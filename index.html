@@ -172,6 +172,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .intel-chat-messages { flex: 1; overflow-y: auto; padding: 8px 0; }
 .intel-chat-input-row { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
 @media (max-width: 1100px) { .intel-grid { grid-template-columns: 1fr; } }
+/* Roadmap section */
+.roadmap-section { margin-top: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.roadmap-header { padding: 14px 18px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; display: flex; align-items: center; gap: 8px; }
+.roadmap-title { font-weight: 700; font-size: 14px; color: #1a1a1a; }
+.roadmap-sub { font-size: 11px; color: #9ca3af; margin-left: auto; }
+.roadmap-body { padding: 18px; }
+.roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .roadmap-grid { grid-template-columns: 1fr; } }
+.roadmap-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: #fafbfc; position: relative; }
+.roadmap-card-status { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
+.roadmap-status-missing { background: #fef2f2; color: #dc2626; }
+.roadmap-status-partial { background: #fffbeb; color: #d97706; }
+.roadmap-card-title { font-weight: 700; font-size: 13px; color: #1a1a1a; margin-bottom: 6px; }
+.roadmap-card-desc { font-size: 12px; color: #6b7280; line-height: 1.5; }
+.roadmap-card-impact { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #4b5563; }
+.roadmap-card-impact strong { color: #1a1a1a; }
 /* Anomalies Section */
 .anom-timeline { position: relative; padding-left: 24px; }
 .anom-month { margin-bottom: 24px; position: relative; }
@@ -342,6 +358,7 @@ function emptyMonth(month) {
 
 // Working days per month (US federal holidays excluded)
 const WORKING_DAYS = {
+  'FY 2023':252,'FY 2024':253,
   'Jan 25':21,'Feb 25':19,'Mar 25':21,'Apr 25':22,'May 25':21,'Jun 25':20,
   'Jul 25':22,'Aug 25':21,'Sep 25':21,'Oct 25':22,'Nov 25':18,'Dec 25':22,
   'Jan 26':20,'Feb 26':19
@@ -485,73 +502,92 @@ const JAN26 = makeMonth('Jan 26',
 );
 
 // ═══════════════════════════════════════════════════════════════
+// 2023 — Estimated monthly from annual totals ($27.7M rev / $3.4M net)
+// Labor not separated in accounting until 2024. Using estimated splits.
+// Source: Citrin Cooperman annual P&L (3/24/2026 export)
+// ═══════════════════════════════════════════════════════════════
+const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0};
+// FY 2023 Year End — Annual totals from Citrin Cooperman ($27.7M revenue)
+const FY23 = makeMonth('FY 2023',
+  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0},
+  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0},
+  {direct:3500004, project:500004, hc:HC}, 1500000,
+  {payroll:1819356, facilities:443736, operating:769380, marketing:75780, ga:399336, taxIns:105660}, -759576, 40560);
+
+// FY 2024 Year End — Annual totals from Citrin Cooperman ($22.1M revenue)
+const FY24 = makeMonth('FY 2024',
+  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0},
+  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0},
+  {direct:4111560, project:600000, hc:HC}, 1706640,
+  {payroll:1417800, facilities:485556, operating:857964, marketing:132240, ga:389424, taxIns:78084}, -884388, 60996);
+
+// ═══════════════════════════════════════════════════════════════
 // 2025 FULL YEAR — All Locations (from "P&L EBITDA 12 Mos.xlsx")
 // Note: Dec 25 salary was $150K overstated (one-time charge)
 // COGS "Recurring Resale" split across depts by revenue proportion
 // ═══════════════════════════════════════════════════════════════
-const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0};
 const JAN25 = makeMonth('Jan 25',
-  {managed_services:528441, security:104679, cloud_hosting:51273, hw_sw_resale:329475, professional_services:138400, ai_consulting:0},
-  {managed_services:31073, security:59642, cloud_hosting:28507, hw_sw_resale:250919, professional_services:72436, ai_consulting:0},
+  {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0},
+  {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0},
   {direct:227678, project:69884, hc:HC}, 174805,
   {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:20205, taxIns:7425}, -17131, 2920);
 const FEB25 = makeMonth('Feb 25',
-  {managed_services:535139, security:104764, cloud_hosting:60907, hw_sw_resale:673161, professional_services:150612, ai_consulting:0},
-  {managed_services:32626, security:59355, cloud_hosting:33723, hw_sw_resale:540206, professional_services:48356, ai_consulting:0},
+  {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0},
+  {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0},
   {direct:203182, project:64602, hc:HC}, 166242,
   {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:23341, taxIns:7419}, -56287, 2691);
 const MAR25 = makeMonth('Mar 25',
-  {managed_services:543621, security:112444, cloud_hosting:61631, hw_sw_resale:572520, professional_services:140255, ai_consulting:0},
-  {managed_services:30561, security:64320, cloud_hosting:34198, hw_sw_resale:445058, professional_services:29343, ai_consulting:0},
+  {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0},
+  {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0},
   {direct:227117, project:71122, hc:HC}, 145044,
   {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:18959, taxIns:7430}, -25355, 15867);
 const APR25 = makeMonth('Apr 25',
-  {managed_services:580350, security:114074, cloud_hosting:62256, hw_sw_resale:721501, professional_services:113613, ai_consulting:0},
-  {managed_services:31652, security:64311, cloud_hosting:33916, hw_sw_resale:571170, professional_services:14836, ai_consulting:0},
+  {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0},
+  {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0},
   {direct:194932, project:67481, hc:HC}, 128044,
   {payroll:76476, facilities:39645, operating:94847, marketing:8153, ga:15130, taxIns:6410}, -26506, 0);
 const MAY25 = makeMonth('May 25',
-  {managed_services:577654, security:137635, cloud_hosting:74062, hw_sw_resale:636895, professional_services:63542, ai_consulting:0},
-  {managed_services:33569, security:67069, cloud_hosting:39013, hw_sw_resale:476411, professional_services:14125, ai_consulting:0},
+  {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0},
+  {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0},
   {direct:203541, project:64595, hc:HC}, 136510,
   {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:18050, taxIns:5501}, -37385, 1202);
 const JUN25 = makeMonth('Jun 25',
-  {managed_services:588593, security:141210, cloud_hosting:73861, hw_sw_resale:719662, professional_services:129304, ai_consulting:0},
-  {managed_services:30679, security:73481, cloud_hosting:38860, hw_sw_resale:571449, professional_services:8161, ai_consulting:0},
+  {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0},
+  {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0},
   {direct:205476, project:61677, hc:HC}, 129570,
   {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:17197, taxIns:6826}, -43058, 2047);
 const JUL25 = makeMonth('Jul 25',
-  {managed_services:569712, security:141371, cloud_hosting:76482, hw_sw_resale:930926, professional_services:66148, ai_consulting:0},
-  {managed_services:31720, security:75731, cloud_hosting:39109, hw_sw_resale:761931, professional_services:12951, ai_consulting:0},
+  {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0},
+  {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0},
   {direct:218508, project:65070, hc:HC}, 147139,
   {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:23977, taxIns:6081}, -30397, 1048);
 const AUG25 = makeMonth('Aug 25',
-  {managed_services:583625, security:143784, cloud_hosting:76516, hw_sw_resale:792736, professional_services:140832, ai_consulting:0},
-  {managed_services:35366, security:77589, cloud_hosting:39320, hw_sw_resale:635859, professional_services:31339, ai_consulting:0},
+  {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0},
+  {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0},
   {direct:189126, project:64553, hc:HC}, 145868,
   {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:16742, taxIns:6091}, -52865, 1470);
 const SEP25 = makeMonth('Sep 25',
-  {managed_services:543115, security:148421, cloud_hosting:67217, hw_sw_resale:480149, professional_services:60551, ai_consulting:0},
-  {managed_services:37121, security:81629, cloud_hosting:34986, hw_sw_resale:383657, professional_services:13423, ai_consulting:0},
+  {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0},
+  {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0},
   {direct:210696, project:55387, hc:HC}, 147595,
   {payroll:75368, facilities:32562, operating:124862, marketing:14315, ga:22849, taxIns:14268}, -16860, 5382);
 const OCT25 = makeMonth('Oct 25',
-  {managed_services:575126, security:153443, cloud_hosting:78516, hw_sw_resale:743575, professional_services:87543, ai_consulting:0},
-  {managed_services:46011, security:92631, cloud_hosting:43493, hw_sw_resale:582961, professional_services:23040, ai_consulting:0},
+  {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0},
+  {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0},
   {direct:206820, project:57904, hc:HC}, 197590,
   {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:25910, taxIns:9950}, -66612, 0);
 const NOV25 = makeMonth('Nov 25',
-  {managed_services:577716, security:151608, cloud_hosting:73549, hw_sw_resale:453597, professional_services:60578, ai_consulting:0},
-  {managed_services:24419, security:90623, cloud_hosting:40515, hw_sw_resale:338188, professional_services:23527, ai_consulting:0},
+  {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0},
+  {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0},
   {direct:174861, project:51988, hc:HC}, 111629,
   {payroll:54724, facilities:44444, operating:125361, marketing:15176, ga:33809, taxIns:7787}, -21706, 0);
-// ⚠️ Dec 25: $150K one-time salary charge overstated direct labor. Adjusted EBITDA ~$150K higher.
+// ⚠️ Dec 25: Year-end adjustments including $325K direct labor (YE payroll corrections), $135K insurance cleanup, $302K operating expenses, and $601K favorable other income adjustments.
 const DEC25 = makeMonth('Dec 25',
-  {managed_services:582790, security:152186, cloud_hosting:11863, hw_sw_resale:323404, professional_services:66099, ai_consulting:0},
-  {managed_services:37109, security:107029, cloud_hosting:156, hw_sw_resale:219208, professional_services:2305, ai_consulting:0},
+  {managed_services:581894, security:152186, cloud_hosting:11863, hw_sw_resale:324300, professional_services:66099, ai_consulting:0},
+  {managed_services:35508, security:66787, cloud_hosting:40783, hw_sw_resale:220424, professional_services:2305, ai_consulting:0},
   {direct:325620, project:-2116, hc:HC}, 31075,
   {payroll:71324, facilities:46712, operating:301681, marketing:13014, ga:33590, taxIns:143390}, 193794, 6023);
-DEC25._note = 'Dec salary $150K overstated (one-time charge). Cloud SaaS rev -$15K adj.';
+DEC25._note = 'Dec 25: YE payroll adjustments +$161K, insurance cleanup $135K, operating expenses $302K including PAGA accrual $137K, other income favorable +$601K';
 
 // ═══════════════════════════════════════════════════════════════
 // FEBRUARY 2026 — All Locations (Consolidated CA + OH)
@@ -586,7 +622,7 @@ FEB26.detail = {
     officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
 };
 
-const DATA = [JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+const DATA = [FY23, FY24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
 
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
@@ -598,8 +634,15 @@ const ANOMALIES = {
     {type:'credit', category:'Write-Off', description:'One-time credit of $48K due to a write-off', impact: 48000, dept:'general'},
   ],
   'Dec 25': [
-    {type:'expense', category:'Direct Labor', description:'End-of-year labor costs — anomaly in Managed IT COGS (salary overstated ~$150K due to one-time charge)', impact: -150000, dept:'managed_services'},
-    {type:'expense', category:'Tax & Insurance', description:'Tax & Insurance at $143K vs normal ~$7K — year-end accrual/true-up', impact: -136000, dept:'general'},
+    {type:'expense', category:'Direct Labor', description:'YE payroll corrections — Direct Labor wages adjusted +$161K (net of corrections across all labor categories). Includes contractor wages and benefit true-ups.', impact: -91087, dept:'managed_services'},
+    {type:'expense', category:'Tax & Insurance', description:'Insurance prepaid cleanup $135K — balance sheet cleanup reclassified prepaid insurance to expense. Normal monthly ~$7K.', impact: -135253, dept:'general'},
+    {type:'expense', category:'Operating Expenses', description:'Operating expenses $302K vs normal ~$100K — includes Professional Services cleanup ($231K net: Citrin Cooperman $88K + CA Class Action lawsuit accruals $137K), software/license cleanups $15K', impact: -200000, dept:'general'},
+    {type:'adjustment', category:'CA Class Action Lawsuit', description:'PAGA Class Action Suit accrual $5.9K + estimated settlement costs $125K + additional PAGA accrual $5.9K = $137K total legal reserve', impact: -136800, dept:'general'},
+    {type:'adjustment', category:'Revenue Adjustments', description:'Cloud SaaS revenue reduced $60K (HHHC Overbilling correction). WIP accruals net -$27K on Project Services.', impact: -87357, dept:'cloud_hosting'},
+    {type:'adjustment', category:'Depreciation & Amortization', description:'Full-year D&A booking: Amortization $146K + Depreciation $102K + Finance Lease $68K = $316K. Posted as YE entries.', impact: -316000, dept:'general'},
+    {type:'credit', category:'Other Income Adjustments', description:'DLL Finance Free Flooring reversal $216K + MTS Earnout adjustment $239K + Payroll accrual correction $146K = $601K net favorable in Other Expense', impact: 601454, dept:'general'},
+    {type:'adjustment', category:'Sales Commission Correction', description:'Sales commission correction — $135K reversal offset by $15K adjustment. Net -$120K in sales labor.', impact: -119819, dept:'general'},
+    {type:'adjustment', category:'Internal Use Software', description:'Capitalized $91K of internal-use software development costs (moved from Direct Labor to balance sheet)', impact: 90648, dept:'general'},
   ],
   'Jan 26': [
     {type:'adjustment', category:'R&D Salary Reallocation', description:'Tim, Peter, Jacob (Direct Labor) + James (Officer Comp) wages moved to R&D for AI solutions team. ~$71K in R&D wages/taxes/pension. YTD adjustment posted 2/28/2026.', impact: 71331, dept:'general'},
@@ -777,20 +820,24 @@ function render() {
 // DASHBOARD VIEW
 // ═══════════════════════════════════════════════════════════════
 function renderDashboard(el) {
-  const L = latest(), P = prev(), hc = totalHC(), annRev = L.totRev*12, annEbitda = L.ebitda*12;
-  const revChg = P ? chg(L.totRev, P.totRev) : 0;
-  const ebitdaChg = P ? chg(L.ebitda, P.ebitda) : 0;
-  const gmChg = P ? (L.gpM - P.gpM) : 0;
+  const L = latest(), P = prev(), hc = totalHC();
+  const isFY = L.month.startsWith('FY');
+  const annRev = isFY ? L.totRev : L.totRev*12;
+  const annEbitda = isFY ? L.ebitda : L.ebitda*12;
+  const prevIsFYMismatch = P && (isFY !== P.month.startsWith('FY')); // Don't compare FY vs monthly
+  const revChg = (P && !prevIsFYMismatch) ? chg(L.totRev, P.totRev) : 0;
+  const ebitdaChg = (P && !prevIsFYMismatch) ? chg(L.ebitda, P.ebitda) : 0;
+  const gmChg = (P && !prevIsFYMismatch) ? (L.gpM - P.gpM) : 0;
   const insights = generateInsights(L, P);
   const allLaborPct = L.totRev>0?((L.totLab+L.salesLab+L.adminLab)/L.totRev*100):0;
 
   el.innerHTML = `<div class="fade-in">
     ${monthSelector()}
     <div class="section-title">Executive Overview</div>
-    <div class="section-sub">${L.month} — Annualized Revenue: ${fmt(annRev)} | Annualized EBITDA: ${fmt(annEbitda)} | Net Income: ${fmt(L.netIncome)}</div>
+    <div class="section-sub">${L.month} — ${isFY ? 'Annual' : 'Annualized'} Revenue: ${fmt(annRev)} | ${isFY ? 'Annual' : 'Annualized'} EBITDA: ${fmt(annEbitda)} | Net Income: ${fmt(L.netIncome)}</div>
     <div class="kpi-grid">
       ${kpiCard('Total Revenue', fmt(L.totRev), revChg, '/month', 'var(--blue)')}
-      ${kpiCard('Gross Profit', fmt(L.gp), chg(L.gp, P.gp), fmtP(L.gpM)+' margin (labor in COGS)', 'var(--purple)')}
+      ${kpiCard('Gross Profit', fmt(L.gp), (P && !prevIsFYMismatch) ? chg(L.gp, P.gp) : null, fmtP(L.gpM)+' margin (labor in COGS)', 'var(--purple)')}
       ${kpiCard('Operating Income', fmt(L.ebitda), ebitdaChg, fmtP(L.ebitdaM)+' margin', 'var(--green)')}
       ${kpiCard('Net Income', fmt(L.netIncome), null, 'After other income & tax', L.netIncome>=0?'var(--green)':'var(--red)')}
       ${kpiCard('Total Labor', fmt(L.totLab+L.salesLab+L.adminLab), null, fmtP(allLaborPct)+' of revenue', 'var(--orange)')}
@@ -1143,9 +1190,17 @@ function pnlTableEngine() {
   for (let i = Math.max(0, si - 3); i <= si; i++) mIdxs.push(i);
   const mData = mIdxs.map(i => DATA[i]);
   const curIdx = mData.length - 1;
+  const isCurFY = cur.month.startsWith('FY');
+  // For avg/MOM: exclude FY entries when viewing monthly data (apples-to-apples)
   const avgIdxs = [];
-  for (let i = Math.max(0, si - 3); i < si; i++) avgIdxs.push(i);
+  for (let i = Math.max(0, si - 3); i < si; i++) {
+    if (!isCurFY && DATA[i].month.startsWith('FY')) continue; // skip FY from monthly avg
+    avgIdxs.push(i);
+  }
   const avgData = avgIdxs.map(i => DATA[i]);
+  // Check if previous entry in window is FY (suppress MOM if mixing FY vs monthly)
+  const prevInWindow = curIdx > 0 ? mData[curIdx - 1] : null;
+  const suppressMOM = !isCurFY && prevInWindow && prevInWindow.month.startsWith('FY');
   const activeDepts = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0));
 
   function fc(v) {
@@ -1175,9 +1230,12 @@ function pnlTableEngine() {
     return avgData.reduce((s, m) => s + (getter(m) || 0), 0) / avgData.length;
   }
 
-  const colCount = mData.length + 6;
+  // Suppress MOM/AVG analysis for 2023-2024 (estimated from annual totals, not real monthly data)
+  const isEstimated = cur.month && cur.month.startsWith('FY');
+  const analysisCols = isEstimated ? 0 : 5;
+  const colCount = mData.length + analysisCols + (isEstimated ? 0 : 1);
   const thMonths = mData.map((m, i) => `<th class="${i === curIdx ? 'gp-cur' : ''}">${m.month}</th>`).join('');
-  const thAnalysis = `<th class="gp-sep">MOM Δ</th><th>MOM %</th><th class="gp-sep">3-MO AVG</th><th>VS AVG Δ</th><th>VS AVG %</th>`;
+  const thAnalysis = isEstimated ? '<th class="gp-sep" style="font-size:11px;color:#9ca3af;font-style:italic" colspan="1">Estimated from annual totals</th>' : `<th class="gp-sep">MOM Δ</th><th>MOM %</th><th class="gp-sep">3-MO AVG</th><th>VS AVG Δ</th><th>VS AVG %</th>`;
 
   function divRow(label) {
     return `<tr class="gp-div-row"><td colspan="${colCount}">${label}</td></tr>`;
@@ -1194,21 +1252,27 @@ function pnlTableEngine() {
     const flagHtml = flag ? ` <span class="gp-flag ${flagType || 'gp-flag-warn'}">${flag}</span>` : '';
 
     if (isPct) {
+      const dash = '<span style="color:#9ca3af">—</span>';
+      const pctAnalysis = isEstimated ? '' : `<td class="gp-sep" style="font-family:inherit">${suppressMOM ? dash : (prevVal !== null ? (momD >= 0 ? '+' : '') + momD.toFixed(1) + 'pts' : '—')}</td><td>${suppressMOM ? '' : ''}</td>
+        <td class="gp-sep" style="font-family:inherit">${avgData.length > 0 ? fmtP(a) : '—'}</td>
+        <td style="font-family:inherit">${avgData.length > 0 ? (vsA >= 0 ? '+' : '') + vsA.toFixed(1) + 'pts' : '—'}</td><td></td>`;
       return `<tr class="gp-gpm-row"><td>${label}</td>
         ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-family:inherit">${fmtP(v)}</td>`).join('')}
-        <td class="gp-sep" style="font-family:inherit">${prevVal !== null ? (momD >= 0 ? '+' : '') + momD.toFixed(1) + 'pts' : '—'}</td><td></td>
-        <td class="gp-sep" style="font-family:inherit">${avgData.length > 0 ? fmtP(a) : '—'}</td>
-        <td style="font-family:inherit">${avgData.length > 0 ? (vsA >= 0 ? '+' : '') + vsA.toFixed(1) + 'pts' : '—'}</td><td></td></tr>`;
+        ${pctAnalysis}</tr>`;
     }
 
     const cls = isTotal ? 'gp-gp-row' : bold ? 'gp-bold' : indent ? 'gp-indent' : '';
+    const dash = '<span style="color:#9ca3af">—</span>';
+    const momDelta = suppressMOM ? dash : fDelta(momD);
+    const momPct = suppressMOM ? '' : fPct(curVal, prevVal);
+    const dataAnalysis = isEstimated ? '' : `<td class="gp-sep">${momDelta}</td><td>${momPct}</td>
+      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td>`;
     return `<tr class="${cls}"><td>${label}${flagHtml}</td>
       ${vals.map((v, i) => {
         const style = isCost ? 'color:var(--red);' : isTotal ? (v < 0 ? 'color:var(--red);' : '') : '';
         return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="${style}">${isTotal ? fNeg(v) : fc(v)}</td>`;
       }).join('')}
-      <td class="gp-sep">${fDelta(momD)}</td><td>${fPct(curVal, prevVal)}</td>
-      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td></tr>`;
+      ${dataAnalysis}</tr>`;
   }
 
   // Net row for product-level: Revenue - COGS = Net, with color
@@ -1219,14 +1283,17 @@ function pnlTableEngine() {
     const momD = prevVal !== null ? curVal - prevVal : 0;
     const a = avgData.length > 0 ? avgData.reduce((s, m) => s + ((revGetter(m)||0) - (cogsGetter(m)||0)), 0) / avgData.length : 0;
     const vsA = curVal - a;
+    const nDash = '<span style="color:#9ca3af">—</span>';
+    const netAnalysis = isEstimated ? '' : `<td class="gp-sep">${suppressMOM ? nDash : fDelta(momD)}</td><td>${suppressMOM ? '' : fPct(curVal, prevVal)}</td>
+      <td class="gp-sep">${fNeg(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td>`;
     return `<tr class="gp-net-row"><td style="padding-left:28px">${label}</td>
       ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${fNeg(v)}</td>`).join('')}
-      <td class="gp-sep">${fDelta(momD)}</td><td>${fPct(curVal, prevVal)}</td>
-      <td class="gp-sep">${fNeg(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td></tr>`;
+      ${netAnalysis}</tr>`;
   }
 
   // Working days info row
   function workingDaysRow() {
+    if (isEstimated) return ''; // No working days for FY year-end entries
     const vals = mData.map(m => m.workingDays || 0);
     const curWd = vals[curIdx];
     const prevWd = curIdx > 0 ? vals[curIdx - 1] : null;
@@ -1234,12 +1301,15 @@ function pnlTableEngine() {
     const a = avgData.length > 0 ? Math.round(avgData.reduce((s, m) => s + (m.workingDays || 0), 0) / avgData.length) : 0;
     const vsA = curWd - a;
     return `<tr style="background:#f0f4ff;font-size:12px;color:#4b5563;font-weight:500"><td>Working Days (Fed. Holidays excl.)</td>
-      ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-weight:${i === curIdx ? '700' : '500'};color:${v >= 22 ? '#059669' : v <= 19 ? '#d97706' : '#4b5563'}">${v}</td>`).join('')}
+      ${vals.map((v, i) => {
+        const isFY = mData[i].month.startsWith('FY');
+        return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-weight:${i === curIdx ? '700' : '500'};color:${isFY ? '#9ca3af' : v >= 22 ? '#059669' : v <= 19 ? '#d97706' : '#4b5563'}">${isFY ? '—' : v}</td>`;
+      }).join('')}
       <td class="gp-sep" style="color:${momD > 0 ? '#059669' : momD < 0 ? '#dc2626' : '#9ca3af'}">${momD > 0 ? '+' : ''}${momD || '—'}</td><td></td>
       <td class="gp-sep">${a}</td><td style="color:${vsA > 0 ? '#059669' : vsA < 0 ? '#dc2626' : '#9ca3af'}">${vsA > 0 ? '+' : ''}${vsA || '—'}</td><td></td></tr>`;
   }
 
-  return {cur, mData, curIdx, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData, fc, fNeg, fDelta, fPct};
+  return {cur, mData, curIdx, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData, fc, fNeg, fDelta, fPct, isEstimated};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1603,6 +1673,37 @@ function renderAdvisor(el) {
         </div>
       </div>
     </div>
+
+    <!-- DASHBOARD ROADMAP -->
+    <div class="roadmap-section">
+      <div class="roadmap-header">
+        <span>🗺️</span><span class="roadmap-title">Dashboard Roadmap</span>
+        <span class="roadmap-sub">Data gaps & planned enhancements to reach a complete financial picture</span>
+      </div>
+      <div class="roadmap-body">
+        <div class="roadmap-grid">
+          <div class="roadmap-card">
+            <span class="roadmap-card-status roadmap-status-missing">Missing Data</span>
+            <div class="roadmap-card-title">Department-Level Resource Allocation</div>
+            <div class="roadmap-card-desc">Break out personnel costs by team so each department has a true team-level P&L. Currently labor is allocated by formula (Direct → MS, Project → PS/Security). Need actual headcount assignments and salary data per department to show real cost-of-delivery per team.</div>
+            <div class="roadmap-card-impact"><strong>Impact:</strong> Enables team-by-team profitability view, identifies which departments are overstaffed vs understaffed, and supports per-seat/per-employee margin analysis for exit readiness.</div>
+          </div>
+          <div class="roadmap-card">
+            <span class="roadmap-card-status roadmap-status-partial">Partial — SNI Started</span>
+            <div class="roadmap-card-title">Won Revenue Not Yet Invoiced (HW/SW & Projects)</div>
+            <div class="roadmap-card-desc">Show hardware/software sales that have been closed but not yet invoiced, plus project pipeline value of project revenue earned but not yet billed or recognized. The SNI section covers products ordered/received — need to add closed project backlog and scheduling data.</div>
+            <div class="roadmap-card-impact"><strong>Impact:</strong> Reveals the true forward revenue picture beyond recognized P&L. Critical for cash flow forecasting and understanding the gap between bookings and billings.</div>
+          </div>
+          <div class="roadmap-card">
+            <span class="roadmap-card-status roadmap-status-missing">Missing Data</span>
+            <div class="roadmap-card-title">New MRR Won — Not Yet Onboarded</div>
+            <div class="roadmap-card-desc">Track new recurring revenue contracts that have been signed but not yet invoiced — including expected onboarding start dates and projected first invoice dates. Some clients start immediately, others take 30-60 days for onboarding before billing begins.</div>
+            <div class="roadmap-card-impact"><strong>Impact:</strong> Shows the MRR growth pipeline and expected ramp timing. Essential for revenue forecasting, capacity planning, and demonstrating predictable growth trajectory to potential buyers.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>`;
   renderMessages();
   if (state.chatMessages.length <= 1) {
