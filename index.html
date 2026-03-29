@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datapath Financial Command Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #f8f9fa; --card: #ffffff; --card-hover: #f1f3f5; --input: #ffffff;
+  --border: #e0e0e0; --border-lt: #d0d0d0;
+  --text: #1a1a1a; --muted: #6b7280; --dim: #9ca3af;
+  --blue: #2563eb; --green: #16a34a; --red: #dc2626; --purple: #7c3aed;
+  --orange: #ea580c; --cyan: #0891b2; --pink: #db2777; --yellow: #ca8a04;
+  --primary: #1e40af; --primary-lt: #2563eb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+.app { display: flex; height: 100vh; }
+.sidebar { width: 220px; background: #ffffff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s; }
+.sidebar.collapsed { width: 64px; }
+.sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.sidebar.collapsed .sidebar-header { padding: 20px 12px; }
+.sidebar.collapsed .brand { display: none; }
+.brand-name { font-weight: 800; font-size: 16px; letter-spacing: -0.3px; }
+.brand-sub { font-size: 10px; color: var(--primary-lt); text-transform: uppercase; letter-spacing: 1px; }
+.nav { flex: 1; padding: 12px 8px; }
+.nav-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; background: transparent; border: none; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 14px; margin-bottom: 4px; transition: all 0.15s; text-align: left; }
+.nav-btn:hover { background: var(--card-hover); }
+.nav-btn.active { background: rgba(30,64,175,0.08); color: var(--primary-lt); font-weight: 600; }
+.sidebar.collapsed .nav-btn { justify-content: center; padding: 12px 0; }
+.sidebar.collapsed .nav-label { display: none; }
+.sidebar-footer { padding: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--dim); }
+.sidebar.collapsed .sidebar-footer { display: none; }
+.main { flex: 1; overflow: auto; padding: 24px 32px; }
+.section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.kpi-card { background: #ffffff; border-radius: 8px; padding: 20px 24px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.kpi-label { color: var(--muted); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.kpi-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.kpi-change { font-size: 13px; font-weight: 600; }
+.kpi-change.up { color: var(--green); }
+.kpi-change.down { color: var(--red); }
+.kpi-sub { color: var(--dim); font-size: 12px; margin-top: 4px; }
+.chart-grid { display: grid; gap: 16px; margin-bottom: 28px; }
+.chart-grid-2 { grid-template-columns: 1fr 1fr; }
+.chart-grid-2-1 { grid-template-columns: 2fr 1fr; }
+.chart-card { background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.chart-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+.dept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.dept-card { background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #e0e0e0; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.dept-card:hover { transform: translateY(-2px); }
+.dept-card-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.dept-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.dept-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.dept-name { font-weight: 600; font-size: 14px; }
+.dept-hc { color: var(--dim); font-size: 11px; }
+.dept-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dept-metric-label { color: var(--dim); font-size: 11px; margin-bottom: 2px; }
+.dept-metric-value { font-weight: 700; font-size: 16px; }
+.margin-bar { margin-top: 14px; }
+.margin-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.margin-label { color: var(--muted); font-size: 11px; }
+.margin-value { font-size: 13px; font-weight: 700; }
+.margin-track { background: #e5e7eb; border-radius: 4px; height: 6px; position: relative; overflow: hidden; }
+.margin-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.margin-target { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--dim); }
+.margin-range { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; color: var(--dim); }
+/* P&L Table */
+.pnl-wrap { background: #ffffff; border-radius: 8px; border: 1px solid #e0e0e0; overflow: auto; max-height: calc(100vh - 180px); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.pnl-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pnl-table th { position: sticky; top: 0; background: #ffffff; padding: 12px 14px; border-bottom: 2px solid #d0d0d0; color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600; z-index: 1; }
+.pnl-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 2; min-width: 200px; }
+.pnl-table th:not(:first-child) { text-align: right; min-width: 95px; }
+.pnl-table td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #1a1a1a; }
+.pnl-table td:first-child { position: sticky; left: 0; background: #ffffff; z-index: 1; white-space: nowrap; }
+.pnl-table td:not(:first-child) { text-align: right; font-size: 13px; }
+.pnl-row-hl td { background: #f0f7ff !important; }
+.pnl-row-hl td:first-child { background: #e8f0fe !important; font-weight: 700; }
+.pnl-bold td:first-child { font-weight: 700; }
+.pnl-indent td:first-child { padding-left: 28px; color: #6b7280; font-weight: 400; }
+/* Chat */
+.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 160px); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px 0; }
+.chat-msg { margin-bottom: 16px; display: flex; }
+.chat-msg.user { justify-content: flex-end; padding-left: 48px; }
+.chat-msg.assistant { justify-content: flex-start; padding-right: 48px; }
+.chat-bubble { border-radius: 12px; padding: 14px 18px; max-width: 85%; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.chat-msg.user .chat-bubble { background: var(--primary); }
+.chat-msg.assistant .chat-bubble { background: #f5f5f5; border: 1px solid #e0e0e0; color: #1a1a1a; }
+.chat-input-row { display: flex; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.chat-input { flex: 1; background: #ffffff; border: 1px solid #d0d0d0; border-radius: 10px; padding: 12px 16px; color: #1a1a1a; font-size: 14px; outline: none; }
+.chat-input:focus { border-color: var(--primary-lt); }
+.chat-send { background: var(--primary); border: none; border-radius: 10px; padding: 12px 20px; cursor: pointer; color: #fff; font-weight: 600; font-size: 14px; }
+.chat-send:hover { background: var(--primary-lt); }
+.quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+.quick-btn { background: #ffffff; border: 1px solid #d0d0d0; border-radius: 20px; padding: 8px 16px; color: var(--primary-lt); cursor: pointer; font-size: 13px; }
+.quick-btn:hover { border-color: var(--primary-lt); }
+/* Drill-down */
+.back-btn { background: none; border: none; color: var(--primary-lt); cursor: pointer; font-size: 14px; margin-bottom: 16px; padding: 0; }
+.drill-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.drill-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.drill-title { font-size: 24px; font-weight: 700; }
+.drill-desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.mini-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.mini-kpi { background: #ffffff; border-radius: 8px; padding: 16px; border: 1px solid #e0e0e0; }
+.mini-kpi-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.mini-kpi-value { font-size: 22px; font-weight: 700; }
+.bench-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; text-align: center; }
+.bench-val { font-size: 28px; font-weight: 700; }
+.bench-label { color: var(--dim); font-size: 12px; margin-top: 4px; }
+/* Detail table */
+.detail-table { width: 100%; border-collapse: collapse; }
+.detail-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #d0d0d0; color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.detail-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #1a1a1a; }
+/* Insights */
+.insights-panel { background: #ffffff; border-radius: 8px; padding: 24px; border: 1px solid #e0e0e0; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.insights-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.insights-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.insight-col-header { font-size: 13px; font-weight: 700; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 6px; }
+.insight-item { font-size: 12.5px; line-height: 1.6; color: var(--muted); padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; border-left: 3px solid transparent; }
+.insight-item.good { background: #f0fdf4; border-left-color: var(--green); }
+.insight-item.bad { background: #fef2f2; border-left-color: var(--red); }
+.insight-item.opp { background: #eff6ff; border-left-color: var(--blue); }
+@media (max-width: 900px) { .insights-columns { grid-template-columns: 1fr; } }
+/* Month Selector */
+.month-bar { display: flex; align-items: center; gap: 4px; margin-bottom: 20px; padding: 6px; background: #ffffff; border-radius: 8px; border: 1px solid #e0e0e0; flex-wrap: wrap; }
+.month-bar-label { color: var(--dim); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 8px; white-space: nowrap; }
+.month-btn { padding: 6px 12px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
+.month-btn:hover { background: var(--card-hover); color: var(--text); }
+.month-btn.active { background: #1e40af; color: #fff; }
+.month-compare { display: flex; align-items: center; gap: 6px; margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--border); }
+.month-compare-label { color: var(--dim); font-size: 11px; }
+.month-vs { font-size: 12px; color: var(--primary-lt); font-weight: 600; }
+/* Gross Profit Analysis */
+.gp-wrap { background: #ffffff; border-radius: 8px; border: 1px solid #e0e0e0; overflow: auto; max-height: calc(100vh - 180px); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.gp-tbl { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.gp-tbl th { position: sticky; top: 0; background: #ffffff; padding: 12px 16px; border-bottom: 2px solid #d0d0d0; color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600; z-index: 1; text-align: right; letter-spacing: 0.3px; }
+.gp-tbl th:first-child { text-align: left; position: sticky; left: 0; z-index: 2; min-width: 260px; color: #374151; }
+.gp-tbl th.gp-cur { background: #f0f7ff; color: #1a1a1a; font-weight: 800; }
+.gp-tbl th.gp-sep { border-left: 2px solid #d0d0d0; }
+.gp-tbl td { padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; text-align: right; color: #1a1a1a; }
+.gp-tbl td:first-child { text-align: left; font-size: 13px; position: sticky; left: 0; background: #ffffff; z-index: 1; color: #1a1a1a; }
+.gp-tbl td.gp-cur { background: #f8fbff; font-weight: 700; }
+.gp-tbl td.gp-sep { border-left: 2px solid #e5e5e5; }
+.gp-div-row td { background: #f5f5f5 !important; font-weight: 800; font-size: 13px; padding: 14px 16px 10px; border-bottom: 2px solid #d0d0d0; border-top: 2px solid #d0d0d0; letter-spacing: 0.2px; color: #111827; }
+.gp-bold td { font-weight: 700; }
+.gp-bold td:first-child { font-weight: 700; }
+.gp-indent td:first-child { padding-left: 28px; color: #6b7280; font-weight: 400; }
+.gp-gp-row td { font-weight: 700; border-top: 2px solid #d0d0d0; }
+.gp-gpm-row td { color: #9ca3af; font-size: 12px; font-style: italic; border-bottom: none; padding-top: 2px; padding-bottom: 14px; }
+.gp-flag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; }
+.gp-flag-warn { background: #fef3c7; color: #d97706; }
+.gp-flag-new { background: #d1fae5; color: #059669; }
+.gp-flag-alloc { background: #ede9fe; color: #7c3aed; }
+.gp-net-row td { font-weight: 600; font-size: 12px; border-bottom: 2px solid #e5e7eb; }
+.gp-net-row td:first-child { font-style: italic; }
+.gp-filter-bar { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.gp-filter-btn { padding: 7px 16px; border-radius: 6px; border: 1px solid #e0e0e0; background: #ffffff; color: #6b7280; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+.gp-filter-btn:hover { background: #f5f5f5; }
+.gp-filter-btn.active { background: #1e40af; color: #ffffff; border-color: #1e40af; }
+/* Intelligence two-panel layout */
+.intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100vh - 160px); }
+.intel-panel { display: flex; flex-direction: column; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+.intel-panel-header { padding: 14px 18px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; display: flex; align-items: center; gap: 8px; }
+.intel-panel-title { font-weight: 700; font-size: 14px; color: #1a1a1a; }
+.intel-panel-sub { font-size: 11px; color: #9ca3af; margin-left: auto; }
+.intel-panel-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+.intel-chat-wrap { display: flex; flex-direction: column; height: 100%; }
+.intel-chat-messages { flex: 1; overflow-y: auto; padding: 8px 0; }
+.intel-chat-input-row { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+@media (max-width: 1100px) { .intel-grid { grid-template-columns: 1fr; } }
+/* Anomalies Section */
+.anom-timeline { position: relative; padding-left: 24px; }
+.anom-month { margin-bottom: 24px; position: relative; }
+.anom-month::before { content: ''; position: absolute; left: -24px; top: 0; bottom: -24px; width: 2px; background: #e5e7eb; }
+.anom-month:last-child::before { bottom: 0; }
+.anom-dot { position: absolute; left: -29px; top: 6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #ffffff; box-shadow: 0 0 0 1px #d1d5db; }
+.anom-dot.credit { background: #059669; }
+.anom-dot.expense { background: #dc2626; }
+.anom-dot.revenue { background: #2563eb; }
+.anom-dot.adjustment { background: #d97706; }
+.anom-month-label { font-weight: 700; font-size: 14px; color: #1a1a1a; margin-bottom: 8px; }
+.anom-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.anom-card:hover { border-color: #d1d5db; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.anom-card-left { flex: 1; }
+.anom-type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 8px; }
+.anom-type-credit { background: #d1fae5; color: #059669; }
+.anom-type-expense { background: #fee2e2; color: #dc2626; }
+.anom-type-revenue { background: #dbeafe; color: #2563eb; }
+.anom-type-adjustment { background: #fef3c7; color: #d97706; }
+.anom-desc { font-size: 13px; color: #374151; margin-top: 4px; }
+.anom-dept { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.anom-impact { font-family: 'SF Mono', monospace; font-weight: 700; font-size: 14px; white-space: nowrap; margin-left: 16px; }
+.anom-impact.positive { color: #059669; }
+.anom-impact.negative { color: #dc2626; }
+.anom-summary { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.anom-summary-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; flex: 1; min-width: 180px; }
+.anom-summary-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+.anom-summary-val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+.anom-empty { text-align: center; padding: 40px; color: #9ca3af; font-size: 14px; }
+/* Upload Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+.modal { background: #ffffff; border-radius: 12px; width: 900px; max-height: 85vh; display: flex; flex-direction: column; border: 1px solid #d0d0d0; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.modal-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 20px; padding: 4px; }
+.modal-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.modal-tab { flex: 1; padding: 12px 16px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600; }
+.modal-tab.active { background: #eff6ff; border-bottom-color: var(--primary-lt); color: var(--primary-lt); }
+.modal-body { flex: 1; overflow: auto; padding: 24px; }
+.drop-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
+.drop-zone.over { border-color: var(--primary-lt); background: rgba(30,64,175,0.08); }
+.drop-zone-title { font-size: 16px; font-weight: 600; margin: 12px 0 4px; }
+.drop-zone-sub { color: var(--muted); font-size: 13px; }
+.drop-zone-hint { color: var(--dim); font-size: 12px; margin-top: 8px; }
+.status-msg { margin-bottom: 16px; padding: 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+.status-msg.ok { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+.status-msg.err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+.sheet-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.sheet-tab { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+.sheet-tab.active { border-color: var(--primary-lt); background: #eff6ff; color: var(--primary-lt); font-weight: 600; }
+.preview-table-wrap { border-radius: 10px; border: 1px solid var(--border); overflow: auto; max-height: 300px; }
+.preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.preview-table th { position: sticky; top: 0; background: #1a2744; padding: 10px 12px; border-bottom: 2px solid var(--border); font-size: 11px; font-weight: 600; color: var(--primary-lt); white-space: nowrap; text-align: left; }
+.preview-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.preview-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.col-summary { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.col-chip { background: var(--input); border-radius: 8px; padding: 8px 12px; border: 1px solid var(--border); font-size: 11px; }
+.col-chip-name { color: var(--primary-lt); font-weight: 600; margin-bottom: 2px; }
+.col-chip-info { color: var(--dim); }
+.import-btn { background: var(--green); color: #fff; border: none; border-radius: 10px; padding: 12px 24px; cursor: pointer; font-weight: 700; font-size: 15px; margin-top: 20px; }
+.import-btn:hover { filter: brightness(1.1); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-label { color: var(--muted); font-size: 12px; margin-bottom: 4px; display: block; }
+.form-input { width: 100%; background: var(--input); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; }
+.form-input:focus { border-color: var(--primary-lt); outline: none; }
+.btn-primary { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; font-weight: 600; font-size: 14px; margin-top: 16px; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.fade-in { animation: fadeIn 0.3s ease-out; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* Sold Not Invoiced */
+.sni-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 12px; }
+.sni-card { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.sni-card-total { background: #f0fdf4; border-color: #bbf7d0; }
+.sni-header { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 14px; }
+.sni-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+.sni-row:last-of-type { border-bottom: none; }
+.sni-label { font-size: 13px; color: var(--muted); }
+.sni-val { font-size: 14px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.sni-total { border-top: 2px solid #e0e0e0; border-bottom: none; margin-top: 4px; padding-top: 10px; }
+.sni-count { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-name">DATAPATH</div>
+        <div class="brand-sub">Financial Command Center</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer" id="sidebar-footer"></div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+<div class="modal-overlay" id="upload-modal" style="display:none"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const state = {
+  view: 'dashboard',
+  selDept: null,
+  selMonth: -1, // -1 means "latest"; set after DATA is built
+  sidebarCollapsed: false,
+  chatMessages: [{role:'assistant', content: `Welcome to the Datapath MSP Advisor.\n\nI analyze your P&L data against industry benchmarks from Service Leadership, ConnectWise Peer Groups, and Kaseya.\n\nTry asking:\n• "How do we improve our EBITDA margin?"\n• "What's our business worth?"\n• "How does our security division compare?"\n• "Where should we focus to maximize exit value?"\n• "Analyze our labor costs"\n• "Compare us to top-performing MSPs"`}],
+  charts: {},
+};
+
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENTS & BENCHMARKS
+// ═══════════════════════════════════════════════════════════════
+const DEPTS = [
+  {id:'managed_services', name:'Managed Services', emoji:'🖥️', color:'#3b82f6'},
+  {id:'professional_services', name:'Projects / Prof. Services', emoji:'🔧', color:'#10b981'},
+  {id:'cloud_hosting', name:'Cloud & Hosting', emoji:'☁️', color:'#8b5cf6'},
+  {id:'security', name:'Security (MDR/SOC)', emoji:'🛡️', color:'#ef4444'},
+  {id:'hw_sw_resale', name:'HW/SW Resale', emoji:'📦', color:'#f59e0b'},
+  {id:'ai_consulting', name:'AI Consulting', emoji:'🤖', color:'#06b6d4'},
+];
+const BM = {
+  managed_services:{tgt:72, top:78, med:65, revEmp:165000, desc:'Recurring managed services (RMM, helpdesk, NOC)'},
+  professional_services:{tgt:55, top:62, med:48, revEmp:185000, desc:'Project-based work, implementations, migrations'},
+  cloud_hosting:{tgt:70, top:75, med:62, revEmp:240000, desc:'Cloud infrastructure, IaaS, hosting'},
+  security:{tgt:65, top:72, med:58, revEmp:155000, desc:'MDR, SOC, security stack management'},
+  hw_sw_resale:{tgt:22, top:28, med:18, revEmp:520000, desc:'Hardware/software procurement & resale'},
+  ai_consulting:{tgt:65, top:75, med:55, revEmp:250000, desc:'AI solutions, consulting, and implementation services'},
+};
+
+// ═══════════════════════════════════════════════════════════════
+// DATA — Real Datapath P&L (January 2026 from Citrin Cooperman)
+// ═══════════════════════════════════════════════════════════════
+// Revenue mapping from P&L:
+//   Managed Services: Managed IT(558871) + Voice(8250) + Backup(10551) + ERATE(4679) + SpamFilter(894) = 583,245
+//   Security: Managed Security(5055) + Security Resale(157727) = 162,782
+//   Cloud & Hosting: Public Cloud(1144) + Private Cloud(25891) + Cloud SaaS(39621) = 66,656
+//   HW/SW Resale: HaaS(33254) + Chromebook(562) + M365(125654) + Tool Resale(5466) + Voice Resale(2546) + Product Sales(289324) + Freight(6435) + Commissions(15537) = 478,778
+//   Projects/Prof Svcs: Project Service(24005) + Subcontracted(36848) = 60,853
+//   AI Consulting: 0 (revenue to be tracked as AI solutions practice grows)
+//
+// COGS mapping:
+//   Managed Services: ManagedIT(44031) + Backup(4917) + SpamFilter(373) + Domain(990) + Voice(2272) = 52,583
+//   Security: ManagedSecurity(5622) + SecurityResale(70636) = 76,258
+//   Cloud: Public(401) + Private(11154) = 11,555
+//   HW/SW Resale: RecurResale(24815) + HaaS(18879) + Chromebook(1111) + M365(100058) + VoiceResale(5254) + ProductSales(248701) + Freight(5572) = 404,390
+//   Projects: Subcontractor(30947) = 30,947
+//   AI Consulting: 0
+//
+// Labor: IT Project Labor(60926) + Direct Labor(226198) = 287,124
+// Sales Labor: 128,659
+// Admin Payroll (OpEx): 70,635
+// Headcount: IT Project(5) + Direct(32) + Sales(12) + Admin(10) = 59
+//
+function emptyMonth(month) {
+  const zd = {rev:0,cogs:0,lab:0,gp:0,gpM:0,hc:0};
+  return {month, totRev:0, totCogs:0, gp:0, totLab:0, salesLab:0, adminLab:0, opex:0, ga:0, ebitda:0, ebitdaM:0, gpM:0,
+    d:{managed_services:{...zd}, professional_services:{...zd}, cloud_hosting:{...zd}, security:{...zd}, hw_sw_resale:{...zd}, ai_consulting:{...zd}},
+    detail: null
+  };
+}
+
+// Working days per month (US federal holidays excluded)
+const WORKING_DAYS = {
+  'Jan 25':21,'Feb 25':19,'Mar 25':21,'Apr 25':22,'May 25':21,'Jun 25':20,
+  'Jul 25':22,'Aug 25':21,'Sep 25':21,'Oct 25':22,'Nov 25':18,'Dec 25':22,
+  'Jan 26':20,'Feb 26':19
+};
+
+// Sold Not Invoiced — Pipeline data from Power BI
+// Products ordered/received but not yet invoiced (revenue not yet recognized)
+// Source: Power BI > C360 Procurement > Product Received Not Invoiced (by Product)
+// URL: https://app.powerbi.com/groups/c0aa564d-1eb3-4002-b6d7-13c610317344/reports/74739d42-a87b-4c41-b6dc-c3e15c289a60
+const SNI_DATA = {
+  ordered:  { revenue: 1772570.65, cost: 1047433.62, profit: 725137.03, count: 28 },
+  received: { revenue: 765808.00, cost: 633775.53, profit: 132032.47, count: 32 },
+  asOf: '3/28/2026'
+};
+
+function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, incomeTax) {
+  // ── Labor Reallocation ──
+  // Direct Labor (techs) → 100% into Managed Services COGS (they deliver MS work)
+  // 25% of Project Labor → also into Managed Services COGS (supports MS)
+  // PS head ($11K/mo) → into Security COGS
+  // Remaining Project Labor → stays in Project Services
+  const directLabor = labor.direct;
+  const projLabAlloc_MS = Math.round(labor.project * 0.25);  // 25% of project labor → MS
+  const projLabAlloc_Sec = 11000;                             // PS head → Security
+  const projLabRemaining = labor.project - projLabAlloc_MS - projLabAlloc_Sec;
+  const totalMSLabor = directLabor + projLabAlloc_MS;         // All labor going into MS COGS
+
+  const d = {};
+  let totRev=0, totCogs=0;
+  DEPTS.forEach(dept => {
+    const rev = revs[dept.id]||0;
+    let cogs = cogss[dept.id]||0;
+    let labAlloc = 0;
+    if (dept.id === 'managed_services') labAlloc = totalMSLabor;  // Direct labor + 25% project
+    if (dept.id === 'security') labAlloc = projLabAlloc_Sec;
+    if (dept.id === 'professional_services') labAlloc = projLabRemaining;  // Remaining project labor → PS COGS
+    cogs += labAlloc;
+    const gp = rev - cogs, gpM = rev>0?(gp/rev*100):0;
+    d[dept.id] = {rev, cogs, lab: labAlloc, gp, gpM, hc: labor.hc[dept.id]||0,
+      cogsBeforeAlloc: cogss[dept.id]||0, labAlloc,
+      directLabor: dept.id === 'managed_services' ? directLabor : 0,
+      projLabAlloc: dept.id === 'managed_services' ? projLabAlloc_MS : (dept.id === 'security' ? projLabAlloc_Sec : (dept.id === 'professional_services' ? projLabRemaining : 0))};
+    totRev += rev;
+    totCogs += cogs; // COGS now includes all labor allocations in department totals
+  });
+
+  // GP = Revenue - all dept COGS (which now include all labor allocations)
+  const totalDeptCogs = totCogs;
+  const gp = totRev - totalDeptCogs;           // Gross Profit (after all labor in COGS)
+  const gpM = totRev > 0 ? (gp / totRev * 100) : 0;
+
+  // Below the line: sales + opex (remaining project labor is now in PS COGS)
+  const totalOpex = opexData.payroll + opexData.facilities + opexData.operating + opexData.marketing + opexData.ga + opexData.taxIns;
+  const opNetIncome = gp - salesLab - totalOpex;
+  const netIncome = opNetIncome + otherInc - incomeTax;
+
+  // For backward compat, also compute "GP before any labor" for reference
+  const rawCogs = Object.values(cogss).reduce((s,v) => s + (v||0), 0);
+  const gpBeforeLabor = totRev - rawCogs;
+  const totLab = labor.direct + labor.project;  // total labor spend (for reference)
+
+  return {
+    month, totRev, totCogs: totalDeptCogs, gp,
+    totLab, salesLab, adminLab: opexData.payroll,
+    directLabor: labor.direct, projectLabor: labor.project,
+    projLabAlloc_MS, projLabAlloc_Sec, projLabRemaining,
+    totalMSLabor,
+    opex: totalOpex, ga: opexData.ga,
+    facilities: opexData.facilities, operating: opexData.operating,
+    marketing: opexData.marketing, taxIns: opexData.taxIns,
+    ebitda: opNetIncome,
+    ebitdaM: totRev>0?(opNetIncome/totRev*100):0,
+    gpM,
+    gpBeforeLabor,
+    gpBeforeLaborM: totRev>0?(gpBeforeLabor/totRev*100):0,
+    workingDays: WORKING_DAYS[month] || 0,
+    otherInc, incomeTax, netIncome,
+    d,
+    detail: {
+      // Detailed revenue lines for P&L drill-down
+      rev: {
+        managedIT: 558871, managedSecurity: 5055, managedVoice: 8250, managedBackup: 10551,
+        usacErate: 4679, publicCloud: 1144, privateCloud: 25891, cloudSaas: 39621,
+        haas: 33254, chromebook: 562, m365: 125654, securityResale: 157727,
+        toolResale: 5466, voiceResale: 2546, spamFilter: 894,
+        projectService: 24005, subcontracted: 36848,
+        productSales: 289324, freight: 6435, commissions: 15537,
+      },
+      cogs: {
+        managedIT: 44031, backup: 4917, spamFilter: 373, domain: 990, voice: 2272,
+        publicCloud: 401, privateCloud: 11154,
+        recurResale: 24815, haas: 18879, chromebook: 1111, m365: 100058,
+        securityResale: 70636, voiceResale: 5254, managedSecurity: 5622,
+        subcontractor: 30947,
+        productSales: 248701, freight: 5572,
+      },
+      opex: {
+        adminPayroll: 70635, facilities: 36668, softwareMaint: 54781,
+        profServices: 59667, badDebt: -12431, auto: 8102,
+        marketing: 20060, officeSupplies: 10459, charitable: 13141,
+        education: 5287, financeCharges: 16493, travel: 5678,
+        insurance: 6884, taxes: 4311,
+        officeLease: 21807, repairs: 781, utilities: 14080,
+      }
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// JANUARY 2026 — All Locations (Consolidated CA + OH)
+// ═══════════════════════════════════════════════════════════════
+const JAN26 = makeMonth('Jan 26',
+  // Revenue by department
+  {
+    managed_services: 583245,    // ManagedIT + Voice + Backup + ERATE + SpamFilter
+    security: 162782,            // ManagedSecurity + SecurityResale
+    cloud_hosting: 66656,        // PublicCloud + PrivateCloud + CloudSaaS
+    hw_sw_resale: 478778,        // HaaS + Chromebook + M365 + ToolResale + VoiceResale + ProductSales + Freight + Commissions
+    professional_services: 60853, // ProjectService + Subcontracted
+    ai_consulting: 0,
+  },
+  // COGS by department (before labor)
+  {
+    managed_services: 52583,     // ManagedIT + Backup + SpamFilter + Domain + Voice
+    security: 76258,             // ManagedSecurity + SecurityResale
+    cloud_hosting: 11555,        // PublicCloud + PrivateCloud
+    hw_sw_resale: 404390,        // RecurResale + HaaS + Chromebook + M365 + VoiceResale + ProductSales + Freight
+    professional_services: 30947, // Subcontractor costs
+    ai_consulting: 0,
+  },
+  // Labor
+  {direct: 226198, project: 60926, hc: {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0}},
+  // Sales labor
+  128659,
+  // OpEx breakdown
+  {payroll:70635, facilities:36668, operating:110119, marketing:20060, ga:51058, taxIns:11195},
+  // Other income/expense
+  -60762,
+  // Income tax
+  0
+);
+
+// ═══════════════════════════════════════════════════════════════
+// 2025 FULL YEAR — All Locations (from "P&L EBITDA 12 Mos.xlsx")
+// Note: Dec 25 salary was $150K overstated (one-time charge)
+// COGS "Recurring Resale" split across depts by revenue proportion
+// ═══════════════════════════════════════════════════════════════
+const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0};
+const JAN25 = makeMonth('Jan 25',
+  {managed_services:528441, security:104679, cloud_hosting:51273, hw_sw_resale:329475, professional_services:138400, ai_consulting:0},
+  {managed_services:31073, security:59642, cloud_hosting:28507, hw_sw_resale:250919, professional_services:72436, ai_consulting:0},
+  {direct:227678, project:69884, hc:HC}, 174805,
+  {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:20205, taxIns:7425}, -17131, 2920);
+const FEB25 = makeMonth('Feb 25',
+  {managed_services:535139, security:104764, cloud_hosting:60907, hw_sw_resale:673161, professional_services:150612, ai_consulting:0},
+  {managed_services:32626, security:59355, cloud_hosting:33723, hw_sw_resale:540206, professional_services:48356, ai_consulting:0},
+  {direct:203182, project:64602, hc:HC}, 166242,
+  {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:23341, taxIns:7419}, -56287, 2691);
+const MAR25 = makeMonth('Mar 25',
+  {managed_services:543621, security:112444, cloud_hosting:61631, hw_sw_resale:572520, professional_services:140255, ai_consulting:0},
+  {managed_services:30561, security:64320, cloud_hosting:34198, hw_sw_resale:445058, professional_services:29343, ai_consulting:0},
+  {direct:227117, project:71122, hc:HC}, 145044,
+  {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:18959, taxIns:7430}, -25355, 15867);
+const APR25 = makeMonth('Apr 25',
+  {managed_services:580350, security:114074, cloud_hosting:62256, hw_sw_resale:721501, professional_services:113613, ai_consulting:0},
+  {managed_services:31652, security:64311, cloud_hosting:33916, hw_sw_resale:571170, professional_services:14836, ai_consulting:0},
+  {direct:194932, project:67481, hc:HC}, 128044,
+  {payroll:76476, facilities:39645, operating:94847, marketing:8153, ga:15130, taxIns:6410}, -26506, 0);
+const MAY25 = makeMonth('May 25',
+  {managed_services:577654, security:137635, cloud_hosting:74062, hw_sw_resale:636895, professional_services:63542, ai_consulting:0},
+  {managed_services:33569, security:67069, cloud_hosting:39013, hw_sw_resale:476411, professional_services:14125, ai_consulting:0},
+  {direct:203541, project:64595, hc:HC}, 136510,
+  {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:18050, taxIns:5501}, -37385, 1202);
+const JUN25 = makeMonth('Jun 25',
+  {managed_services:588593, security:141210, cloud_hosting:73861, hw_sw_resale:719662, professional_services:129304, ai_consulting:0},
+  {managed_services:30679, security:73481, cloud_hosting:38860, hw_sw_resale:571449, professional_services:8161, ai_consulting:0},
+  {direct:205476, project:61677, hc:HC}, 129570,
+  {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:17197, taxIns:6826}, -43058, 2047);
+const JUL25 = makeMonth('Jul 25',
+  {managed_services:569712, security:141371, cloud_hosting:76482, hw_sw_resale:930926, professional_services:66148, ai_consulting:0},
+  {managed_services:31720, security:75731, cloud_hosting:39109, hw_sw_resale:761931, professional_services:12951, ai_consulting:0},
+  {direct:218508, project:65070, hc:HC}, 147139,
+  {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:23977, taxIns:6081}, -30397, 1048);
+const AUG25 = makeMonth('Aug 25',
+  {managed_services:583625, security:143784, cloud_hosting:76516, hw_sw_resale:792736, professional_services:140832, ai_consulting:0},
+  {managed_services:35366, security:77589, cloud_hosting:39320, hw_sw_resale:635859, professional_services:31339, ai_consulting:0},
+  {direct:189126, project:64553, hc:HC}, 145868,
+  {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:16742, taxIns:6091}, -52865, 1470);
+const SEP25 = makeMonth('Sep 25',
+  {managed_services:543115, security:148421, cloud_hosting:67217, hw_sw_resale:480149, professional_services:60551, ai_consulting:0},
+  {managed_services:37121, security:81629, cloud_hosting:34986, hw_sw_resale:383657, professional_services:13423, ai_consulting:0},
+  {direct:210696, project:55387, hc:HC}, 147595,
+  {payroll:75368, facilities:32562, operating:124862, marketing:14315, ga:22849, taxIns:14268}, -16860, 5382);
+const OCT25 = makeMonth('Oct 25',
+  {managed_services:575126, security:153443, cloud_hosting:78516, hw_sw_resale:743575, professional_services:87543, ai_consulting:0},
+  {managed_services:46011, security:92631, cloud_hosting:43493, hw_sw_resale:582961, professional_services:23040, ai_consulting:0},
+  {direct:206820, project:57904, hc:HC}, 197590,
+  {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:25910, taxIns:9950}, -66612, 0);
+const NOV25 = makeMonth('Nov 25',
+  {managed_services:577716, security:151608, cloud_hosting:73549, hw_sw_resale:453597, professional_services:60578, ai_consulting:0},
+  {managed_services:24419, security:90623, cloud_hosting:40515, hw_sw_resale:338188, professional_services:23527, ai_consulting:0},
+  {direct:174861, project:51988, hc:HC}, 111629,
+  {payroll:54724, facilities:44444, operating:125361, marketing:15176, ga:33809, taxIns:7787}, -21706, 0);
+// ⚠️ Dec 25: $150K one-time salary charge overstated direct labor. Adjusted EBITDA ~$150K higher.
+const DEC25 = makeMonth('Dec 25',
+  {managed_services:582790, security:152186, cloud_hosting:11863, hw_sw_resale:323404, professional_services:66099, ai_consulting:0},
+  {managed_services:37109, security:107029, cloud_hosting:156, hw_sw_resale:219208, professional_services:2305, ai_consulting:0},
+  {direct:325620, project:-2116, hc:HC}, 31075,
+  {payroll:71324, facilities:46712, operating:301681, marketing:13014, ga:33590, taxIns:143390}, 193794, 6023);
+DEC25._note = 'Dec salary $150K overstated (one-time charge). Cloud SaaS rev -$15K adj.';
+
+// ═══════════════════════════════════════════════════════════════
+// FEBRUARY 2026 — All Locations (Consolidated CA + OH)
+// ═══════════════════════════════════════════════════════════════
+// Revenue: MS(593456) + Sec(150488) + Cloud(65607) + HW/SW(422620) + PS(24460) = 1,256,631
+// COGS before labor: 497,138 | Labor: Direct(134465)+Project(49371)=183,836
+// GP after labor: 575,657 | Sales Labor: 114,856 | OpEx: 363,333
+// Operating Net Income: 97,468 | Other: -34,560 | Tax: 104 | Net Income: 62,804
+const FEB26 = makeMonth('Feb 26',
+  {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620, professional_services:24460, ai_consulting:0},
+  {managed_services:43304, security:72977, cloud_hosting:9883, hw_sw_resale:367999, professional_services:2975, ai_consulting:0},
+  {direct:134465, project:49371, hc:{managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0}},
+  114856,
+  {payroll:33491, facilities:37777, operating:216811, marketing:8685, ga:63602, taxIns:2967},
+  -34560, 104
+);
+FEB26.detail = {
+  rev: {managedIT:569519, managedSecurity:5056, managedVoice:8249, managedBackup:10442,
+    usacErate:4352, publicCloud:1144, privateCloud:25291, cloudSaas:39172,
+    haas:33279, chromebook:562, m365:125038, securityResale:145432,
+    toolResale:5166, voiceResale:2546, spamFilter:894,
+    projectService:20890, subcontracted:3570,
+    productSales:236506, freight:7144, commissions:12379},
+  cogs: {managedIT:36545, backup:4985, spamFilter:373, domain:1085, voice:316,
+    publicCloud:1373, privateCloud:8510,
+    recurResale:27933, haas:11807, chromebook:79, m365:99693,
+    securityResale:67835, voiceResale:5267, managedSecurity:5142,
+    subcontractor:2975, productSales:215474, freight:7746},
+  opex: {adminPayroll:33491, facilities:37777, softwareMaint:14333, profServices:71792,
+    badDebt:47924, auto:7431, marketing:8685, officeSupplies:10975, education:10000,
+    financeCharges:2018, travel:40609, insurance:2967, taxes:0,
+    officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
+};
+
+const DATA = [JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+
+// ═══════════════════════════════════════════════════════════════
+// ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
+// type: 'revenue' | 'expense' | 'credit' | 'adjustment'
+// impact: dollar amount (positive = favorable, negative = unfavorable)
+// ═══════════════════════════════════════════════════════════════
+const ANOMALIES = {
+  'Jan 25': [
+    {type:'credit', category:'Write-Off', description:'One-time credit of $48K due to a write-off', impact: 48000, dept:'general'},
+  ],
+  'Dec 25': [
+    {type:'expense', category:'Direct Labor', description:'End-of-year labor costs — anomaly in Managed IT COGS (salary overstated ~$150K due to one-time charge)', impact: -150000, dept:'managed_services'},
+    {type:'expense', category:'Tax & Insurance', description:'Tax & Insurance at $143K vs normal ~$7K — year-end accrual/true-up', impact: -136000, dept:'general'},
+  ],
+  'Jan 26': [
+    {type:'adjustment', category:'R&D Salary Reallocation', description:'Tim, Peter, Jacob (Direct Labor) + James (Officer Comp) wages moved to R&D for AI solutions team. ~$71K in R&D wages/taxes/pension. YTD adjustment posted 2/28/2026.', impact: 71331, dept:'general'},
+    {type:'expense', category:'Bad Debt Write-Off', description:'Write-off of old AP ($47,924 CA) + Luther Memorial ($12,431 OH) = $60K total bad debt', impact: -60355, dept:'general'},
+    {type:'expense', category:'Business Travel', description:'Flywire Travel charge of ~$37K — one-time credit card charges', impact: -37458, dept:'general'},
+    {type:'expense', category:'Marketing', description:'MISAC Conference registration $7K + Casey & Associates $5K — one-time events', impact: -12000, dept:'general'},
+    {type:'expense', category:'Loan Fee', description:'One-time loan fee of $10,492 on 1/16 — not a recurring monthly charge', impact: -10492, dept:'general'},
+    {type:'expense', category:'Education/Training', description:'$10K AmEx charge for business conferences & training', impact: -10000, dept:'general'},
+    {type:'expense', category:'Charitable Donation', description:'49ers Foundation $10K donation via AmEx on 1/30', impact: -10000, dept:'general'},
+  ],
+  'Feb 26': [
+    {type:'adjustment', category:'R&D Salary Reallocation', description:'YTD adjustment on 2/28/2026 finalized — Direct Labor (Tim, Peter, Jacob) and Officer Comp (co-CEO James) wages moved to R&D for AI solutions build. Feb R&D shows only $4.6K after retroactive adjustment.', impact: 0, dept:'general'},
+    {type:'expense', category:'Business Travel', description:'Flywire Travel charge of $20,542 — one-time credit card expense', impact: -20542, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Citrin Cooperman bill increased ~$9K + Silvermine AI $3,750 for AI consulting', impact: -12750, dept:'general'},
+    {type:'expense', category:'Charitable Donation', description:'$13K in charitable donations including various organizations', impact: -13141, dept:'general'},
+    {type:'expense', category:'Education/Training', description:'$10K AmEx charge on 2/4 for business conferences & training', impact: -10000, dept:'general'},
+    {type:'adjustment', category:'Operating Expenses', description:'Pia Trade Co recurring charge write-off — reversed charges that should not have continued billing', impact: 0, dept:'general'},
+    {type:'credit', category:'Insurance Refund', description:'Insurance refund of $3,565 on 2/11 netted against monthly expenses', impact: 3565, dept:'general'},
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+// INSIGHTS ENGINE
+// ═══════════════════════════════════════════════════════════════
+function generateInsights(current, previous) {
+  const insights = {good:[], bad:[], opportunities:[]};
+  if (!current || current.totRev === 0) return insights;
+
+  const revChg = previous && previous.totRev > 0 ? (current.totRev - previous.totRev)/previous.totRev*100 : 0;
+
+  // Dec 25 one-time charge flag
+  if (current.month === 'Dec 25') {
+    insights.bad.push('⚠️ December salary was $150K overstated due to a one-time charge. Adjusted EBITDA would be ~$150K higher (approximately -$44K → +$106K). Tax/Insurance at $143K is also anomalous vs ~$7K normal.');
+  }
+
+  // Revenue
+  if (revChg > 5) insights.good.push(`Revenue grew ${revChg.toFixed(1)}% month-over-month to ${fmt(current.totRev)}, driven by strong product sales and recurring resale growth.`);
+  else if (revChg < -5) insights.bad.push(`Revenue declined ${Math.abs(revChg).toFixed(1)}% month-over-month. Investigate which service lines contracted.`);
+
+  // Gross margin analysis
+  const gpM = current.gpM;
+  if (gpM >= 40) insights.good.push(`Gross profit margin (after direct labor) at ${fmtP(gpM)} is healthy for an MSP at your scale.`);
+  else if (gpM < 30) insights.bad.push(`Gross profit margin (after direct labor) at ${fmtP(gpM)} is below the 35%+ target. Direct labor and COGS are consuming too much revenue.`);
+
+  // Department margins
+  DEPTS.forEach(dept => {
+    const d = current.d[dept.id];
+    if (d.rev === 0) return;
+    const bm = BM[dept.id];
+    if (d.gpM >= bm.top) insights.good.push(`${dept.name} gross margin at ${fmtP(d.gpM)} exceeds top-quartile benchmark of ${bm.top}%.`);
+    else if (d.gpM < bm.med) insights.bad.push(`${dept.name} gross margin at ${fmtP(d.gpM)} is below the industry median of ${bm.med}%. Target: ${bm.tgt}%.`);
+  });
+
+  // HW/SW Resale margin check
+  const hwMargin = current.d.hw_sw_resale.gpM;
+  if (hwMargin < 20) insights.bad.push(`HW/SW Resale margin at ${fmtP(hwMargin)} is thin. M365 alone costs ${fmt(current.detail?.cogs?.m365||0)} against ${fmt(current.detail?.rev?.m365||0)} revenue — only ${current.detail?.rev?.m365 > 0 ? fmtP((current.detail.rev.m365 - current.detail.cogs.m365)/current.detail.rev.m365*100) : '0%'} margin on your largest resale line.`);
+
+  // Labor efficiency
+  const laborPct = current.totRev > 0 ? (current.totLab / current.totRev * 100) : 0;
+  const allLaborPct = current.totRev > 0 ? ((current.totLab + current.salesLab + current.adminLab) / current.totRev * 100) : 0;
+  if (allLaborPct > 50) insights.bad.push(`Total labor (direct + sales + admin) is ${fmtP(allLaborPct)} of revenue. World-class MSPs keep all-in labor under 50%. You're spending ${fmt(current.totLab + current.salesLab + current.adminLab)} on ${Object.values(current.d).reduce((s,d)=>s+d.hc,0)} employees against ${fmt(current.totRev)} revenue.`);
+  else insights.good.push(`Total labor at ${fmtP(allLaborPct)} of revenue is within the target range. Keep monitoring as you scale.`);
+
+  // Sales labor vs revenue
+  const salesPct = current.totRev > 0 ? (current.salesLab / current.totRev * 100) : 0;
+  if (salesPct > 8) insights.opportunities.push(`Sales labor at ${fmtP(salesPct)} of revenue (${fmt(current.salesLab)}) is above the 6-8% benchmark. Ensure sales comp is tied to margin, not just revenue. Track CAC payback period.`);
+
+  // Operating expenses
+  const opexPct = current.totRev > 0 ? (current.opex / current.totRev * 100) : 0;
+  if (opexPct > 25) insights.bad.push(`Operating expenses at ${fmtP(opexPct)} of revenue need scrutiny. Professional services (accounting/legal) at ${fmt(current.detail?.opex?.profServices||0)} is a significant line — ensure this isn't recurring at this level.`);
+
+  // EBITDA
+  const ebitdaM = current.ebitdaM;
+  if (ebitdaM >= 15) insights.good.push(`Operating income margin at ${fmtP(ebitdaM)} positions you well for premium exit multiples.`);
+  else if (ebitdaM >= 5) insights.opportunities.push(`Operating income at ${fmtP(ebitdaM)} (${fmt(current.ebitda)}). To hit premium valuation multiples (8-12x), push this above 15-20% through margin improvement and OpEx discipline.`);
+  else insights.bad.push(`Operating income at ${fmtP(ebitdaM)} is below sustainable levels. Focus on margin expansion in managed services and reducing OpEx.`);
+
+  // Managed Services is the core
+  const msRevPct = current.totRev > 0 ? (current.d.managed_services.rev / current.totRev * 100) : 0;
+  if (msRevPct < 40) insights.opportunities.push(`Managed Services is only ${fmtP(msRevPct)} of total revenue. For premium MSP valuations, recurring managed services should be 50%+ of revenue. Currently at ${fmt(current.d.managed_services.rev)}/mo.`);
+
+  // Security growth opportunity
+  if (current.d.security.rev > 0) {
+    insights.opportunities.push(`Security revenue at ${fmt(current.d.security.rev)}/mo (${fmtP(current.d.security.rev/current.totRev*100)} of revenue) is a high-growth opportunity. Top MSPs are growing security 25-30% annually. Consider productizing as "Datapath Shield" and targeting 100% attach rate on managed services clients.`);
+  }
+
+  // Product sales volatility
+  if (current.d.hw_sw_resale.rev > current.totRev * 0.3) {
+    insights.opportunities.push(`Product/resale revenue is ${fmtP(current.d.hw_sw_resale.rev/current.totRev*100)} of total — high dependency on low-margin, lumpy revenue. Shift mix toward managed services and security for predictability and premium multiples.`);
+  }
+
+  // AI Consulting gap
+  if (current.d.ai_consulting.rev === 0) {
+    insights.opportunities.push(`No AI Consulting revenue yet. With an R&D team (Tim, Peter, Jacob, James) already building AI solutions, this is a natural high-margin service line. Consider productizing AI consulting engagements to recognize revenue from the investment.`);
+  }
+
+  return insights;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+const fmt = n => {if(n===0||isNaN(n))return '$0'; const a=Math.abs(n); const s=a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e3?'$'+Math.round(a).toLocaleString():'$'+a.toFixed(0); return n<0?'-'+s:s;};
+const fmtP = n => (isNaN(n)||!isFinite(n))?'0.0%':n.toFixed(1)+'%';
+const fmtN = n => n.toLocaleString();
+// selMonth: index into DATA. -1 = latest
+const getSelIdx = () => state.selMonth < 0 || state.selMonth >= DATA.length ? DATA.length-1 : state.selMonth;
+const latest = () => DATA[getSelIdx()];
+const prev = () => { const i = getSelIdx(); return i > 0 ? DATA[i-1] : null; };
+const chg = (a,b) => b===0?0:((a-b)/Math.abs(b)*100);
+const totalHC = () => Object.values(latest().d).reduce((s,d)=>s+d.hc,0);
+const destroyCharts = () => { Object.values(state.charts).forEach(c=>{try{c.destroy()}catch(e){}}); state.charts={}; };
+function selectMonth(idx) { state.selMonth = idx; render(); }
+
+function monthSelector() {
+  const si = getSelIdx();
+  const p = prev();
+  return `<div class="month-bar">
+    <span class="month-bar-label">Month:</span>
+    ${DATA.map((m,i) => `<button class="month-btn ${si===i?'active':''}" onclick="selectMonth(${i})">${m.month}</button>`).join('')}
+    ${p ? `<div class="month-compare"><span class="month-compare-label">vs prior:</span><span class="month-vs">${p.month}</span></div>` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════════════
+const NAV = [
+  {id:'dashboard', label:'Dashboard', icon:'📊'},
+  {id:'departments', label:'Departments', icon:'🏢'},
+  {id:'grossprofit', label:'Gross Profit', icon:'💰'},
+  {id:'pnl', label:'P&L Detail', icon:'📄'},
+  {id:'advisor', label:'Intelligence', icon:'🧠'},
+  {id:'data', label:'Import Data', icon:'📤'},
+];
+
+function renderNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV.map(n => `<button class="nav-btn ${state.view===n.id||(n.id==='departments'&&state.selDept)?'active':''}" onclick="navigate('${n.id}')">
+    <span>${n.icon}</span><span class="nav-label">${n.label}</span></button>`).join('');
+  const footer = document.getElementById('sidebar-footer');
+  footer.innerHTML = `Data: ${latest().month}<br>Annualized: ${fmt(latest().totRev*12)}`;
+}
+
+function toggleSidebar() {
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', state.sidebarCollapsed);
+}
+
+function navigate(view) {
+  if (view === 'data') { showUploadModal(); return; }
+  state.view = view;
+  if (view !== 'departments') state.selDept = null;
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ROUTER
+// ═══════════════════════════════════════════════════════════════
+function render() {
+  destroyCharts();
+  renderNav();
+  const main = document.getElementById('main');
+  main.scrollTop = 0;
+  if (state.view === 'dashboard') renderDashboard(main);
+  else if (state.view === 'departments' && state.selDept) renderDrilldown(main);
+  else if (state.view === 'departments') renderDeptList(main);
+  else if (state.view === 'grossprofit') renderGrossProfit(main);
+  else if (state.view === 'pnl') renderPnL(main);
+  else if (state.view === 'advisor') renderAdvisor(main);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard(el) {
+  const L = latest(), P = prev(), hc = totalHC(), annRev = L.totRev*12, annEbitda = L.ebitda*12;
+  const revChg = P ? chg(L.totRev, P.totRev) : 0;
+  const ebitdaChg = P ? chg(L.ebitda, P.ebitda) : 0;
+  const gmChg = P ? (L.gpM - P.gpM) : 0;
+  const insights = generateInsights(L, P);
+  const allLaborPct = L.totRev>0?((L.totLab+L.salesLab+L.adminLab)/L.totRev*100):0;
+
+  el.innerHTML = `<div class="fade-in">
+    ${monthSelector()}
+    <div class="section-title">Executive Overview</div>
+    <div class="section-sub">${L.month} — Annualized Revenue: ${fmt(annRev)} | Annualized EBITDA: ${fmt(annEbitda)} | Net Income: ${fmt(L.netIncome)}</div>
+    <div class="kpi-grid">
+      ${kpiCard('Total Revenue', fmt(L.totRev), revChg, '/month', 'var(--blue)')}
+      ${kpiCard('Gross Profit', fmt(L.gp), chg(L.gp, P.gp), fmtP(L.gpM)+' margin (labor in COGS)', 'var(--purple)')}
+      ${kpiCard('Operating Income', fmt(L.ebitda), ebitdaChg, fmtP(L.ebitdaM)+' margin', 'var(--green)')}
+      ${kpiCard('Net Income', fmt(L.netIncome), null, 'After other income & tax', L.netIncome>=0?'var(--green)':'var(--red)')}
+      ${kpiCard('Total Labor', fmt(L.totLab+L.salesLab+L.adminLab), null, fmtP(allLaborPct)+' of revenue', 'var(--orange)')}
+    </div>
+
+    <!-- INSIGHTS PANEL -->
+    <div class="insights-panel">
+      <div class="insights-title">📋 Monthly Intelligence Report — ${L.month}</div>
+      <div class="insights-columns">
+        <div>
+          <div class="insight-col-header" style="color:var(--green)">✅ Strengths (${insights.good.length})</div>
+          ${insights.good.map(i=>`<div class="insight-item good">${i}</div>`).join('')||'<div class="insight-item good" style="color:var(--dim)">No standout strengths this period</div>'}
+        </div>
+        <div>
+          <div class="insight-col-header" style="color:var(--red)">⚠️ Concerns (${insights.bad.length})</div>
+          ${insights.bad.map(i=>`<div class="insight-item bad">${i}</div>`).join('')||'<div class="insight-item bad" style="color:var(--dim)">No critical concerns</div>'}
+        </div>
+        <div>
+          <div class="insight-col-header" style="color:var(--blue)">💡 Opportunities (${insights.opportunities.length})</div>
+          ${insights.opportunities.map(i=>`<div class="insight-item opp">${i}</div>`).join('')||'<div class="insight-item opp" style="color:var(--dim)">No new opportunities identified</div>'}
+        </div>
+      </div>
+    </div>
+
+    <!-- ANOMALIES PANEL — current month only -->
+    ${(function(){
+      const curAnom = ANOMALIES[L.month] || [];
+      if (curAnom.length === 0) return '';
+      const deptName = id => { const dd = DEPTS.find(x => x.id === id); return dd ? dd.name : 'General / Company-Wide'; };
+      let anomCards = '';
+      curAnom.forEach(a => {
+        const impactStr = (a.impact >= 0 ? '+$' : '-$') + Math.abs(a.impact).toLocaleString();
+        anomCards += '<div class="anom-card">' +
+          '<div class="anom-card-left">' +
+            '<div><span class="anom-type-badge anom-type-' + a.type + '">' + a.type + '</span>' +
+            '<span style="font-weight:600;font-size:12px">' + a.category + '</span></div>' +
+            '<div class="anom-desc">' + a.description + '</div>' +
+            '<div class="anom-dept">' + deptName(a.dept) + '</div>' +
+          '</div>' +
+          '<div class="anom-impact ' + (a.impact >= 0 ? 'positive' : 'negative') + '">' + impactStr + '</div>' +
+        '</div>';
+      });
+      const monthImpact = curAnom.reduce(function(s, a) { return s + a.impact; }, 0);
+      return '<div class="insights-panel" style="margin-top:16px">' +
+        '<div class="insights-title">⚡ Anomalies & One-Time Items — ' + L.month +
+          '<span style="float:right;font-size:13px;font-weight:600;color:' + (monthImpact >= 0 ? '#059669' : '#dc2626') + '">Net Impact: ' + (monthImpact >= 0 ? '+' : '-') + '$' + Math.abs(monthImpact).toLocaleString() + '</span>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:8px;padding:0 4px">' + anomCards + '</div>' +
+      '</div>';
+    })()}
+
+    <div class="chart-grid chart-grid-2-1">
+      <div class="chart-card"><div class="chart-title">Revenue & Operating Income Trend</div><canvas id="chart-trend" height="140"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Revenue Mix by Department</div><canvas id="chart-mix" height="140"></canvas></div>
+    </div>
+    <div class="section-title">Department Performance</div>
+    <div class="section-sub">Click any department for detailed P&L drill-down</div>
+    <div class="dept-grid">${DEPTS.map(d => deptCard(d, L.d[d.id])).join('')}</div>
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card"><div class="chart-title">Stacked Revenue by Department</div><canvas id="chart-stacked" height="150"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Gross Margin vs. Benchmarks</div><canvas id="chart-margins" height="150"></canvas></div>
+    </div>
+    <!-- SOLD NOT INVOICED SECTION -->
+    <div class="section-title" style="margin-top:20px">Pipeline Revenue — Sold Not Yet Invoiced</div>
+    <div class="section-sub">Products ordered and received but not yet invoiced — revenue and profit not yet recognized</div>
+    <div class="sni-grid">
+      <div class="sni-card">
+        <div class="sni-header">📦 Ordered — Not Invoiced</div>
+        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue)}</span></div>
+        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost)}</span></div>
+        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${SNI_DATA.ordered.profit >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit)}</span></div>
+        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${SNI_DATA.ordered.revenue > 0 ? fmtP(SNI_DATA.ordered.profit / SNI_DATA.ordered.revenue * 100) : '—'}</span></div>
+        <div class="sni-count">${SNI_DATA.ordered.count} orders</div>
+      </div>
+      <div class="sni-card">
+        <div class="sni-header">✅ Received — Not Invoiced</div>
+        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.received.revenue)}</span></div>
+        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.received.cost)}</span></div>
+        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${SNI_DATA.received.profit >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.received.profit)}</span></div>
+        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${SNI_DATA.received.revenue > 0 ? fmtP(SNI_DATA.received.profit / SNI_DATA.received.revenue * 100) : '—'}</span></div>
+        <div class="sni-count">${SNI_DATA.received.count} orders</div>
+      </div>
+      <div class="sni-card sni-card-total">
+        <div class="sni-header">💰 Total Pipeline (Not Invoiced)</div>
+        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue + SNI_DATA.received.revenue)}</span></div>
+        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost + SNI_DATA.received.cost)}</span></div>
+        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${(SNI_DATA.ordered.profit + SNI_DATA.received.profit) >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit + SNI_DATA.received.profit)}</span></div>
+        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${(SNI_DATA.ordered.revenue + SNI_DATA.received.revenue) > 0 ? fmtP((SNI_DATA.ordered.profit + SNI_DATA.received.profit) / (SNI_DATA.ordered.revenue + SNI_DATA.received.revenue) * 100) : '—'}</span></div>
+        <div class="sni-count">${SNI_DATA.ordered.count + SNI_DATA.received.count} total orders</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: Power BI — Sold Not Invoiced Report | Last updated: ${SNI_DATA.asOf}</div>
+  </div>`;
+
+  // Charts
+  setTimeout(() => {
+    // Trend
+    state.charts.trend = new Chart(document.getElementById('chart-trend'), {
+      type:'line', data:{
+        labels: DATA.map(d=>d.month),
+        datasets:[
+          {label:'Revenue', data:DATA.map(d=>d.totRev), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3},
+          {label:'Gross Profit', data:DATA.map(d=>d.gp), borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.3},
+          {label:'Operating Income', data:DATA.map(d=>d.ebitda), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3},
+          {label:'Op. Margin %', data:DATA.map(d=>d.ebitdaM), borderColor:'#f59e0b', borderDash:[5,5], yAxisID:'y1', pointRadius:4, tension:0.3}
+        ]
+      }, options:{responsive:true, interaction:{mode:'index',intersect:false}, scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'K'}, grid:{color:'#e5e7eb'}}, y1:{position:'right', ticks:{callback:v=>v.toFixed(1)+'%'}, grid:{display:false}}, x:{grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:12}}}}
+    });
+    // Mix
+    const activeDepts = DEPTS.filter(d=>L.d[d.id].rev>0);
+    state.charts.mix = new Chart(document.getElementById('chart-mix'), {
+      type:'doughnut', data:{
+        labels: activeDepts.map(d=>d.name),
+        datasets:[{data:activeDepts.map(d=>L.d[d.id].rev), backgroundColor:activeDepts.map(d=>d.color), borderWidth:0}]
+      }, options:{responsive:true, plugins:{legend:{position:'bottom',labels:{color:'#6b7280',boxWidth:10,font:{size:10}}}, tooltip:{callbacks:{label:ctx=>{const v=ctx.raw;return ' '+ctx.label+': '+fmt(v)+' ('+fmtP(v/L.totRev*100)+')';}}}}}
+    });
+    // Stacked
+    state.charts.stacked = new Chart(document.getElementById('chart-stacked'), {
+      type:'bar', data:{
+        labels:DATA.map(d=>d.month),
+        datasets:DEPTS.filter(d=>DATA.some(m=>m.d[d.id].rev>0)).map(d=>({label:d.name, data:DATA.map(m=>m.d[d.id].rev), backgroundColor:d.color}))
+      }, options:{responsive:true, scales:{x:{stacked:true,grid:{color:'#e5e7eb'}}, y:{stacked:true,ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10,font:{size:10}}}}}
+    });
+    // Margins vs Benchmarks
+    const marginDepts = DEPTS.filter(d=>L.d[d.id].rev>0);
+    state.charts.margins = new Chart(document.getElementById('chart-margins'), {
+      type:'bar', data:{
+        labels:marginDepts.map(d=>d.name.split('/')[0].split('(')[0].trim()),
+        datasets:[
+          {label:'Actual', data:marginDepts.map(d=>L.d[d.id].gpM), backgroundColor:marginDepts.map(d=>d.color)},
+          {label:'Target', data:marginDepts.map(d=>BM[d.id].tgt), backgroundColor:'rgba(100,116,139,0.3)'}
+        ]
+      }, options:{responsive:true, scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#e5e7eb'}},x:{grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10}}}}
+    });
+    // (Waterfall chart removed)
+  }, 50);
+}
+
+function kpiCard(title, value, change, sub, color, isPP) {
+  const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '';
+  const cls = change > 0 ? (isPP ? (change > 0 ? 'up' : 'down') : 'up') : change < 0 ? (isPP ? (change < 0 ? 'down' : 'up') : 'down') : '';
+  return `<div class="kpi-card">
+    <div class="kpi-label">${title}</div>
+    <div class="kpi-value" style="color:${color}">${value}</div>
+    ${change !== null && change !== undefined ? `<div class="kpi-change ${cls}">${arrow} ${Math.abs(change).toFixed(1)}% ${isPP?'pp':''} vs prior month</div>` : ''}
+    ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+  </div>`;
+}
+
+function deptCard(dept, data) {
+  const bm = BM[dept.id], margin = data.gpM, target = bm.tgt;
+  const sc = margin >= target ? 'var(--green)' : margin >= target-8 ? 'var(--yellow)' : 'var(--red)';
+  return `<div class="dept-card" onclick="drillDept('${dept.id}')" onmouseover="this.style.borderColor='${dept.color}'" onmouseout="this.style.borderColor='var(--border)'">
+    <div class="dept-card-bar" style="background:${dept.color}"></div>
+    <div class="dept-header">
+      <div class="dept-icon" style="background:${dept.color}22">${dept.emoji}</div>
+      <div><div class="dept-name">${dept.name}</div><div class="dept-hc">${data.hc} employees</div></div>
+    </div>
+    <div class="dept-metrics">
+      <div><div class="dept-metric-label">Revenue</div><div class="dept-metric-value">${fmt(data.rev)}</div></div>
+      <div><div class="dept-metric-label">Gross Profit</div><div class="dept-metric-value">${fmt(data.gp)}</div></div>
+    </div>
+    <div class="margin-bar">
+      <div class="margin-header"><span class="margin-label">Gross Margin</span><span class="margin-value" style="color:${sc}">${fmtP(margin)}</span></div>
+      <div class="margin-track"><div class="margin-target" style="left:${target}%"></div><div class="margin-fill" style="width:${Math.min(margin,100)}%;background:${sc}"></div></div>
+      <div class="margin-range"><span>0%</span><span>Target: ${target}%</span></div>
+    </div>
+  </div>`;
+}
+
+function drillDept(id) {
+  state.selDept = id;
+  state.view = 'departments';
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENT DRILLDOWN
+// ═══════════════════════════════════════════════════════════════
+function renderDrilldown(el) {
+  const dept = DEPTS.find(d=>d.id===state.selDept);
+  const L = latest(), P = prev(), data = L.d[dept.id], bm = BM[dept.id];
+  const pData = P ? P.d[dept.id] : null;
+  const net = data.rev - data.cogs;
+  const cogsPct = data.rev>0?(data.cogs/data.rev*100):0;
+  const revEmp = data.hc>0?(data.rev*12/data.hc):0;
+  const revChgPct = pData && pData.rev>0 ? chg(data.rev, pData.rev) : 0;
+
+  // Build detailed line items for this department from detail data
+  const detLines = getDeptDetailLines(dept.id, L);
+
+  el.innerHTML = `<div class="fade-in">
+    ${monthSelector()}
+    <button class="back-btn" onclick="navigate('dashboard')">← Back to Overview</button>
+    <div class="drill-header">
+      <div class="drill-icon" style="background:${dept.color}22;font-size:28px">${dept.emoji}</div>
+      <div><div class="drill-title">${dept.name}</div><div class="drill-desc">${bm.desc}</div></div>
+    </div>
+    <div class="mini-kpi-grid">
+      ${miniKpi('Monthly Revenue', fmt(data.rev), dept.color)}
+      ${miniKpi('MoM Change', (revChgPct>=0?'+':'')+revChgPct.toFixed(1)+'%', revChgPct>=0?'var(--green)':'var(--red)')}
+      ${miniKpi('Gross Margin', fmtP(data.gpM), data.gpM>=bm.tgt?'var(--green)':data.gpM>=bm.med?'var(--yellow)':'var(--red)')}
+      ${miniKpi('Gross Profit', fmt(data.gp), 'var(--green)')}
+      ${miniKpi('COGS', fmt(data.cogs), 'var(--red)')}
+      ${miniKpi('Headcount', data.hc, 'var(--cyan)')}
+      ${miniKpi('Rev/Employee (Ann.)', data.hc>0?'$'+Math.round(revEmp).toLocaleString():'N/A', revEmp>=bm.revEmp?'var(--green)':'var(--yellow)')}
+      ${miniKpi('Rev/Emp Target', '$'+bm.revEmp.toLocaleString(), 'var(--dim)')}
+    </div>
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">Benchmark Comparison — Gross Margin</div>
+      <div class="bench-grid">
+        <div><div class="bench-val" style="color:${data.gpM>=bm.tgt?'var(--green)':data.gpM>=bm.med?'var(--yellow)':'var(--red)'}">${fmtP(data.gpM)}</div><div class="bench-label">Your Margin</div></div>
+        <div><div class="bench-val" style="color:var(--yellow)">${fmtP(bm.tgt)}</div><div class="bench-label">Target</div></div>
+        <div><div class="bench-val" style="color:var(--green)">${fmtP(bm.top)}</div><div class="bench-label">Top Quartile</div></div>
+        <div><div class="bench-val" style="color:var(--dim)">${fmtP(bm.med)}</div><div class="bench-label">Median</div></div>
+      </div>
+    </div>
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card"><div class="chart-title">Revenue & Gross Profit Trend</div><canvas id="chart-dept-trend" height="130"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Cost Breakdown</div><canvas id="chart-dept-pie" height="130"></canvas></div>
+    </div>
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-title">Detailed P&L Breakdown — ${L.month}</div>
+      <table class="detail-table">
+        <thead><tr><th>Line Item</th><th style="text-align:right">Amount</th><th style="text-align:right">% of Rev</th><th style="text-align:right">Status</th></tr></thead>
+        <tbody>
+          ${detailRow('REVENUE', data.rev, 100, 'neutral', true)}
+          ${detLines.rev.map(r=>detailRow('  '+r.name, r.val, data.rev>0?(r.val/data.rev*100):0, 'neutral', false)).join('')}
+          ${detailRow('COST OF GOODS SOLD', -data.cogs, cogsPct, cogsPct>(100-bm.tgt)+5?'bad':'good', true)}
+          ${detLines.cogs.map(r=>detailRow('  '+r.name, -r.val, data.rev>0?(r.val/data.rev*100):0, 'neutral', false)).join('')}
+          ${detailRow('GROSS PROFIT', data.gp, data.gpM, data.gpM>=bm.tgt?'good':data.gpM>=bm.med?'warning':'bad', true)}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  setTimeout(() => {
+    const trend = DATA.map(m=>m.d[dept.id]);
+    state.charts.deptTrend = new Chart(document.getElementById('chart-dept-trend'), {
+      type:'bar', data:{
+        labels:DATA.map(d=>d.month),
+        datasets:[
+          {label:'Revenue', data:trend.map(d=>d.rev), backgroundColor:dept.color+'55', borderColor:dept.color, borderWidth:1},
+          {label:'Gross Profit', data:trend.map(d=>d.gp), backgroundColor:dept.color, borderColor:dept.color, borderWidth:1},
+        ]
+      }, options:{responsive:true, scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:'#e5e7eb'}},x:{grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10}}}}
+    });
+    state.charts.deptPie = new Chart(document.getElementById('chart-dept-pie'), {
+      type:'doughnut', data:{
+        labels:['COGS','Gross Profit'],
+        datasets:[{data:[data.cogs, Math.max(0,data.gp)], backgroundColor:['#ef4444','#10b981'], borderWidth:0}]
+      }, options:{responsive:true, plugins:{legend:{position:'bottom',labels:{color:'#6b7280',boxWidth:10}}}}
+    });
+  }, 50);
+}
+
+// Map detail line items to each department
+function getDeptDetailLines(deptId, m) {
+  const d = m.detail;
+  // Always include labor lines for MS and Security even without detail data
+  const isDec = m.month && m.month.startsWith('Dec');
+  const msLabor = [
+    {name:'Direct Labor (Tech Team)', val: m.directLabor || 0, parent: 'Managed IT', anomaly: isDec ? 'EOY ANOMALY' : null},
+    {name:'Project Labor Alloc (25%)', val: m.projLabAlloc_MS || 0, parent: 'Managed IT'}
+  ];
+  const secLabor = [
+    {name:'PS Head Labor Alloc ($11K)', val: m.projLabAlloc_Sec || 0, parent: 'Managed Security'}
+  ];
+  const psLabor = [
+    {name:'Project Labor (Remaining)', val: m.projLabRemaining || 0, parent: 'Project Services'}
+  ];
+
+  if (!d) {
+    // No product detail — return only labor lines for MS/Sec
+    const laborOnly = {
+      managed_services: {rev:[], cogs: msLabor},
+      security: {rev:[], cogs: secLabor},
+      cloud_hosting: {rev:[], cogs:[]},
+      hw_sw_resale: {rev:[], cogs:[]},
+      professional_services: {rev:[], cogs: psLabor},
+      ai_consulting: {rev:[], cogs:[]}
+    };
+    const dept = laborOnly[deptId] || {rev:[], cogs:[]};
+    return {rev: dept.rev, cogs: dept.cogs.filter(r => r.val > 0)};
+  }
+
+  const lines = {
+    managed_services: {
+      rev: [{name:'Managed IT',val:d.rev.managedIT||0},{name:'Voice Services',val:d.rev.managedVoice||0},{name:'Backup',val:d.rev.managedBackup||0},{name:'USAC/E-Rate',val:d.rev.usacErate||0},{name:'Spam Filter',val:d.rev.spamFilter||0}],
+      cogs: [{name:'Managed IT (Tech Stack)',val:d.cogs.managedIT||0, parent:'Managed IT'},{name:'Backup',val:d.cogs.backup||0},{name:'Spam Filter',val:d.cogs.spamFilter||0},{name:'Domain',val:d.cogs.domain||0},{name:'Voice Services',val:d.cogs.voice||0},
+        ...msLabor]
+    },
+    security: {
+      rev: [{name:'Managed Security',val:d.rev.managedSecurity||0},{name:'Security Resale',val:d.rev.securityResale||0}],
+      cogs: [{name:'Managed Security',val:d.cogs.managedSecurity||0},{name:'Security Resale',val:d.cogs.securityResale||0},
+        ...secLabor]
+    },
+    cloud_hosting: {
+      rev: [{name:'Public Cloud',val:d.rev.publicCloud||0},{name:'Private Cloud',val:d.rev.privateCloud||0},{name:'Cloud SaaS',val:d.rev.cloudSaas||0}],
+      cogs: [{name:'Public Cloud',val:d.cogs.publicCloud||0},{name:'Private Cloud',val:d.cogs.privateCloud||0}]
+    },
+    hw_sw_resale: {
+      rev: [{name:'Product Sales',val:d.rev.productSales||0},{name:'M365 Licensing',val:d.rev.m365||0},{name:'HaaS',val:d.rev.haas||0},{name:'Commissions',val:d.rev.commissions||0},{name:'Freight',val:d.rev.freight||0},{name:'Tool Resale',val:d.rev.toolResale||0},{name:'Voice Resale',val:d.rev.voiceResale||0},{name:'Chromebook',val:d.rev.chromebook||0}],
+      cogs: [{name:'Product Sales',val:d.cogs.productSales||0},{name:'M365 Licensing',val:d.cogs.m365||0},{name:'HaaS',val:d.cogs.haas||0},{name:'Recurring Resale',val:d.cogs.recurResale||0},{name:'Freight',val:d.cogs.freight||0},{name:'Voice Resale',val:d.cogs.voiceResale||0},{name:'Chromebook',val:d.cogs.chromebook||0}]
+    },
+    professional_services: {
+      rev: [{name:'Project Services',val:d.rev.projectService||0},{name:'Subcontracted',val:d.rev.subcontracted||0}],
+      cogs: [{name:'Subcontracted',val:d.cogs.subcontractor||0}, ...psLabor]
+    },
+    ai_consulting: { rev:[], cogs:[] }
+  };
+  const dept = lines[deptId] || {rev:[], cogs:[]};
+  return {rev: dept.rev.filter(r=>r.val>0), cogs: dept.cogs.filter(r=>r.val>0)};
+}
+
+function miniKpi(label, value, color) {
+  return `<div class="mini-kpi"><div class="mini-kpi-label">${label}</div><div class="mini-kpi-value" style="color:${color}">${value}</div></div>`;
+}
+
+function detailRow(item, amt, pct, status, bold) {
+  const sc = {good:'✅ On Target', warning:'⚠️ Watch', bad:'🔴 Needs Attention', neutral:'—'};
+  const scColor = {good:'var(--green)', warning:'var(--yellow)', bad:'var(--red)', neutral:'var(--dim)'};
+  return `<tr><td style="font-weight:${bold?600:400}">${item}</td>
+    <td style="text-align:right;color:${amt>=0?'var(--text)':'var(--red)'};font-weight:600;font-family:monospace">${amt>=0?fmt(amt):'-'+fmt(Math.abs(amt))}</td>
+    <td style="text-align:right;color:var(--muted);font-family:monospace">${fmtP(pct)}</td>
+    <td style="text-align:right;color:${scColor[status]};font-size:12px">${sc[status]}</td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENT LIST
+// ═══════════════════════════════════════════════════════════════
+function renderDeptList(el) {
+  const L = latest();
+  el.innerHTML = `<div class="fade-in">
+    ${monthSelector()}
+    <div class="section-title">Department Analysis — ${L.month}</div>
+    <div class="section-sub">Select a department to drill into its P&L</div>
+    <div class="dept-grid">${DEPTS.map(d => deptCard(d, L.d[d.id])).join('')}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED TABLE ENGINE for Gross Profit & P&L views
+// Columns: 3 prior months | Current (bold) | MOM Δ | MOM % | 3-MO AVG | VS AVG Δ | VS AVG %
+// ═══════════════════════════════════════════════════════════════
+function pnlTableEngine() {
+  const si = getSelIdx();
+  const cur = DATA[si];
+  const mIdxs = [];
+  for (let i = Math.max(0, si - 3); i <= si; i++) mIdxs.push(i);
+  const mData = mIdxs.map(i => DATA[i]);
+  const curIdx = mData.length - 1;
+  const avgIdxs = [];
+  for (let i = Math.max(0, si - 3); i < si; i++) avgIdxs.push(i);
+  const avgData = avgIdxs.map(i => DATA[i]);
+  const activeDepts = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0));
+
+  function fc(v) {
+    if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
+    return '$' + Math.abs(Math.round(v)).toLocaleString();
+  }
+  function fNeg(v) {
+    if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
+    return v < 0 ? '<span style="color:var(--red)">($' + Math.abs(Math.round(v)).toLocaleString() + ')</span>' : '$' + Math.round(v).toLocaleString();
+  }
+  function fDelta(d) {
+    if (d === 0 || d === undefined || isNaN(d)) return '<span style="color:#9ca3af">—</span>';
+    const color = d > 0 ? 'var(--green)' : 'var(--red)';
+    const sign = d > 0 ? '+' : '-';
+    return `<span style="color:${color}">${sign}$${Math.abs(Math.round(d)).toLocaleString()}</span>`;
+  }
+  function fPct(cur, base) {
+    if (!base || base === 0 || cur === undefined) return '<span style="color:#9ca3af">—</span>';
+    const pct = ((cur - base) / Math.abs(base) * 100);
+    if (Math.abs(pct) < 0.05) return '<span style="color:#9ca3af">—</span>';
+    const color = pct > 0 ? 'var(--green)' : 'var(--red)';
+    const sign = pct > 0 ? '+' : '';
+    return `<span style="color:${color}">${sign}${Math.round(pct)}%</span>`;
+  }
+  function avg3(getter) {
+    if (avgData.length === 0) return 0;
+    return avgData.reduce((s, m) => s + (getter(m) || 0), 0) / avgData.length;
+  }
+
+  const colCount = mData.length + 6;
+  const thMonths = mData.map((m, i) => `<th class="${i === curIdx ? 'gp-cur' : ''}">${m.month}</th>`).join('');
+  const thAnalysis = `<th class="gp-sep">MOM Δ</th><th>MOM %</th><th class="gp-sep">3-MO AVG</th><th>VS AVG Δ</th><th>VS AVG %</th>`;
+
+  function divRow(label) {
+    return `<tr class="gp-div-row"><td colspan="${colCount}">${label}</td></tr>`;
+  }
+
+  function dataRow(label, getter, opts = {}) {
+    const {bold, indent, isCost, isTotal, isPct, flag, flagType} = opts;
+    const vals = mData.map(m => getter(m));
+    const curVal = vals[curIdx];
+    const prevVal = curIdx > 0 ? vals[curIdx - 1] : null;
+    const momD = prevVal !== null ? curVal - prevVal : 0;
+    const a = avg3(getter);
+    const vsA = curVal - a;
+    const flagHtml = flag ? ` <span class="gp-flag ${flagType || 'gp-flag-warn'}">${flag}</span>` : '';
+
+    if (isPct) {
+      return `<tr class="gp-gpm-row"><td>${label}</td>
+        ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-family:inherit">${fmtP(v)}</td>`).join('')}
+        <td class="gp-sep" style="font-family:inherit">${prevVal !== null ? (momD >= 0 ? '+' : '') + momD.toFixed(1) + 'pts' : '—'}</td><td></td>
+        <td class="gp-sep" style="font-family:inherit">${avgData.length > 0 ? fmtP(a) : '—'}</td>
+        <td style="font-family:inherit">${avgData.length > 0 ? (vsA >= 0 ? '+' : '') + vsA.toFixed(1) + 'pts' : '—'}</td><td></td></tr>`;
+    }
+
+    const cls = isTotal ? 'gp-gp-row' : bold ? 'gp-bold' : indent ? 'gp-indent' : '';
+    return `<tr class="${cls}"><td>${label}${flagHtml}</td>
+      ${vals.map((v, i) => {
+        const style = isCost ? 'color:var(--red);' : isTotal ? (v < 0 ? 'color:var(--red);' : '') : '';
+        return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="${style}">${isTotal ? fNeg(v) : fc(v)}</td>`;
+      }).join('')}
+      <td class="gp-sep">${fDelta(momD)}</td><td>${fPct(curVal, prevVal)}</td>
+      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td></tr>`;
+  }
+
+  // Net row for product-level: Revenue - COGS = Net, with color
+  function netRow(label, revGetter, cogsGetter) {
+    const vals = mData.map(m => (revGetter(m) || 0) - (cogsGetter(m) || 0));
+    const curVal = vals[curIdx];
+    const prevVal = curIdx > 0 ? vals[curIdx - 1] : null;
+    const momD = prevVal !== null ? curVal - prevVal : 0;
+    const a = avgData.length > 0 ? avgData.reduce((s, m) => s + ((revGetter(m)||0) - (cogsGetter(m)||0)), 0) / avgData.length : 0;
+    const vsA = curVal - a;
+    return `<tr class="gp-net-row"><td style="padding-left:28px">${label}</td>
+      ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${fNeg(v)}</td>`).join('')}
+      <td class="gp-sep">${fDelta(momD)}</td><td>${fPct(curVal, prevVal)}</td>
+      <td class="gp-sep">${fNeg(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td></tr>`;
+  }
+
+  // Working days info row
+  function workingDaysRow() {
+    const vals = mData.map(m => m.workingDays || 0);
+    const curWd = vals[curIdx];
+    const prevWd = curIdx > 0 ? vals[curIdx - 1] : null;
+    const momD = prevWd !== null ? curWd - prevWd : 0;
+    const a = avgData.length > 0 ? Math.round(avgData.reduce((s, m) => s + (m.workingDays || 0), 0) / avgData.length) : 0;
+    const vsA = curWd - a;
+    return `<tr style="background:#f0f4ff;font-size:12px;color:#4b5563;font-weight:500"><td>Working Days (Fed. Holidays excl.)</td>
+      ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-weight:${i === curIdx ? '700' : '500'};color:${v >= 22 ? '#059669' : v <= 19 ? '#d97706' : '#4b5563'}">${v}</td>`).join('')}
+      <td class="gp-sep" style="color:${momD > 0 ? '#059669' : momD < 0 ? '#dc2626' : '#9ca3af'}">${momD > 0 ? '+' : ''}${momD || '—'}</td><td></td>
+      <td class="gp-sep">${a}</td><td style="color:${vsA > 0 ? '#059669' : vsA < 0 ? '#dc2626' : '#9ca3af'}">${vsA > 0 ? '+' : ''}${vsA || '—'}</td><td></td></tr>`;
+  }
+
+  return {cur, mData, curIdx, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData, fc, fNeg, fDelta, fPct};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GROSS PROFIT VIEW — Division-level with Rev + COGS paired
+// Filter tabs: Full P&L | each dept | Expenses | Bottom line
+// ═══════════════════════════════════════════════════════════════
+let gpFilter = 'all'; // 'all', dept id, 'expenses', 'bottomline'
+function setGpFilter(f) { gpFilter = f; render(); }
+
+function renderGrossProfit(el) {
+  const E = pnlTableEngine();
+  const {cur, mData, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData} = E;
+
+  // Filter tabs
+  const tabs = [
+    {id:'all', label:'Full P&L'},
+    ...activeDepts.map((d,i) => ({id: d.id, label: d.name})),
+    {id:'expenses', label:'Expenses'},
+    {id:'bottomline', label:'Bottom line'},
+  ];
+  const tabsHtml = tabs.map(t =>
+    `<button class="gp-filter-btn ${gpFilter === t.id ? 'active' : ''}" onclick="setGpFilter('${t.id}')">${t.label}</button>`
+  ).join('');
+
+  let rows = workingDaysRow();
+
+  // Department divisions (filtered)
+  const showDepts = gpFilter === 'all' || gpFilter === 'bottomline' || gpFilter === 'expenses'
+    ? activeDepts
+    : activeDepts.filter(d => d.id === gpFilter);
+
+  if (gpFilter !== 'expenses' && gpFilter !== 'bottomline') {
+    showDepts.forEach((dept, di) => {
+      const bm = BM[dept.id];
+      rows += divRow(dept.name);
+
+      // Collect all product names across months from both rev and cogs
+      const allRevNames = [];
+      const allCogsNames = [];
+      const seenRev = new Set(), seenCogs = new Set();
+      mData.forEach(m => {
+        const dl = getDeptDetailLines(dept.id, m);
+        dl.rev.forEach(r => { if (!seenRev.has(r.name)) { seenRev.add(r.name); allRevNames.push(r.name); }});
+        dl.cogs.forEach(r => { if (!seenCogs.has(r.name)) { seenCogs.add(r.name); allCogsNames.push(r.name); }});
+      });
+
+      const hasDetail = allRevNames.length > 0 || allCogsNames.length > 0;
+
+      if (hasDetail) {
+        const cogsShown = new Set();
+
+        // Build a map of COGS items that have a parent (labor allocations grouped under a product)
+        const childCogsMap = {}; // parent name -> [cogs names]
+        mData.forEach(m => {
+          const dl = getDeptDetailLines(dept.id, m);
+          dl.cogs.forEach(c => {
+            if (c.parent && !childCogsMap[c.parent]) childCogsMap[c.parent] = [];
+            if (c.parent && !childCogsMap[c.parent].includes(c.name)) childCogsMap[c.parent].push(c.name);
+          });
+        });
+
+        // For each revenue line: Revenue, COGS (or $0), child COGS, Net
+        allRevNames.forEach(name => {
+          const revGet = m => { const dl = getDeptDetailLines(dept.id, m); const f = dl.rev.find(r => r.name === name); return f ? f.val : 0; };
+          const hasCogs = seenCogs.has(name);
+          const cogsGet = hasCogs
+            ? (m => { const dl = getDeptDetailLines(dept.id, m); const f = dl.cogs.find(r => r.name === name); return f ? f.val : 0; })
+            : (m => 0);
+
+          // Collect child COGS getters for this revenue line (labor allocs with parent === name)
+          const childNames = childCogsMap[name] || [];
+          const childGetters = childNames.map(cn => ({
+            name: cn,
+            get: m => { const dl = getDeptDetailLines(dept.id, m); const f = dl.cogs.find(r => r.name === cn); return f ? f.val : 0; },
+            getAnomaly: m => { const dl = getDeptDetailLines(dept.id, m); const f = dl.cogs.find(r => r.name === cn); return f && f.anomaly ? f.anomaly : null; }
+          }));
+
+          // Total COGS getter (matched COGS + all child COGS)
+          const totalCogsGet = m => {
+            let total = cogsGet(m);
+            childGetters.forEach(cg => { total += cg.get(m); });
+            return total;
+          };
+
+          rows += dataRow('Revenue – ' + name, revGet, {indent: true});
+
+          if (hasCogs) {
+            const curVal = cogsGet(cur);
+            rows += dataRow('COGS – ' + name, cogsGet, {indent: true, isCost: true, flag: curVal > 50000 ? 'FLAG' : null});
+            cogsShown.add(name);
+          } else if (childNames.length === 0) {
+            // No COGS match and no children — show $0 so user knows to research
+            rows += dataRow('COGS – ' + name, m => 0, {indent: true, isCost: true, flag: 'NEEDS DATA', flagType: 'gp-flag-new'});
+          }
+
+          // Show child COGS lines (labor allocations grouped under this product)
+          childGetters.forEach(cg => {
+            const anomaly = cg.getAnomaly(cur);
+            const flag = anomaly || 'ALLOC';
+            const flagType = anomaly ? 'gp-flag-warn' : 'gp-flag-alloc';
+            rows += dataRow('COGS – ' + cg.name, cg.get, {indent: true, isCost: true, flag, flagType});
+            cogsShown.add(cg.name);
+          });
+
+          // Net line (Rev - all COGS including children)
+          rows += netRow('Net – ' + name, revGet, totalCogsGet);
+        });
+
+        // Show any orphan COGS items that didn't match a revenue line and aren't children
+        const orphanCogs = allCogsNames.filter(n => !cogsShown.has(n));
+        orphanCogs.forEach(name => {
+          const cogsGet = m => { const dl = getDeptDetailLines(dept.id, m); const f = dl.cogs.find(r => r.name === name); return f ? f.val : 0; };
+          const curVal = cogsGet(cur);
+          rows += dataRow('Revenue – ' + name, m => 0, {indent: true, flag: 'NEEDS DATA', flagType: 'gp-flag-new'});
+          rows += dataRow('COGS – ' + name, cogsGet, {indent: true, isCost: true, flag: curVal > 50000 ? 'FLAG' : null});
+          rows += netRow('Net – ' + name, m => 0, cogsGet);
+        });
+      } else {
+        // No product detail — but we still have labor lines from getDeptDetailLines
+        rows += dataRow('Revenue', m => m.d[dept.id].rev, {bold: true});
+        // Show non-labor COGS
+        rows += dataRow('COGS (non-labor)', m => m.d[dept.id].cogsBeforeAlloc || 0, {indent: true, isCost: true});
+        // Show labor COGS lines (getDeptDetailLines returns them even without product detail)
+        const labLines = getDeptDetailLines(dept.id, cur);
+        labLines.cogs.forEach(c => {
+          rows += dataRow('COGS – ' + c.name, m => {
+            const dl = getDeptDetailLines(dept.id, m);
+            const f = dl.cogs.find(r => r.name === c.name);
+            return f ? f.val : 0;
+          }, {indent: true, isCost: true, flag: c.name.includes('Labor') || c.name.includes('Alloc') ? 'ALLOC' : null, flagType: 'gp-flag-alloc'});
+        });
+      }
+
+      // Total COGS (always show — includes labor)
+      rows += dataRow('Total COGS', m => m.d[dept.id].cogs, {bold: true, isCost: true});
+
+      // Gross profit + GP%
+      rows += dataRow('Gross profit', m => m.d[dept.id].gp, {isTotal: true});
+      rows += dataRow('GP %', m => m.d[dept.id].gpM, {isPct: true});
+    });
+  }
+
+  // Expenses section (all labor is now in dept COGS; only sales + opex here)
+  if (gpFilter === 'all' || gpFilter === 'expenses') {
+    rows += divRow('Sales Labor');
+    rows += dataRow('Sales Labor', m => m.salesLab, {bold: true, isCost: true});
+
+    rows += divRow('Operating Expenses');
+    rows += dataRow('Admin Payroll', m => m.adminLab, {indent: true, isCost: true});
+    rows += dataRow('Facilities & Rent', m => m.facilities, {indent: true, isCost: true});
+    rows += dataRow('Operating (Software, Prof Svcs, etc.)', m => m.operating || 0, {indent: true, isCost: true, flag: (cur.operating || 0) > 150000 ? 'FLAG' : null});
+    rows += dataRow('Marketing', m => m.marketing, {indent: true, isCost: true});
+    rows += dataRow('G&A', m => m.ga, {indent: true, isCost: true});
+    rows += dataRow('Tax & Insurance', m => m.taxIns, {indent: true, isCost: true, flag: cur.taxIns > 20000 ? 'FLAG' : null});
+    rows += dataRow('Total OpEx', m => m.opex, {bold: true, isCost: true});
+    rows += dataRow('OpEx % of Revenue', m => m.totRev > 0 ? (m.opex / m.totRev * 100) : 0, {isPct: true});
+  }
+
+  // Bottom line
+  if (gpFilter === 'all' || gpFilter === 'bottomline') {
+    rows += divRow('Bottom Line');
+    rows += dataRow('Total Revenue', m => m.totRev, {bold: true});
+    rows += dataRow('Total COGS (incl. labor in depts)', m => m.totCogs, {bold: true, isCost: true});
+    rows += dataRow('Gross Profit', m => m.gp, {isTotal: true});
+    rows += dataRow('GP %', m => m.gpM, {isPct: true});
+    rows += dataRow('Sales Labor', m => m.salesLab, {isCost: true});
+    rows += dataRow('Operating Expenses', m => m.opex, {isCost: true});
+    rows += dataRow('Operating Net Income', m => m.ebitda, {isTotal: true});
+    rows += dataRow('Operating Margin %', m => m.ebitdaM, {isPct: true});
+    rows += dataRow('Other Income / (Expense)', m => m.otherInc, {});
+    rows += dataRow('Income Tax', m => m.incomeTax, {isCost: true});
+    rows += dataRow('Net Income', m => m.netIncome, {isTotal: true});
+    rows += dataRow('Net Margin %', m => m.totRev > 0 ? (m.netIncome / m.totRev * 100) : 0, {isPct: true});
+  }
+
+  el.innerHTML = `<div class="fade-in">
+    ${monthSelector()}
+    <div class="section-title">Gross Profit by Product — ${cur.month}</div>
+    <div class="section-sub">Datapath — All Locations | Revenue & COGS paired per product line</div>
+    <div class="gp-filter-bar">${tabsHtml}</div>
+    <div class="gp-wrap">
+      <table class="gp-tbl">
+        <thead><tr><th>LINE ITEM</th>${thMonths}${thAnalysis}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// P&L VIEW — Same engine, Full P&L with all sections
+// ═══════════════════════════════════════════════════════════════
+function renderPnL(el) {
+  const E = pnlTableEngine();
+  const {cur, mData, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, workingDaysRow} = E;
+
+  let rows = workingDaysRow();
+
+  // Revenue section
+  rows += divRow('Revenue');
+  rows += dataRow('Total Revenue', m => m.totRev, {bold: true});
+  activeDepts.forEach(dept => {
+    rows += dataRow(dept.name, m => m.d[dept.id].rev, {indent: true});
+  });
+
+  // COGS section (now includes labor allocated to departments)
+  rows += divRow('Cost of Goods Sold (incl. labor)');
+  rows += dataRow('Total COGS', m => m.totCogs, {bold: true, isCost: true});
+  activeDepts.forEach(dept => {
+    rows += dataRow(dept.name, m => m.d[dept.id].cogs, {indent: true, isCost: true});
+  });
+
+  // Gross Profit (labor is in COGS, so this is the real GP)
+  rows += divRow('Gross Profit');
+  rows += dataRow('Gross Profit', m => m.gp, {isTotal: true});
+  rows += dataRow('GP %', m => m.gpM, {isPct: true});
+
+  // Labor allocation reference (info only — already included in COGS above)
+  rows += divRow('Labor Allocation Detail (for reference)');
+  rows += dataRow('Direct Labor → Managed Services', m => m.directLabor, {indent: true, isCost: true, flag: 'IN MS COGS', flagType: 'gp-flag-alloc'});
+  rows += dataRow('25% Project Labor → Managed Services', m => m.projLabAlloc_MS, {indent: true, isCost: true, flag: 'IN MS COGS', flagType: 'gp-flag-alloc'});
+  rows += dataRow('PS Head ($11K) → Security', m => m.projLabAlloc_Sec, {indent: true, isCost: true, flag: 'IN SEC COGS', flagType: 'gp-flag-alloc'});
+  rows += dataRow('Project Labor (Remaining) → Prof. Services', m => m.projLabRemaining, {indent: true, isCost: true, flag: 'IN PS COGS', flagType: 'gp-flag-alloc'});
+
+  // Sales
+  rows += divRow('Sales Labor');
+  rows += dataRow('Sales Labor', m => m.salesLab, {bold: true, isCost: true});
+
+  // OpEx
+  rows += divRow('Operating Expenses');
+  rows += dataRow('Total Operating Expenses', m => m.opex, {bold: true, isCost: true});
+  rows += dataRow('Admin Payroll', m => m.adminLab, {indent: true, isCost: true});
+  rows += dataRow('Facilities & Rent', m => m.facilities, {indent: true, isCost: true});
+  rows += dataRow('Operating (Software, Prof Svcs, etc.)', m => m.operating || 0, {indent: true, isCost: true, flag: (cur.operating || 0) > 150000 ? 'FLAG' : null});
+  rows += dataRow('Marketing', m => m.marketing, {indent: true, isCost: true});
+  rows += dataRow('G&A', m => m.ga, {indent: true, isCost: true});
+  rows += dataRow('Tax & Insurance', m => m.taxIns, {indent: true, isCost: true, flag: cur.taxIns > 20000 ? 'FLAG' : null});
+  rows += dataRow('OpEx % of Revenue', m => m.totRev > 0 ? (m.opex / m.totRev * 100) : 0, {isPct: true});
+
+  // Operating income
+  rows += divRow('Operating Net Income (EBITDA Proxy)');
+  rows += dataRow('Operating Net Income', m => m.ebitda, {isTotal: true});
+  rows += dataRow('Operating Margin %', m => m.ebitdaM, {isPct: true});
+
+  // Bottom line
+  rows += divRow('Other Income & Net Income');
+  rows += dataRow('Other Income / (Expense)', m => m.otherInc, {});
+  rows += dataRow('Income Tax', m => m.incomeTax, {isCost: true});
+  rows += dataRow('Net Income', m => m.netIncome, {isTotal: true});
+  rows += dataRow('Net Margin %', m => m.totRev > 0 ? (m.netIncome / m.totRev * 100) : 0, {isPct: true});
+
+  el.innerHTML = `<div class="fade-in">
+    ${monthSelector()}
+    <div class="section-title">Consolidated P&L Statement — ${cur.month}</div>
+    <div class="section-sub">Datapath — All Locations (California + Ohio) | Source: Citrin Cooperman</div>
+    <div class="gp-wrap">
+      <table class="gp-tbl">
+        <thead><tr><th>LINE ITEM</th>${thMonths}${thAnalysis}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTELLIGENCE REPORT — Anomalies + AI Advisor side by side
+// ═══════════════════════════════════════════════════════════════
+function buildAnomalyHtml() {
+  const deptName = id => {
+    const d = DEPTS.find(x => x.id === id);
+    return d ? d.name : 'General / Company-Wide';
+  };
+  const allMonths = DATA.map(m => m.month);
+  const monthsWithAnom = allMonths.filter(mo => ANOMALIES[mo] && ANOMALIES[mo].length > 0);
+
+  let totalFavorable = 0, totalUnfavorable = 0, totalItems = 0;
+  Object.values(ANOMALIES).forEach(items => {
+    items.forEach(a => { totalItems++; if (a.impact >= 0) totalFavorable += a.impact; else totalUnfavorable += Math.abs(a.impact); });
+  });
+
+  const si = getSelIdx();
+  const curMonth = DATA[si].month;
+  const curAnom = ANOMALIES[curMonth] || [];
+  const curImpact = curAnom.reduce((s, a) => s + a.impact, 0);
+
+  let html = `<div class="anom-summary" style="gap:10px;margin-bottom:16px">
+    <div class="anom-summary-card" style="padding:10px 14px;min-width:0">
+      <div class="anom-summary-label">Items</div>
+      <div class="anom-summary-val" style="font-size:18px;color:#1a1a1a">${totalItems}</div>
+    </div>
+    <div class="anom-summary-card" style="padding:10px 14px;min-width:0">
+      <div class="anom-summary-label">Favorable</div>
+      <div class="anom-summary-val" style="font-size:18px;color:#059669">+$${totalFavorable.toLocaleString()}</div>
+    </div>
+    <div class="anom-summary-card" style="padding:10px 14px;min-width:0">
+      <div class="anom-summary-label">Unfavorable</div>
+      <div class="anom-summary-val" style="font-size:18px;color:#dc2626">-$${totalUnfavorable.toLocaleString()}</div>
+    </div>
+  </div>`;
+
+  if (monthsWithAnom.length === 0) {
+    html += '<div class="anom-empty">No anomalies recorded yet.</div>';
+  } else {
+    html += '<div class="anom-timeline">';
+    [...monthsWithAnom].reverse().forEach(mo => {
+      const items = ANOMALIES[mo];
+      const wd = WORKING_DAYS[mo] || 0;
+      const mData = DATA.find(m => m.month === mo);
+      const moImpact = items.reduce((s, a) => s + a.impact, 0);
+      html += `<div class="anom-month">
+        <div class="anom-dot ${items[0].type}"></div>
+        <div class="anom-month-label">${mo} <span style="font-weight:400;color:#9ca3af;font-size:11px">(${wd}d)</span>
+          <span style="float:right;font-size:12px;font-weight:600;color:${moImpact >= 0 ? '#059669' : '#dc2626'}">${moImpact >= 0 ? '+' : '-'}$${Math.abs(moImpact).toLocaleString()}</span>
+        </div>`;
+      items.forEach(a => {
+        const impactStr = (a.impact >= 0 ? '+$' : '-$') + Math.abs(a.impact).toLocaleString();
+        html += `<div class="anom-card">
+          <div class="anom-card-left">
+            <div><span class="anom-type-badge anom-type-${a.type}">${a.type}</span><span style="font-weight:600;font-size:12px">${a.category}</span></div>
+            <div class="anom-desc">${a.description}</div>
+            <div class="anom-dept">${deptName(a.dept)}</div>
+          </div>
+          <div class="anom-impact ${a.impact >= 0 ? 'positive' : 'negative'}">${impactStr}</div>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderAdvisor(el) {
+  const anomHtml = buildAnomalyHtml();
+
+  el.innerHTML = `<div class="fade-in">
+    <div class="section-title">Intelligence Report</div>
+    <div class="section-sub">Anomalies & one-time items alongside AI-powered MSP strategy analysis</div>
+    <div class="intel-grid">
+      <div class="intel-panel">
+        <div class="intel-panel-header">
+          <span>⚡</span><span class="intel-panel-title">Anomalies & One-Time Items</span>
+          <span class="intel-panel-sub">Non-recurring items by month</span>
+        </div>
+        <div class="intel-panel-body">${anomHtml}</div>
+      </div>
+      <div class="intel-panel">
+        <div class="intel-panel-header">
+          <span>🧠</span><span class="intel-panel-title">MSP Strategy Advisor</span>
+          <span class="intel-panel-sub">Benchmarks & Analysis</span>
+        </div>
+        <div class="intel-panel-body">
+          <div class="intel-chat-wrap">
+            <div class="intel-chat-messages chat-messages" id="chat-messages"></div>
+            <div id="quick-btns"></div>
+            <div class="intel-chat-input-row">
+              <input class="chat-input" id="chat-input" placeholder="Ask about margins, valuations, labor, growth..." onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="chat-send" onclick="sendChat()">▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  renderMessages();
+  if (state.chatMessages.length <= 1) {
+    const quickQ = ['How do we improve EBITDA?','What\'s our valuation?','Analyze labor costs','Security deep dive','Benchmark us vs top MSPs','Cloud growth strategy'];
+    document.getElementById('quick-btns').innerHTML = `<div class="quick-btns">${quickQ.map(q=>`<button class="quick-btn" onclick="document.getElementById('chat-input').value='${q}';sendChat()">${q}</button>`).join('')}</div>`;
+  }
+}
+
+function renderMessages() {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+  el.innerHTML = state.chatMessages.map(m => `<div class="chat-msg ${m.role}"><div class="chat-bubble">${m.content}</div></div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  state.chatMessages.push({role:'user', content:q});
+  input.value = '';
+  renderMessages();
+  const quickEl = document.getElementById('quick-btns');
+  if (quickEl) quickEl.innerHTML = '';
+  setTimeout(() => {
+    state.chatMessages.push({role:'assistant', content: genAdvisorResponse(q)});
+    renderMessages();
+  }, 600 + Math.random()*800);
+}
+
+function genAdvisorResponse(question) {
+  const q = question.toLowerCase();
+  const L = latest(), F = DATA[0];
+  const annRev = L.totRev*12;
+  const dM = DEPTS.map(d=>({...d, margin:L.d[d.id].gpM, rev:L.d[d.id].rev, tgt:BM[d.id].tgt, gap:L.d[d.id].gpM-BM[d.id].tgt}));
+  const weakest = [...dM].sort((a,b)=>a.gap-b.gap)[0];
+  const strongest = [...dM].sort((a,b)=>b.gap-a.gap)[0];
+  const growth = (L.totRev-F.totRev)/F.totRev*100;
+
+  if (q.includes('ebitda') || q.includes('margin') || q.includes('profit')) {
+    const tier = L.ebitdaM>=22?'Top Performer':L.ebitdaM>=16?'Above Average':L.ebitdaM>=10?'Median':'Below Average';
+    return `📊 EBITDA Analysis for Datapath\n\nCurrent EBITDA margin: ${fmtP(L.ebitdaM)} — "${tier}" category\n\nBenchmarks (Service Leadership / ConnectWise):\n• Top Performer: 22%+\n• Above Average: 16-22%\n• Median: 10-16%\n• Below Average: <10%\n\nKey Levers:\n\n1. Managed Services Margin — Currently ${fmtP(L.d.managed_services.gpM)} vs 72% target. ${L.d.managed_services.gpM<72?'Every 1% improvement = ~$'+Math.round(L.d.managed_services.rev*0.01).toLocaleString()+'/mo':''}\n\n2. Labor Efficiency — ${fmtP(L.totLab/L.totRev*100)} of revenue. World-class MSPs target <50%\n\n3. Revenue Mix — Shift to higher-margin recurring (MS, security, cloud). Target 70%+ recurring\n\nValuation Impact: At ~${fmt(annRev)} run rate, every 1% EBITDA = ~$${Math.round(annRev*0.01*8/1000)}K in enterprise value (at 8x)`;
+  }
+  if (q.includes('valuation') || q.includes('sell') || q.includes('exit') || q.includes('multiple') || q.includes('worth')) {
+    const ebitda = L.ebitda*12;
+    return `💰 Valuation & Exit Readiness\n\nAnnualized:\n• Revenue: ~${fmt(annRev)}\n• EBITDA: ~${fmt(ebitda)}\n• EBITDA Margin: ${fmtP(L.ebitdaM)}\n\nMSP Market Multiples (2025):\n• Premium (>20% EBITDA, >70% MRR): 8-12x\n• Above Average (15-20%): 6-8x\n• Average (10-15%): 4-6x\n• Below Average (<10%): 2-4x\n\nEstimated Range: ${fmt(ebitda*4)} - ${fmt(ebitda*10)}\n\nTo Maximize Exit Value:\n1. Push EBITDA to 20%+ (shifts multiple from 5-6x to 8-10x)\n2. MRR to 75%+ (predictability premium)\n3. Reduce owner dependency (build management layer)\n4. Clean GAAP financials with documented add-backs\n5. Grow security & cloud (highest-multiple lines)\n6. No single client >10% of revenue\n7. 3-year contracts with auto-renewal`;
+  }
+  if (q.includes('managed service') || q.includes('recurring') || q.includes('mrr')) {
+    const ms = L.d.managed_services;
+    return `🖥️ Managed Services Deep Dive\n\nRevenue: ${fmt(ms.rev)}/mo at ${fmtP(ms.gpM)} gross margin\n\nBenchmark: ${fmtP(ms.gpM)} vs Target 78% / Median 65%\nRev per Employee: $${Math.round(ms.rev*12/ms.hc).toLocaleString()}\n\nOptimization:\n1. Stack Optimization — negotiate 15-20% below list on RMM/PSA\n2. Tiered Service Model — Gold/Silver/Bronze increases ARPU 15-25%\n3. Automation — resolve 40%+ of L1 tickets without human touch\n4. Per-User Pricing — shift from per-device for 20-30% value increase\n5. QBR-Driven Upsell — every QBR includes security & cloud roadmap\n6. Hybrid NOC — onshore L2-L3, offshore L1 saves 25-35% on labor`;
+  }
+  if (q.includes('security') || q.includes('mdr') || q.includes('soc') || q.includes('cyber')) {
+    const sec = L.d.security;
+    return `🛡️ Security Division Analysis\n\nRevenue: ${fmt(sec.rev)}/mo at ${fmtP(sec.gpM)} margin\nHighest-growth opportunity — cybersecurity MSP market growing 25-30% annually\n\nBenchmark: ${fmtP(sec.gpM)} vs Target 65% / Top 72%\n\nGrowth Strategies:\n1. Named Product — "Datapath Shield" or "Datapath SecureOps"\n2. Compliance Bundling — MDR + CMMC/SOC2/HIPAA = $500-2K/user/mo\n3. SOC Efficiency — 200+ endpoints per analyst minimum\n4. Stack Margins — target 40-50% on security tools at scale\n5. 100% Attach Rate — every MS client should be on your security stack\n\nAcquirers pay 1.5-2x higher multiples for strong security practices.`;
+  }
+  if (q.includes('labor') || q.includes('headcount') || q.includes('employee') || q.includes('staff')) {
+    const hc = totalHC();
+    return `👥 Labor & Workforce\n\nHeadcount: ${hc}\nRev/Employee: $${Math.round(annRev/hc).toLocaleString()}\nLabor % Revenue: ${fmtP(L.totLab/L.totRev*100)}\n\nBenchmarks: Top: $200K+, Above Avg: $165-200K, Median: $130-165K\n\nBy Department:\n${DEPTS.map(d=>`• ${d.name}: ${L.d[d.id].hc} people, $${Math.round(L.d[d.id].rev*12/L.d[d.id].hc).toLocaleString()}/emp`).join('\n')}\n\nActions:\n1. PS team: 70-75% billable utilization, tracked weekly\n2. Offshore L1 helpdesk: 50-60% cost savings per seat\n3. Each tech manages 150+ endpoints minimum\n4. Cross-train to improve utilization 10-15%\n5. Every $1 in automation should save $3-5 in labor annually`;
+  }
+  if (q.includes('cloud') || q.includes('hosting') || q.includes('azure') || q.includes('aws')) {
+    const cl = L.d.cloud_hosting;
+    return `☁️ Cloud & Hosting\n\nRevenue: ${fmt(cl.rev)}/mo at ${fmtP(cl.gpM)} margin (Target: 70%+)\n\nStrategies:\n1. Mark up cloud 20-40% + bundle management on top\n2. Cloud Management fee: $5-15/user/mo (pure margin)\n3. Every on-prem client = migration project ($30-80K + MRR uplift)\n4. Maximize CSP incentives (Azure consumed revenue rebates)\n5. Offer FinOps as a service — take % of optimization savings\n\nTarget: Cloud = 20%+ of total revenue within 18 months`;
+  }
+  if (q.includes('benchmark') || q.includes('compare') || q.includes('industry') || q.includes('peer')) {
+    return `📈 Datapath vs. Industry (${L.month})\n\nOperating Margin: ${fmtP(L.ebitdaM)} (Median: 10%, Top: 22%)\nGross Margin (after labor): ${fmtP(L.gpM)} (Median: 52%, Top: 62%)\nGross Margin (before labor): ${fmtP(L.gpBeforeLaborM)}\nMoM Revenue Growth: ${fmtP(growth)}\nAll-In Labor: ${fmtP((L.totLab+L.salesLab+L.adminLab)/L.totRev*100)} of rev\n\nDept Margins vs. Targets:\n${DEPTS.filter(d=>L.d[d.id].rev>0).map(d=>{const m=L.d[d.id].gpM,t=BM[d.id].tgt;return `${m>=t?'✅':m>=t-5?'⚠️':'🔴'} ${d.name}: ${fmtP(m)} (target: ${t}%)`}).join('\n')}\n\nBiggest Opportunity: ${weakest.name} is ${Math.abs(weakest.gap).toFixed(1)}pp below target → ~${fmt(Math.abs(weakest.gap)*weakest.rev/100)}/mo in gross profit recovery`;
+  }
+  if (q.includes('opex') || q.includes('expense') || q.includes('cost') || q.includes('overhead')) {
+    const opexPct = L.totRev>0?(L.opex/L.totRev*100):0;
+    return `📋 OpEx Breakdown — ${L.month}\n\nTotal Operating Expenses: ${fmt(L.opex)} (${fmtP(opexPct)} of revenue)\n\nBy Category:\n• Admin Payroll: ${fmt(L.adminLab)} — ${fmtP(L.adminLab/L.totRev*100)}\n• Facilities & Rent: ${fmt(L.facilities)} — ${fmtP(L.facilities/L.totRev*100)}\n• Operating (SW, Prof Svcs): ${fmt(L.operating||0)} — ${fmtP((L.operating||0)/L.totRev*100)}\n• Marketing: ${fmt(L.marketing)} — ${fmtP(L.marketing/L.totRev*100)}\n• G&A: ${fmt(L.ga)} — ${fmtP(L.ga/L.totRev*100)}\n• Tax & Insurance: ${fmt(L.taxIns)} — ${fmtP(L.taxIns/L.totRev*100)}\n\nLabor Summary:\n• Direct Labor: ${fmt(L.directLabor)}\n• IT Project Labor: ${fmt(L.projectLabor)}\n• Sales Labor: ${fmt(L.salesLab)}\n• Admin Payroll: ${fmt(L.adminLab)}\n• TOTAL ALL LABOR: ${fmt(L.totLab+L.salesLab+L.adminLab)} — ${fmtP((L.totLab+L.salesLab+L.adminLab)/L.totRev*100)} of revenue\n\nBenchmark: World-class MSPs keep total OpEx under 25% and all-in labor under 50%.`;
+  }
+  if (q.includes('product') || q.includes('resale') || q.includes('hardware') || q.includes('hw')) {
+    const hw = L.d.hw_sw_resale;
+    return `📦 HW/SW Resale Analysis — ${L.month}\n\nRevenue: ${fmt(hw.rev)} at ${fmtP(hw.gpM)} margin\nBenchmark: Target 22%, Top Quartile 28%\n\nTop Revenue Lines:\n• Product Sales: ${fmt(L.detail?.rev?.productSales||0)} (COGS: ${fmt(L.detail?.cogs?.productSales||0)} = ${L.detail?.rev?.productSales>0?fmtP((L.detail.rev.productSales-L.detail.cogs.productSales)/L.detail.rev.productSales*100):''} margin)\n• M365 Licensing: ${fmt(L.detail?.rev?.m365||0)} (COGS: ${fmt(L.detail?.cogs?.m365||0)} = ${L.detail?.rev?.m365>0?fmtP((L.detail.rev.m365-L.detail.cogs.m365)/L.detail.rev.m365*100):''} margin)\n• HaaS: ${fmt(L.detail?.rev?.haas||0)} (COGS: ${fmt(L.detail?.cogs?.haas||0)})\n\n⚠️ This is ${fmtP(hw.rev/L.totRev*100)} of total revenue — high dependency on low-margin, lumpy product sales.\n\nActions:\n1. Negotiate better M365 CSP tier pricing\n2. Bundle HaaS into managed services contracts\n3. Mark up product sales minimum 15-20%\n4. Shift client conversations toward managed services (higher margin, more predictable)`;
+  }
+  const insights = generateInsights(L, F);
+  return `🎯 Datapath Financial Snapshot — ${L.month}\n\nRevenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)\nGross Profit: ${fmt(L.gp)} (${fmtP(L.gpM)} after labor)\nOperating Income: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)\nNet Income: ${fmt(L.netIncome)}\nHeadcount: 59 employees | Rev/Emp: $${Math.round(annRev/59).toLocaleString()}\n\nStrengths:\n${insights.good.slice(0,2).map(i=>'• '+i).join('\n')||'• Working on building strengths'}\n\nConcerns:\n${insights.bad.slice(0,2).map(i=>'• '+i).join('\n')||'• No critical issues'}\n\nTop Opportunities:\n${insights.opportunities.slice(0,3).map(i=>'• '+i).join('\n')||'• Stay the course'}\n\n💡 Ask about: EBITDA, valuation, labor, security, cloud, benchmarks, managed services, OpEx, HW/SW resale, or any department!`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPLOAD MODAL
+// ═══════════════════════════════════════════════════════════════
+let uploadState = {tab:'upload', sheetNames:[], activeSheet:null, previews:{}, workbook:null, status:null};
+
+function showUploadModal() {
+  uploadState = {tab:'upload', sheetNames:[], activeSheet:null, previews:{}, workbook:null, status:null};
+  const modal = document.getElementById('upload-modal');
+  modal.style.display = 'flex';
+  renderUploadModal();
+}
+function hideUploadModal() { document.getElementById('upload-modal').style.display = 'none'; }
+
+function renderUploadModal() {
+  const s = uploadState;
+  const modal = document.getElementById('upload-modal');
+  modal.innerHTML = `<div class="modal">
+    <div class="modal-header">
+      <div><h3 style="font-size:18px">Import P&L Data</h3><p style="color:var(--muted);font-size:12px;margin-top:4px">Upload multi-tab Excel workbooks, CSV files, or enter data manually</p></div>
+      <button class="modal-close" onclick="hideUploadModal()">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab ${s.tab==='upload'?'active':''}" onclick="uploadState.tab='upload';renderUploadModal()">📊 Excel / CSV Upload</button>
+      <button class="modal-tab ${s.tab==='manual'?'active':''}" onclick="uploadState.tab='manual';renderUploadModal()">✏️ Manual Entry</button>
+    </div>
+    <div class="modal-body">${s.tab==='upload' ? renderUploadTab() : renderManualTab()}</div>
+  </div>`;
+}
+
+function renderUploadTab() {
+  const s = uploadState;
+  let html = `<div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div style="font-size:40px;color:var(--dim)">📤</div>
+    <div class="drop-zone-title">Drop your Excel or CSV file here</div>
+    <div class="drop-zone-sub">Supports .xlsx, .xls, .csv with multiple tabs/sheets</div>
+    <div class="drop-zone-hint">Click to browse files</div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.tsv" style="display:none" onchange="handleFileUpload(this)">
+  </div>`;
+
+  if (s.status) {
+    html += `<div class="status-msg ${s.status.ok?'ok':'err'}"><strong>${s.status.ok?'✅ Success':'⚠️ Error'}:</strong> ${s.status.msg}</div>`;
+  }
+
+  if (s.sheetNames.length > 0) {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h4 style="font-size:15px">Sheet Preview</h4>
+      <span style="color:var(--dim);font-size:12px">${s.sheetNames.length} sheet${s.sheetNames.length>1?'s':''} detected</span></div>`;
+    html += `<div class="sheet-tabs">${s.sheetNames.map(name => {
+      const p = s.previews[name];
+      return `<button class="sheet-tab ${s.activeSheet===name?'active':''}" onclick="uploadState.activeSheet='${name}';renderUploadModal()">${name} <span style="color:var(--dim);font-size:11px;margin-left:4px">(${p?p.totalRows:0} rows)</span></button>`;
+    }).join('')}</div>`;
+
+    if (s.activeSheet && s.previews[s.activeSheet]) {
+      const p = s.previews[s.activeSheet];
+      html += `<div class="preview-table-wrap"><table class="preview-table"><thead><tr><th style="text-align:center;width:40px">#</th>${p.headers.map((h,i)=>`<th>${h||'Col '+(i+1)}</th>`).join('')}</tr></thead><tbody>`;
+      p.rows.slice(0,25).forEach((row,ri) => {
+        html += `<tr><td style="text-align:center;color:var(--dim);font-size:10px">${ri+1}</td>${p.headers.map((_,ci)=>`<td style="${typeof row[ci]==='number'?'font-family:monospace':''}">${fmtCell(row[ci])}</td>`).join('')}</tr>`;
+      });
+      html += `</tbody></table>`;
+      if (p.totalRows > 25) html += `<div style="padding:10px 16px;text-align:center;color:var(--dim);font-size:12px;border-top:1px solid var(--border)">Showing 25 of ${p.totalRows} rows</div>`;
+      html += `</div>`;
+
+      // Column summary
+      html += `<div class="col-summary">${p.headers.filter(h=>h).map((h,i) => {
+        const vals = p.rows.map(r=>r[i]).filter(v=>v!==''&&v!=null);
+        const nums = vals.filter(v=>typeof v==='number');
+        const isNum = nums.length > vals.length*0.5;
+        return `<div class="col-chip"><div class="col-chip-name">${h}</div><div class="col-chip-info">${isNum?nums.length+' numbers'+(nums.length>0?' | Range: '+Math.min(...nums).toLocaleString()+' - '+Math.max(...nums).toLocaleString():''):vals.length+' values'}</div></div>`;
+      }).join('')}</div>`;
+    }
+    html += `<div style="margin-top:20px;display:flex;gap:12px;align-items:center"><button class="import-btn" onclick="handleImport()">✅ Import All Sheets to Dashboard</button><span style="color:var(--dim);font-size:12px">Maps your data to the dashboard structure</span></div>`;
+  }
+  return html;
+}
+
+function renderManualTab() {
+  return `<p style="color:var(--muted);font-size:13px;margin-bottom:16px">Enter monthly P&L data by department</p>
+    <div class="form-grid">
+      <div><label class="form-label">Month</label><input class="form-input" id="m-month" placeholder="e.g., Jan 25"></div>
+      <div><label class="form-label">Department</label><select class="form-input" id="m-dept">${DEPTS.map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}</select></div>
+      <div><label class="form-label">Revenue</label><input class="form-input" id="m-rev" type="number" placeholder="$"></div>
+      <div><label class="form-label">COGS</label><input class="form-input" id="m-cogs" type="number" placeholder="$"></div>
+      <div><label class="form-label">Labor Cost</label><input class="form-input" id="m-lab" type="number" placeholder="$"></div>
+      <div><label class="form-label">Headcount</label><input class="form-input" id="m-hc" type="number" placeholder="#"></div>
+    </div>
+    <button class="btn-primary">➕ Add Entry</button>`;
+}
+
+function fmtCell(v) {
+  if (v==null || v==='') return '—';
+  if (typeof v==='number') return Math.abs(v)>=1000?v.toLocaleString('en-US',{maximumFractionDigits:2}):v.toString();
+  if (v instanceof Date) return v.toLocaleDateString();
+  return String(v).substring(0,50);
+}
+
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true, cellNF:true});
+      const names = wb.SheetNames;
+      uploadState.sheetNames = names;
+      uploadState.activeSheet = names[0];
+      const previews = {}, allData = {};
+      names.forEach(name => {
+        const ws = wb.Sheets[name];
+        const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        const jsonObj = XLSX.utils.sheet_to_json(ws, {defval:''});
+        previews[name] = {headers:json[0]||[], rows:json.slice(1,51), totalRows:json.length-1, fullData:jsonObj};
+        allData[name] = jsonObj;
+      });
+      uploadState.previews = previews;
+      uploadState.workbook = allData;
+      uploadState.status = {ok:true, msg:`Loaded "${file.name}" — ${names.length} sheet${names.length>1?'s':''}: ${names.join(', ')} — ${Object.values(previews).reduce((s,p)=>s+p.totalRows,0)} total rows`};
+    } catch(err) {
+      uploadState.status = {ok:false, msg:'Error reading file: '+err.message};
+    }
+    renderUploadModal();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function handleImport() {
+  uploadState.status = {ok:true, msg:'Data imported successfully! Dashboard will update with your data.'};
+  renderUploadModal();
+}
+
+// Setup drop zone events (delegated)
+document.getElementById('upload-modal').addEventListener('dragover', e => {
+  e.preventDefault();
+  const dz = document.getElementById('drop-zone');
+  if (dz) dz.classList.add('over');
+});
+document.getElementById('upload-modal').addEventListener('dragleave', e => {
+  const dz = document.getElementById('drop-zone');
+  if (dz) dz.classList.remove('over');
+});
+document.getElementById('upload-modal').addEventListener('drop', e => {
+  e.preventDefault();
+  const dz = document.getElementById('drop-zone');
+  if (dz) dz.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    // Create a fake input to reuse handler
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.files = dt.files;
+    handleFileUpload(inp);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CHART.JS DEFAULTS
+// ═══════════════════════════════════════════════════════════════
+Chart.defaults.color = '#6b7280';
+Chart.defaults.borderColor = '#e5e7eb';
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+state.selMonth = DATA.length - 1; // Default to latest month
+render();
+</script>
+</body>
+</html>
