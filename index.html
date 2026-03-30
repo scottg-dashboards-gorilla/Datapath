@@ -427,7 +427,8 @@ const WORKING_DAYS = {
 const SNI_DATA = {
   ordered:  { revenue: 1772570.65, cost: 1047433.62, profit: 725137.03, count: 28 },
   received: { revenue: 765808.00, cost: 633775.53, profit: 132032.47, count: 32 },
-  asOf: '3/28/2026'
+  asOf: '3/28/2026',
+  lastSynced: '2026-03-28T09:00:00'
 };
 
 function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, incomeTax) {
@@ -985,7 +986,7 @@ function renderDashboard(el) {
         <div class="sni-count">${SNI_DATA.ordered.count + SNI_DATA.received.count} total orders</div>
       </div>
     </div>
-    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: Power BI — Sold Not Invoiced Report | Last updated: ${SNI_DATA.asOf}</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: Power BI — Sold Not Invoiced Report | Data as of: ${SNI_DATA.asOf} | Last synced: ${SNI_DATA.lastSynced ? new Date(SNI_DATA.lastSynced).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true}) : '—'}</div>
   </div>`;
 
   // Charts
