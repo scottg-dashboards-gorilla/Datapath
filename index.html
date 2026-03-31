@@ -370,6 +370,7 @@ const DEPTS = [
   {id:'security', name:'Security (MDR/SOC)', emoji:'🛡️', color:'#ef4444'},
   {id:'hw_sw_resale', name:'HW/SW Resale', emoji:'📦', color:'#f59e0b'},
   {id:'ai_consulting', name:'AI Consulting', emoji:'🤖', color:'#06b6d4'},
+  {id:'subcontracted', name:'Subcontracted Services', emoji:'🤝', color:'#ec4899'},
 ];
 const BM = {
   managed_services:{tgt:72, top:78, med:65, revEmp:165000, desc:'Recurring managed services (RMM, helpdesk, NOC)'},
@@ -378,6 +379,7 @@ const BM = {
   security:{tgt:65, top:72, med:58, revEmp:155000, desc:'MDR, SOC, security stack management'},
   hw_sw_resale:{tgt:22, top:28, med:18, revEmp:520000, desc:'Hardware/software procurement & resale'},
   ai_consulting:{tgt:65, top:75, med:55, revEmp:250000, desc:'AI solutions, consulting, and implementation services'},
+  subcontracted:{tgt:40, top:50, med:30, revEmp:0, desc:'Outsourced non-employee services for one-time project work'},
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -388,7 +390,8 @@ const BM = {
 //   Security: Managed Security(5055) + Security Resale(157727) = 162,782
 //   Cloud & Hosting: Public Cloud(1144) + Private Cloud(25891) + Cloud SaaS(39621) = 66,656
 //   HW/SW Resale: HaaS(33254) + Chromebook(562) + M365(125654) + Tool Resale(5466) + Voice Resale(2546) + Product Sales(289324) + Freight(6435) + Commissions(15537) = 478,778
-//   Projects/Prof Svcs: Project Service(24005) + Subcontracted(36848) = 60,853
+//   Professional Services: Project Service(24005) = 24,005
+//   Subcontracted Services: Subcontracted(36848) = 36,848
 //   AI Consulting: 0 (revenue to be tracked as AI solutions practice grows)
 //
 // COGS mapping:
@@ -396,7 +399,8 @@ const BM = {
 //   Security: ManagedSecurity(5622) + SecurityResale(70636) = 76,258
 //   Cloud: Public(401) + Private(11154) = 11,555
 //   HW/SW Resale: RecurResale(24815) + HaaS(18879) + Chromebook(1111) + M365(100058) + VoiceResale(5254) + ProductSales(248701) + Freight(5572) = 404,390
-//   Projects: Subcontractor(30947) = 30,947
+//   Professional Services: 0
+//   Subcontracted Services: Subcontractor(30947) = 30,947
 //   AI Consulting: 0
 //
 // Labor: IT Project Labor(60926) + Direct Labor(226198) = 287,124
@@ -407,7 +411,8 @@ const BM = {
 function emptyMonth(month) {
   const zd = {rev:0,cogs:0,lab:0,gp:0,gpM:0,hc:0};
   return {month, totRev:0, totCogs:0, gp:0, totLab:0, salesLab:0, adminLab:0, opex:0, ga:0, ebitda:0, ebitdaM:0, gpM:0,
-    d:{managed_services:{...zd}, professional_services:{...zd}, cloud_hosting:{...zd}, security:{...zd}, hw_sw_resale:{...zd}, ai_consulting:{...zd}},
+    addBacks:{ownerPerks:0, oneTime:0, aboveMarketRent:0, other:0}, totalAddBacks:0, adjEbitda:0, adjEbitdaM:0,
+    d:{managed_services:{...zd}, professional_services:{...zd}, cloud_hosting:{...zd}, security:{...zd}, hw_sw_resale:{...zd}, ai_consulting:{...zd}, subcontracted:{...zd}},
     detail: null
   };
 }
@@ -477,6 +482,12 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
   const gpBeforeLabor = totRev - rawCogs;
   const totLab = labor.direct + labor.project;  // total labor spend (for reference)
 
+  // Add-backs default to 0 — override per month after makeMonth() call
+  // e.g. JAN26.addBacks = {ownerPerks: 5000, oneTime: 10000, ...}
+  const addBacks = {ownerPerks:0, oneTime:0, aboveMarketRent:0, other:0};
+  const totalAddBacks = 0;
+  const adjEbitda = opNetIncome + totalAddBacks;
+
   return {
     month, totRev, totCogs: totalDeptCogs, gp,
     totLab, salesLab, adminLab: opexData.payroll,
@@ -488,6 +499,8 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
     marketing: opexData.marketing, taxIns: opexData.taxIns,
     ebitda: opNetIncome,
     ebitdaM: totRev>0?(opNetIncome/totRev*100):0,
+    addBacks, totalAddBacks, adjEbitda,
+    adjEbitdaM: totRev>0?(adjEbitda/totRev*100):0,
     gpM,
     gpBeforeLabor,
     gpBeforeLaborM: totRev>0?(gpBeforeLabor/totRev*100):0,
@@ -530,24 +543,26 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
 const JAN26 = makeMonth('Jan 26',
   // Revenue by department
   {
-    managed_services: 583245,    // ManagedIT + Voice + Backup + ERATE + SpamFilter
-    security: 162782,            // ManagedSecurity + SecurityResale
-    cloud_hosting: 66656,        // PublicCloud + PrivateCloud + CloudSaaS
-    hw_sw_resale: 478778,        // HaaS + Chromebook + M365 + ToolResale + VoiceResale + ProductSales + Freight + Commissions
-    professional_services: 60853, // ProjectService + Subcontracted
+    managed_services: 583245,       // ManagedIT + Voice + Backup + ERATE + SpamFilter
+    security: 162782,               // ManagedSecurity + SecurityResale
+    cloud_hosting: 66656,           // PublicCloud + PrivateCloud + CloudSaaS
+    hw_sw_resale: 478778,           // HaaS + Chromebook + M365 + ToolResale + VoiceResale + ProductSales + Freight + Commissions
+    professional_services: 24005,   // ProjectService only
+    subcontracted: 36848,           // Subcontracted labor
     ai_consulting: 0,
   },
   // COGS by department (before labor)
   {
-    managed_services: 52583,     // ManagedIT + Backup + SpamFilter + Domain + Voice
-    security: 76258,             // ManagedSecurity + SecurityResale
-    cloud_hosting: 11555,        // PublicCloud + PrivateCloud
-    hw_sw_resale: 404390,        // RecurResale + HaaS + Chromebook + M365 + VoiceResale + ProductSales + Freight
-    professional_services: 30947, // Subcontractor costs
+    managed_services: 52583,        // ManagedIT + Backup + SpamFilter + Domain + Voice
+    security: 76258,                // ManagedSecurity + SecurityResale
+    cloud_hosting: 11555,           // PublicCloud + PrivateCloud
+    hw_sw_resale: 404390,           // RecurResale + HaaS + Chromebook + M365 + VoiceResale + ProductSales + Freight
+    professional_services: 0,       // No COGS for internal project services
+    subcontracted: 30947,           // Subcontractor costs only
     ai_consulting: 0,
   },
   // Labor
-  {direct: 226198, project: 60926, hc: {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0}},
+  {direct: 226198, project: 60926, hc: {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0}},
   // Sales labor
   128659,
   // OpEx breakdown
@@ -563,18 +578,18 @@ const JAN26 = makeMonth('Jan 26',
 // Labor not separated in accounting until 2024. Using estimated splits.
 // Source: Citrin Cooperman annual P&L (3/24/2026 export)
 // ═══════════════════════════════════════════════════════════════
-const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0};
+const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0};
 // FY 2023 Year End — Annual totals from Citrin Cooperman ($27.7M revenue)
 const FY23 = makeMonth('FY 2023',
-  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0},
-  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0},
+  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0, subcontracted:0},
+  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0, subcontracted:0},
   {direct:3500004, project:500004, hc:HC}, 1500000,
   {payroll:1819356, facilities:443736, operating:769380, marketing:75780, ga:399336, taxIns:105660}, -759576, 40560);
 
 // FY 2024 Year End — Annual totals from Citrin Cooperman ($22.1M revenue)
 const FY24 = makeMonth('FY 2024',
-  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0},
-  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0},
+  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0, subcontracted:0},
+  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0, subcontracted:0},
   {direct:4111560, project:600000, hc:HC}, 1706640,
   {payroll:1417800, facilities:485556, operating:857964, marketing:132240, ga:389424, taxIns:78084}, -884388, 60996);
 
@@ -584,64 +599,64 @@ const FY24 = makeMonth('FY 2024',
 // COGS "Recurring Resale" split across depts by revenue proportion
 // ═══════════════════════════════════════════════════════════════
 const JAN25 = makeMonth('Jan 25',
-  {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0},
-  {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0},
+  {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0, subcontracted:0},
+  {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0, subcontracted:0},
   {direct:227678, project:69884, hc:HC}, 174805,
   {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:20205, taxIns:7425}, -17131, 2920);
 const FEB25 = makeMonth('Feb 25',
-  {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0},
-  {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0},
+  {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0, subcontracted:0},
+  {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0, subcontracted:0},
   {direct:203182, project:64602, hc:HC}, 166242,
   {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:23341, taxIns:7419}, -56287, 2691);
 const MAR25 = makeMonth('Mar 25',
-  {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0},
-  {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0},
+  {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0, subcontracted:0},
+  {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0, subcontracted:0},
   {direct:227117, project:71122, hc:HC}, 145044,
   {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:18959, taxIns:7430}, -25355, 15867);
 const APR25 = makeMonth('Apr 25',
-  {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0},
-  {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0},
+  {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0, subcontracted:0},
+  {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0, subcontracted:0},
   {direct:194932, project:67481, hc:HC}, 128044,
   {payroll:76476, facilities:39645, operating:94847, marketing:8153, ga:15130, taxIns:6410}, -26506, 0);
 const MAY25 = makeMonth('May 25',
-  {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0},
-  {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0},
+  {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0, subcontracted:0},
+  {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0, subcontracted:0},
   {direct:203541, project:64595, hc:HC}, 136510,
   {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:18050, taxIns:5501}, -37385, 1202);
 const JUN25 = makeMonth('Jun 25',
-  {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0},
-  {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0},
+  {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0, subcontracted:0},
+  {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0, subcontracted:0},
   {direct:205476, project:61677, hc:HC}, 129570,
   {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:17197, taxIns:6826}, -43058, 2047);
 const JUL25 = makeMonth('Jul 25',
-  {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0},
-  {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0},
+  {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0, subcontracted:0},
+  {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0, subcontracted:0},
   {direct:218508, project:65070, hc:HC}, 147139,
   {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:23977, taxIns:6081}, -30397, 1048);
 const AUG25 = makeMonth('Aug 25',
-  {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0},
-  {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0},
+  {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0, subcontracted:0},
+  {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0, subcontracted:0},
   {direct:189126, project:64553, hc:HC}, 145868,
   {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:16742, taxIns:6091}, -52865, 1470);
 const SEP25 = makeMonth('Sep 25',
-  {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0},
-  {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0},
+  {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0, subcontracted:0},
+  {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0, subcontracted:0},
   {direct:210696, project:55387, hc:HC}, 147595,
   {payroll:75368, facilities:32562, operating:124862, marketing:14315, ga:22849, taxIns:14268}, -16860, 5382);
 const OCT25 = makeMonth('Oct 25',
-  {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0},
-  {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0},
+  {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0, subcontracted:0},
+  {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0, subcontracted:0},
   {direct:206820, project:57904, hc:HC}, 197590,
   {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:25910, taxIns:9950}, -66612, 0);
 const NOV25 = makeMonth('Nov 25',
-  {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0},
-  {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0},
+  {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0, subcontracted:0},
+  {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0, subcontracted:0},
   {direct:174861, project:51988, hc:HC}, 111629,
   {payroll:54724, facilities:44444, operating:125361, marketing:15176, ga:33809, taxIns:7787}, -21706, 0);
 // ⚠️ Dec 25: Year-end adjustments including $325K direct labor (YE payroll corrections), $135K insurance cleanup, $302K operating expenses, and $601K favorable other income adjustments.
 const DEC25 = makeMonth('Dec 25',
-  {managed_services:581894, security:152186, cloud_hosting:11863, hw_sw_resale:324300, professional_services:66099, ai_consulting:0},
-  {managed_services:35508, security:66787, cloud_hosting:40783, hw_sw_resale:220424, professional_services:2305, ai_consulting:0},
+  {managed_services:581894, security:152186, cloud_hosting:11863, hw_sw_resale:324300, professional_services:66099, ai_consulting:0, subcontracted:0},
+  {managed_services:35508, security:66787, cloud_hosting:40783, hw_sw_resale:220424, professional_services:2305, ai_consulting:0, subcontracted:0},
   {direct:325620, project:-2116, hc:HC}, 31075,
   {payroll:71324, facilities:46712, operating:301681, marketing:13014, ga:33590, taxIns:143390}, 193794, 6023);
 DEC25._note = 'Dec 25: YE payroll adjustments +$161K, insurance cleanup $135K, operating expenses $302K including PAGA accrual $137K, other income favorable +$601K';
@@ -654,9 +669,9 @@ DEC25._note = 'Dec 25: YE payroll adjustments +$161K, insurance cleanup $135K, o
 // GP after labor: 575,657 | Sales Labor: 114,856 | OpEx: 363,333
 // Operating Net Income: 97,468 | Other: -34,560 | Tax: 104 | Net Income: 62,804
 const FEB26 = makeMonth('Feb 26',
-  {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620, professional_services:24460, ai_consulting:0},
-  {managed_services:43304, security:72977, cloud_hosting:9883, hw_sw_resale:367999, professional_services:2975, ai_consulting:0},
-  {direct:134465, project:49371, hc:{managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0}},
+  {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620, professional_services:20890, subcontracted:3570, ai_consulting:0},
+  {managed_services:43304, security:72977, cloud_hosting:9883, hw_sw_resale:367999, professional_services:0, subcontracted:2975, ai_consulting:0},
+  {direct:134465, project:49371, hc:{managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0}},
   114856,
   {payroll:33491, facilities:37777, operating:216811, marketing:8685, ga:63602, taxIns:2967},
   -34560, 104
@@ -891,12 +906,12 @@ function renderDashboard(el) {
   el.innerHTML = `<div class="fade-in">
     ${monthSelector()}
     <div class="section-title">Executive Overview</div>
-    <div class="section-sub">${L.month} — ${isFY ? 'Annual' : 'Annualized'} Revenue: ${fmt(annRev)} | ${isFY ? 'Annual' : 'Annualized'} EBITDA: ${fmt(annEbitda)} | Net Income: ${fmt(L.netIncome)}</div>
+    <div class="section-sub">${L.month} — ${isFY ? 'Annual' : 'Annualized'} Revenue: ${fmt(annRev)} | ${isFY ? 'Annual' : 'Annualized'} EBITDA: ${fmt(annEbitda)}${L.totalAddBacks > 0 ? ' | Adj. EBITDA: ' + fmt(isFY ? L.adjEbitda : L.adjEbitda*12) : ''}</div>
     <div class="kpi-grid">
       ${kpiCard('Total Revenue', fmt(L.totRev), revChg, '/month', 'var(--blue)')}
       ${kpiCard('Gross Profit', fmt(L.gp), (P && !prevIsFYMismatch) ? chg(L.gp, P.gp) : null, fmtP(L.gpM)+' margin (labor in COGS)', 'var(--purple)')}
-      ${kpiCard('Operating Income', fmt(L.ebitda), ebitdaChg, fmtP(L.ebitdaM)+' margin', 'var(--green)')}
-      ${kpiCard('Net Income', fmt(L.netIncome), null, 'After other income & tax', L.netIncome>=0?'var(--green)':'var(--red)')}
+      ${kpiCard('EBITDA', fmt(L.ebitda), ebitdaChg, fmtP(L.ebitdaM)+' margin — before owner charges', 'var(--green)')}
+      ${L.totalAddBacks > 0 ? kpiCard('Adjusted EBITDA', fmt(L.adjEbitda), null, fmtP(L.adjEbitdaM)+' margin — with add-backs', '#059669') : kpiCard('Net Income', fmt(L.netIncome), null, 'After other income & tax', L.netIncome>=0?'var(--green)':'var(--red)')}
       ${kpiCard('Total Labor', fmt(L.totLab+L.salesLab+L.adminLab), null, fmtP(allLaborPct)+' of revenue', 'var(--orange)')}
     </div>
 
@@ -947,7 +962,7 @@ function renderDashboard(el) {
     })()}
 
     <div class="chart-grid chart-grid-2-1">
-      <div class="chart-card"><div class="chart-title">Revenue & Operating Income Trend</div><canvas id="chart-trend" height="140"></canvas></div>
+      <div class="chart-card"><div class="chart-title">Revenue & EBITDA Trend</div><canvas id="chart-trend" height="140"></canvas></div>
       <div class="chart-card"><div class="chart-title">Revenue Mix by Department</div><canvas id="chart-mix" height="140"></canvas></div>
     </div>
     <div class="section-title">Department Performance</div>
@@ -978,12 +993,12 @@ function renderDashboard(el) {
         <div class="sni-count">${SNI_DATA.received.count} orders</div>
       </div>
       <div class="sni-card sni-card-total">
-        <div class="sni-header">💰 Total Pipeline (Not Invoiced)</div>
-        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue + SNI_DATA.received.revenue)}</span></div>
-        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost + SNI_DATA.received.cost)}</span></div>
-        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${(SNI_DATA.ordered.profit + SNI_DATA.received.profit) >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit + SNI_DATA.received.profit)}</span></div>
-        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${(SNI_DATA.ordered.revenue + SNI_DATA.received.revenue) > 0 ? fmtP((SNI_DATA.ordered.profit + SNI_DATA.received.profit) / (SNI_DATA.ordered.revenue + SNI_DATA.received.revenue) * 100) : '—'}</span></div>
-        <div class="sni-count">${SNI_DATA.ordered.count + SNI_DATA.received.count} total orders</div>
+        <div class="sni-header">🚚 Ordered — Not Yet Received</div>
+        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue - SNI_DATA.received.revenue)}</span></div>
+        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost - SNI_DATA.received.cost)}</span></div>
+        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${(SNI_DATA.ordered.profit - SNI_DATA.received.profit) >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit - SNI_DATA.received.profit)}</span></div>
+        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${(SNI_DATA.ordered.revenue - SNI_DATA.received.revenue) > 0 ? fmtP((SNI_DATA.ordered.profit - SNI_DATA.received.profit) / (SNI_DATA.ordered.revenue - SNI_DATA.received.revenue) * 100) : '—'}</span></div>
+        <div class="sni-count">${Math.max(0, SNI_DATA.ordered.count - SNI_DATA.received.count)} orders in transit</div>
       </div>
     </div>
     <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: Power BI — Sold Not Invoiced Report | Data as of: ${SNI_DATA.asOf} | Last synced: ${SNI_DATA.lastSynced ? new Date(SNI_DATA.lastSynced).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true}) : '—'}</div>
@@ -998,8 +1013,8 @@ function renderDashboard(el) {
         datasets:[
           {label:'Revenue', data:DATA.map(d=>d.totRev), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3},
           {label:'Gross Profit', data:DATA.map(d=>d.gp), borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.3},
-          {label:'Operating Income', data:DATA.map(d=>d.ebitda), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3},
-          {label:'Op. Margin %', data:DATA.map(d=>d.ebitdaM), borderColor:'#f59e0b', borderDash:[5,5], yAxisID:'y1', pointRadius:4, tension:0.3}
+          {label:'EBITDA', data:DATA.map(d=>d.ebitda), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3},
+          {label:'EBITDA Margin %', data:DATA.map(d=>d.ebitdaM), borderColor:'#f59e0b', borderDash:[5,5], yAxisID:'y1', pointRadius:4, tension:0.3}
         ]
       }, options:{responsive:true, interaction:{mode:'index',intersect:false}, scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'K'}, grid:{color:'#e5e7eb'}}, y1:{position:'right', ticks:{callback:v=>v.toFixed(1)+'%'}, grid:{display:false}}, x:{grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:12}}}}
     });
@@ -1175,6 +1190,7 @@ function getDeptDetailLines(deptId, m) {
       cloud_hosting: {rev:[], cogs:[]},
       hw_sw_resale: {rev:[], cogs:[]},
       professional_services: {rev:[], cogs: psLabor},
+      subcontracted: {rev:[], cogs:[]},
       ai_consulting: {rev:[], cogs:[]}
     };
     const dept = laborOnly[deptId] || {rev:[], cogs:[]};
@@ -1201,8 +1217,12 @@ function getDeptDetailLines(deptId, m) {
       cogs: [{name:'Product Sales',val:d.cogs.productSales||0},{name:'M365 Licensing',val:d.cogs.m365||0},{name:'HaaS',val:d.cogs.haas||0},{name:'Recurring Resale',val:d.cogs.recurResale||0},{name:'Freight',val:d.cogs.freight||0},{name:'Voice Resale',val:d.cogs.voiceResale||0},{name:'Chromebook',val:d.cogs.chromebook||0}]
     },
     professional_services: {
-      rev: [{name:'Project Services',val:d.rev.projectService||0},{name:'Subcontracted',val:d.rev.subcontracted||0}],
-      cogs: [{name:'Subcontracted',val:d.cogs.subcontractor||0}, ...psLabor]
+      rev: [{name:'Project Services',val:d.rev.projectService||0}],
+      cogs: [...psLabor]
+    },
+    subcontracted: {
+      rev: [{name:'Subcontracted',val:d.rev.subcontracted||0}],
+      cogs: [{name:'Subcontracted',val:d.cogs.subcontractor||0}]
     },
     ai_consulting: { rev:[], cogs:[] }
   };
@@ -1268,17 +1288,19 @@ function pnlTableEngine() {
     if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
     return v < 0 ? '<span style="color:var(--red)">($' + Math.abs(Math.round(v)).toLocaleString() + ')</span>' : '$' + Math.round(v).toLocaleString();
   }
-  function fDelta(d) {
+  function fDelta(d, invert) {
     if (d === 0 || d === undefined || isNaN(d)) return '<span style="color:#9ca3af">—</span>';
-    const color = d > 0 ? 'var(--green)' : 'var(--red)';
+    const positive = invert ? d < 0 : d > 0;
+    const color = positive ? 'var(--green)' : 'var(--red)';
     const sign = d > 0 ? '+' : '-';
     return `<span style="color:${color}">${sign}$${Math.abs(Math.round(d)).toLocaleString()}</span>`;
   }
-  function fPct(cur, base) {
+  function fPct(cur, base, invert) {
     if (!base || base === 0 || cur === undefined) return '<span style="color:#9ca3af">—</span>';
     const pct = ((cur - base) / Math.abs(base) * 100);
     if (Math.abs(pct) < 0.05) return '<span style="color:#9ca3af">—</span>';
-    const color = pct > 0 ? 'var(--green)' : 'var(--red)';
+    const positive = invert ? pct < 0 : pct > 0;
+    const color = positive ? 'var(--green)' : 'var(--red)';
     const sign = pct > 0 ? '+' : '';
     return `<span style="color:${color}">${sign}${Math.round(pct)}%</span>`;
   }
@@ -1299,7 +1321,7 @@ function pnlTableEngine() {
   }
 
   function dataRow(label, getter, opts = {}) {
-    const {bold, indent, isCost, isTotal, isPct, flag, flagType} = opts;
+    const {bold, indent, isCost, isTotal, isPct, flag, flagType, colorBySign} = opts;
     const vals = mData.map(m => getter(m));
     const curVal = vals[curIdx];
     const prevVal = curIdx > 0 ? vals[curIdx - 1] : null;
@@ -1320,14 +1342,15 @@ function pnlTableEngine() {
 
     const cls = isTotal ? 'gp-gp-row' : bold ? 'gp-bold' : indent ? 'gp-indent' : '';
     const dash = '<span style="color:#9ca3af">—</span>';
-    const momDelta = suppressMOM ? dash : fDelta(momD);
-    const momPct = suppressMOM ? '' : fPct(curVal, prevVal);
+    const inv = !!isCost;
+    const momDelta = suppressMOM ? dash : fDelta(momD, inv);
+    const momPct = suppressMOM ? '' : fPct(curVal, prevVal, inv);
     const dataAnalysis = isEstimated ? '' : `<td class="gp-sep">${momDelta}</td><td>${momPct}</td>
-      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td>`;
+      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA, inv)}</td><td>${fPct(curVal, a, inv)}</td>`;
     return `<tr class="${cls}"><td>${label}${flagHtml}</td>
       ${vals.map((v, i) => {
-        const style = isCost ? 'color:var(--red);' : isTotal ? (v < 0 ? 'color:var(--red);' : '') : '';
-        return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="${style}">${isTotal ? fNeg(v) : fc(v)}</td>`;
+        const style = colorBySign ? (v > 0 ? 'color:var(--green);' : v < 0 ? 'color:var(--red);' : '') : isCost ? 'color:var(--red);' : isTotal ? (v < 0 ? 'color:var(--red);' : '') : '';
+        return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="${style}">${(isTotal || colorBySign) ? fNeg(v) : fc(v)}</td>`;
       }).join('')}
       ${dataAnalysis}</tr>`;
   }
@@ -1534,9 +1557,12 @@ function renderGrossProfit(el) {
     rows += dataRow('GP %', m => m.gpM, {isPct: true});
     rows += dataRow('Sales Labor', m => m.salesLab, {isCost: true});
     rows += dataRow('Operating Expenses', m => m.opex, {isCost: true});
-    rows += dataRow('Operating Net Income', m => m.ebitda, {isTotal: true});
-    rows += dataRow('Operating Margin %', m => m.ebitdaM, {isPct: true});
-    rows += dataRow('Other Income / (Expense)', m => m.otherInc, {});
+    rows += dataRow('EBITDA', m => m.ebitda, {isTotal: true});
+    rows += dataRow('EBITDA Margin %', m => m.ebitdaM, {isPct: true});
+    rows += dataRow('Add-Backs', m => m.totalAddBacks || 0, {});
+    rows += dataRow('Adjusted EBITDA', m => m.adjEbitda || m.ebitda, {isTotal: true});
+    rows += divRow('Below the Line (Owner / Non-Operating)');
+    rows += dataRow('Other Income / (Expense)', m => m.otherInc, {colorBySign: true});
     rows += dataRow('Income Tax', m => m.incomeTax, {isCost: true});
     rows += dataRow('Net Income', m => m.netIncome, {isTotal: true});
     rows += dataRow('Net Margin %', m => m.totRev > 0 ? (m.netIncome / m.totRev * 100) : 0, {isPct: true});
@@ -1606,14 +1632,25 @@ function renderPnL(el) {
   rows += dataRow('Tax & Insurance', m => m.taxIns, {indent: true, isCost: true, flag: cur.taxIns > 20000 ? 'FLAG' : null});
   rows += dataRow('OpEx % of Revenue', m => m.totRev > 0 ? (m.opex / m.totRev * 100) : 0, {isPct: true});
 
-  // Operating income
-  rows += divRow('Operating Net Income (EBITDA Proxy)');
-  rows += dataRow('Operating Net Income', m => m.ebitda, {isTotal: true});
-  rows += dataRow('Operating Margin %', m => m.ebitdaM, {isPct: true});
+  // EBITDA — This IS "Total Operating Net Income - DL above the line" from the P&L
+  // Before owner charges, other investments, and taxes
+  rows += divRow('EBITDA (Operating Net Income — Before Owner Charges & Taxes)');
+  rows += dataRow('EBITDA', m => m.ebitda, {isTotal: true});
+  rows += dataRow('EBITDA Margin %', m => m.ebitdaM, {isPct: true});
 
-  // Bottom line
-  rows += divRow('Other Income & Net Income');
-  rows += dataRow('Other Income / (Expense)', m => m.otherInc, {});
+  // Add-backs for Adjusted EBITDA
+  rows += divRow('Add-Backs (for Adjusted EBITDA)');
+  rows += dataRow('Owner Perks & Personal Charges', m => m.addBacks?.ownerPerks || 0, {indent: true});
+  rows += dataRow('One-Time / Non-Recurring Expenses', m => m.addBacks?.oneTime || 0, {indent: true});
+  rows += dataRow('Above-Market Rent / Related Party', m => m.addBacks?.aboveMarketRent || 0, {indent: true});
+  rows += dataRow('Other Add-Backs', m => m.addBacks?.other || 0, {indent: true});
+  rows += dataRow('Total Add-Backs', m => m.totalAddBacks || 0, {bold: true});
+  rows += dataRow('Adjusted EBITDA', m => m.adjEbitda || m.ebitda, {isTotal: true});
+  rows += dataRow('Adjusted EBITDA Margin %', m => m.adjEbitdaM || m.ebitdaM, {isPct: true});
+
+  // Below-the-line: owner charges, investments, taxes
+  rows += divRow('Below the Line (Owner / Non-Operating)');
+  rows += dataRow('Other Income / (Expense)', m => m.otherInc, {colorBySign: true});
   rows += dataRow('Income Tax', m => m.incomeTax, {isCost: true});
   rows += dataRow('Net Income', m => m.netIncome, {isTotal: true});
   rows += dataRow('Net Margin %', m => m.totRev > 0 ? (m.netIncome / m.totRev * 100) : 0, {isPct: true});
@@ -1725,6 +1762,7 @@ function renderAdvisor(el) {
             <div class="intel-chat-input-row">
               <input class="chat-input" id="chat-input" placeholder="Ask about margins, valuations, labor, growth..." onkeydown="if(event.key==='Enter')sendChat()">
               <button class="chat-send" onclick="sendChat()">▶</button>
+              <button class="chat-send" onclick="clearChat()" style="background:#ef4444" title="Clear chat">✕</button>
             </div>
           </div>
         </div>
@@ -1763,10 +1801,20 @@ function renderAdvisor(el) {
 
   </div>`;
   renderMessages();
-  if (state.chatMessages.length <= 1) {
-    const quickQ = ['How do we improve EBITDA?','What\'s our valuation?','Analyze labor costs','Security deep dive','Benchmark us vs top MSPs','Cloud growth strategy'];
-    document.getElementById('quick-btns').innerHTML = `<div class="quick-btns">${quickQ.map(q=>`<button class="quick-btn" onclick="document.getElementById('chat-input').value='${q}';sendChat()">${q}</button>`).join('')}</div>`;
-  }
+  renderQuickButtons();
+}
+
+const QUICK_QUESTIONS = ['How do we improve EBITDA?','Whats our valuation?','Analyze labor costs','Security deep dive','Benchmark us vs top MSPs','Cloud growth strategy','Add-backs strategy','R&D investment'];
+
+function renderQuickButtons() {
+  const el = document.getElementById('quick-btns');
+  if (!el) return;
+  el.innerHTML = `<div class="quick-btns">${QUICK_QUESTIONS.map(q => `<button class="quick-btn" onclick="askQuick(this.textContent)">${q}</button>`).join('')}</div>`;
+}
+
+function askQuick(q) {
+  document.getElementById('chat-input').value = q;
+  sendChat();
 }
 
 function renderMessages() {
@@ -1783,13 +1831,45 @@ function sendChat() {
   state.chatMessages.push({role:'user', content:q});
   input.value = '';
   renderMessages();
-  const quickEl = document.getElementById('quick-btns');
-  if (quickEl) quickEl.innerHTML = '';
   setTimeout(() => {
     state.chatMessages.push({role:'assistant', content: genAdvisorResponse(q)});
     renderMessages();
   }, 600 + Math.random()*800);
 }
+
+function clearChat() {
+  state.chatMessages = [{role:'assistant', content: 'Welcome to the Datapath MSP Advisor.\n\nI analyze your P&L data against industry benchmarks from Service Leadership, ConnectWise Peer Groups, and Kaseya.\n\nTry asking:\n• "How do we improve our EBITDA margin?"\n• "What\'s our business worth?"\n• "How does our security division compare?"\n• "Where should we focus to maximize exit value?"\n• "Analyze our labor costs"\n• "Compare us to top-performing MSPs"'}];
+  renderMessages();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADVISOR KNOWLEDGE BASE — Add custom topics here
+// Each entry: { keywords: [...], response: (L, annRev, dM) => string }
+// The advisor checks these AFTER the built-in topics. Add new business
+// intel, strategies, or context here and the advisor will use it.
+// ═══════════════════════════════════════════════════════════════
+const ADVISOR_KB = [
+  {
+    keywords: ['r&d', 'research', 'ai team', 'ai investment', 'innovation'],
+    response: (L, annRev) => {
+      const rdSpend = 75331; // Feb 26 R&D line — update monthly
+      return `🤖 R&D / AI Team Investment\n\nCurrent Team: Tim, Peter, Jacob (engineers) + James (co-CEO)\nMonthly R&D Spend: ~${fmt(rdSpend)}\nAnnualized: ~${fmt(rdSpend*12)}\n\nStrategy:\n• Building AI-powered solutions for MSP operations\n• R&D wages reclassified from Direct Labor & Officer's Comp (Jan 2026)\n• YTD adjustment finalized 2/28/2026\n\nExit Impact:\n• Productized AI IP can command 2-3x revenue multiples on that line\n• R&D investment signals innovation to strategic acquirers\n• Consider capitalizing internal-use software development (reduces OpEx, increases asset value)\n• Document all IP, patents, and proprietary tooling for due diligence\n\n📌 Key: Frame R&D as a competitive moat, not just a cost center. Acquirers pay premiums for differentiated technology.`;
+    }
+  },
+  {
+    keywords: ['add-back', 'adjusted', 'normalize', 'normalization', 'owner comp'],
+    response: (L, annRev) => {
+      const ebitda = L.ebitda * 12;
+      return `📋 EBITDA Add-Backs & Adjustments\n\nReported EBITDA: ~${fmt(ebitda)}\n\nCommon MSP Add-Backs for Adjusted EBITDA:\n1. Owner/Officer Compensation above market rate\n2. One-time legal expenses (CA Class Action reserves: $137K)\n3. One-time bad debt write-offs ($60K Jan 26)\n4. Non-recurring charitable donations\n5. Non-recurring travel/conference expenses\n6. R&D expenses (if capitalizable)\n7. Above-market rent (if owner-owned property)\n8. Personal expenses run through business\n\nTarget: Adjusted EBITDA at 8-11x multiple → $30M–$35M strategic purchase price\n\n⚠️ Add-backs must be defensible in due diligence. Work with Citrin Cooperman to document each adjustment with supporting evidence.\n\n📌 Every $100K in defensible add-backs = $800K–$1.1M in enterprise value at target multiples.`;
+    }
+  },
+  {
+    keywords: ['contract', 'term', 'agreement', 'renewal', 'churn', 'retention'],
+    response: (L, annRev) => {
+      return `📄 Contract & Retention Strategy\n\nFor Maximum Exit Value:\n\n1. Contract Terms:\n• Minimum 3-year terms with auto-renewal\n• 90-day termination notice (not 30-day)\n• Annual escalators of 3-5% (built-in growth)\n• Bundled security into base contracts (increases stickiness)\n\n2. Churn Targets:\n• Logo churn: <5% annually\n• Revenue churn: <3% (net negative with upsells)\n• Track and report monthly — acquirers will ask\n\n3. Concentration Risk:\n• No single client >10% of MRR\n• Top 10 clients <40% of total revenue\n• Document client tenure (longer = more valuable)\n\n📌 Acquirers discount for short-term contracts and high churn. Every client on a 3-year contract is worth more than one on month-to-month.`;
+    }
+  },
+];
 
 function genAdvisorResponse(question) {
   const q = question.toLowerCase();
@@ -1802,11 +1882,15 @@ function genAdvisorResponse(question) {
 
   if (q.includes('ebitda') || q.includes('margin') || q.includes('profit')) {
     const tier = L.ebitdaM>=22?'Top Performer':L.ebitdaM>=16?'Above Average':L.ebitdaM>=10?'Median':'Below Average';
-    return `📊 EBITDA Analysis for Datapath\n\nCurrent EBITDA margin: ${fmtP(L.ebitdaM)} — "${tier}" category\n\nBenchmarks (Service Leadership / ConnectWise):\n• Top Performer: 22%+\n• Above Average: 16-22%\n• Median: 10-16%\n• Below Average: <10%\n\nKey Levers:\n\n1. Managed Services Margin — Currently ${fmtP(L.d.managed_services.gpM)} vs 72% target. ${L.d.managed_services.gpM<72?'Every 1% improvement = ~$'+Math.round(L.d.managed_services.rev*0.01).toLocaleString()+'/mo':''}\n\n2. Labor Efficiency — ${fmtP(L.totLab/L.totRev*100)} of revenue. World-class MSPs target <50%\n\n3. Revenue Mix — Shift to higher-margin recurring (MS, security, cloud). Target 70%+ recurring\n\nValuation Impact: At ~${fmt(annRev)} run rate, every 1% EBITDA = ~$${Math.round(annRev*0.01*8/1000)}K in enterprise value (at 8x)`;
+    const evPer1Pct = Math.round(annRev * 0.01 * 9.5 / 1000); // midpoint of 8-11x
+    return `📊 EBITDA Analysis for Datapath\n\nCurrent EBITDA margin: ${fmtP(L.ebitdaM)} — "${tier}" category\n\nBenchmarks (Service Leadership / ConnectWise):\n• Top Performer: 22%+\n• Above Average: 16-22%\n• Median: 10-16%\n• Below Average: <10%\n\nKey Levers:\n\n1. Managed Services Margin — Currently ${fmtP(L.d.managed_services.gpM)} vs 72% target. ${L.d.managed_services.gpM<72?'Every 1% improvement = ~$'+Math.round(L.d.managed_services.rev*0.01).toLocaleString()+'/mo':''}\n\n2. Labor Efficiency — ${fmtP(L.totLab/L.totRev*100)} of revenue. World-class MSPs target <50%\n\n3. Revenue Mix — Shift to higher-margin recurring (MS, security, cloud). Target 70%+ recurring\n\nValuation Impact: At target 8-11x adjusted EBITDA, every 1% EBITDA improvement = ~$${evPer1Pct}K in enterprise value.\n\n📌 Target: $30M–$35M strategic purchase price. Ask about "add-backs" to learn how adjusted EBITDA can boost your multiple.`;
   }
   if (q.includes('valuation') || q.includes('sell') || q.includes('exit') || q.includes('multiple') || q.includes('worth')) {
     const ebitda = L.ebitda*12;
-    return `💰 Valuation & Exit Readiness\n\nAnnualized:\n• Revenue: ~${fmt(annRev)}\n• EBITDA: ~${fmt(ebitda)}\n• EBITDA Margin: ${fmtP(L.ebitdaM)}\n\nMSP Market Multiples (2025):\n• Premium (>20% EBITDA, >70% MRR): 8-12x\n• Above Average (15-20%): 6-8x\n• Average (10-15%): 4-6x\n• Below Average (<10%): 2-4x\n\nEstimated Range: ${fmt(ebitda*4)} - ${fmt(ebitda*10)}\n\nTo Maximize Exit Value:\n1. Push EBITDA to 20%+ (shifts multiple from 5-6x to 8-10x)\n2. MRR to 75%+ (predictability premium)\n3. Reduce owner dependency (build management layer)\n4. Clean GAAP financials with documented add-backs\n5. Grow security & cloud (highest-multiple lines)\n6. No single client >10% of revenue\n7. 3-year contracts with auto-renewal`;
+    const adjEbitda = ebitda; // TODO: add documented add-backs for adjusted EBITDA
+    const lowEst = Math.round(adjEbitda * 8);
+    const highEst = Math.round(adjEbitda * 11);
+    return `💰 Valuation & Exit Readiness\n\nAnnualized:\n• Revenue: ~${fmt(annRev)}\n• EBITDA: ~${fmt(ebitda)}\n• EBITDA Margin: ${fmtP(L.ebitdaM)}\n\nDatapath-Specific Multiples (Strategic Acquisition):\n• Expected Range: 8-11x adjusted EBITDA\n• Estimated Strategic Purchase Price: ${fmt(lowEst)} – ${fmt(highEst)}\n• Target: $30M–$35M strategic purchase price\n\nGeneral MSP Market Multiples:\n• Premium (>20% EBITDA, >70% MRR): 8-12x\n• Above Average (15-20%): 6-8x\n• Average (10-15%): 4-6x\n• Below Average (<10%): 2-4x\n\nTo Maximize Exit Multiple:\n1. Push EBITDA to 20%+ (shifts from 6-8x to 8-11x territory)\n2. MRR to 75%+ (predictability premium — acquirers pay more for recurring)\n3. Reduce owner dependency (build management layer that runs without founders)\n4. Clean GAAP financials with documented add-backs\n5. Grow security & cloud (highest-multiple service lines)\n6. No single client >10% of revenue (concentration risk kills multiples)\n7. 3-year contracts with auto-renewal (reduces churn risk for buyer)\n8. Build AI/R&D story — differentiated IP commands premium valuations\n\n📌 Key Gap: Get adjusted EBITDA documented with defensible add-backs (one-time expenses, owner comp normalization, R&D capitalization) to reach the 8-11x range.`;
   }
   if (q.includes('managed service') || q.includes('recurring') || q.includes('mrr')) {
     const ms = L.d.managed_services;
@@ -1835,8 +1919,15 @@ function genAdvisorResponse(question) {
     const hw = L.d.hw_sw_resale;
     return `📦 HW/SW Resale Analysis — ${L.month}\n\nRevenue: ${fmt(hw.rev)} at ${fmtP(hw.gpM)} margin\nBenchmark: Target 22%, Top Quartile 28%\n\nTop Revenue Lines:\n• Product Sales: ${fmt(L.detail?.rev?.productSales||0)} (COGS: ${fmt(L.detail?.cogs?.productSales||0)} = ${L.detail?.rev?.productSales>0?fmtP((L.detail.rev.productSales-L.detail.cogs.productSales)/L.detail.rev.productSales*100):''} margin)\n• M365 Licensing: ${fmt(L.detail?.rev?.m365||0)} (COGS: ${fmt(L.detail?.cogs?.m365||0)} = ${L.detail?.rev?.m365>0?fmtP((L.detail.rev.m365-L.detail.cogs.m365)/L.detail.rev.m365*100):''} margin)\n• HaaS: ${fmt(L.detail?.rev?.haas||0)} (COGS: ${fmt(L.detail?.cogs?.haas||0)})\n\n⚠️ This is ${fmtP(hw.rev/L.totRev*100)} of total revenue — high dependency on low-margin, lumpy product sales.\n\nActions:\n1. Negotiate better M365 CSP tier pricing\n2. Bundle HaaS into managed services contracts\n3. Mark up product sales minimum 15-20%\n4. Shift client conversations toward managed services (higher margin, more predictable)`;
   }
+  // Check knowledge base for custom topics
+  const kbMatch = ADVISOR_KB.find(kb => kb.keywords.some(kw => q.includes(kw)));
+  if (kbMatch) {
+    return kbMatch.response(L, annRev, dM);
+  }
+
+  // Fallback — honest about limitations + show snapshot
   const insights = generateInsights(L, F);
-  return `🎯 Datapath Financial Snapshot — ${L.month}\n\nRevenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)\nGross Profit: ${fmt(L.gp)} (${fmtP(L.gpM)} after labor)\nOperating Income: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)\nNet Income: ${fmt(L.netIncome)}\nHeadcount: 59 employees | Rev/Emp: $${Math.round(annRev/59).toLocaleString()}\n\nStrengths:\n${insights.good.slice(0,2).map(i=>'• '+i).join('\n')||'• Working on building strengths'}\n\nConcerns:\n${insights.bad.slice(0,2).map(i=>'• '+i).join('\n')||'• No critical issues'}\n\nTop Opportunities:\n${insights.opportunities.slice(0,3).map(i=>'• '+i).join('\n')||'• Stay the course'}\n\n💡 Ask about: EBITDA, valuation, labor, security, cloud, benchmarks, managed services, OpEx, HW/SW resale, or any department!`;
+  return `🤔 I don't have a specific analysis for "${question}" yet.\n\nHere's what I can help with:\n• EBITDA / margins / profitability\n• Valuation / exit / multiples\n• Managed services / MRR\n• Security / MDR / SOC\n• Cloud / hosting\n• Labor / headcount / staffing\n• OpEx / expenses / overhead\n• HW/SW resale / product sales\n• Benchmarks / industry comparisons\n\n📊 Quick Snapshot — ${L.month}:\nRevenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)\nEBITDA: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)\nNet Income: ${fmt(L.netIncome)}\n\n${insights.good.length > 0 ? '✅ ' + insights.good[0] : ''}\n${insights.bad.length > 0 ? '⚠️ ' + insights.bad[0] : ''}\n\n💡 Tip: You can teach me new topics! Ask the dashboard admin to add entries to the ADVISOR_KB knowledge base.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
