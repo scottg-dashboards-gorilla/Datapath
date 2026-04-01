@@ -371,6 +371,7 @@ const DEPTS = [
   {id:'hw_sw_resale', name:'HW/SW Resale', emoji:'📦', color:'#f59e0b'},
   {id:'ai_consulting', name:'AI Consulting', emoji:'🤖', color:'#06b6d4'},
   {id:'subcontracted', name:'Subcontracted Services', emoji:'🤝', color:'#ec4899'},
+  {id:'r_and_d', name:'R&D', emoji:'🧪', color:'#7c3aed'},
 ];
 const BM = {
   managed_services:{tgt:72, top:78, med:65, revEmp:165000, desc:'Recurring managed services (RMM, helpdesk, NOC)'},
@@ -380,6 +381,7 @@ const BM = {
   hw_sw_resale:{tgt:22, top:28, med:18, revEmp:520000, desc:'Hardware/software procurement & resale'},
   ai_consulting:{tgt:65, top:75, med:55, revEmp:250000, desc:'AI solutions, consulting, and implementation services'},
   subcontracted:{tgt:40, top:50, med:30, revEmp:0, desc:'Outsourced non-employee services for one-time project work'},
+  r_and_d:{tgt:0, top:0, med:0, revEmp:0, desc:'Research & development — internal innovation and AI/automation investment (cost center, no direct revenue)'},
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -425,28 +427,81 @@ const WORKING_DAYS = {
   'Jan 26':20,'Feb 26':19
 };
 
-// Sold Not Invoiced — Pipeline data from Power BI
-// Products ordered/received but not yet invoiced (revenue not yet recognized)
-// Source: Power BI > C360 Procurement > Product Received Not Invoiced (by Product)
-// URL: https://app.powerbi.com/groups/c0aa564d-1eb3-4002-b6d7-13c610317344/reports/74739d42-a87b-4c41-b6dc-c3e15c289a60
-const SNI_DATA = {
-  ordered:  { revenue: 1772570.65, cost: 1047433.62, profit: 725137.03, count: 28 },
-  received: { revenue: 765808.00, cost: 633775.53, profit: 132032.47, count: 32 },
-  asOf: '3/28/2026',
-  lastSynced: '2026-03-28T09:00:00'
-};
+// Products Ordered Not Invoiced — Customer-level detail from uploaded spreadsheet
+// Source: C360 Procurement > Products Ordered Not Invoiced
+// Date range: 9/1/2025 – 2/28/2026 | Exported 3/6/2026
+const SNI_CUSTOMERS = [
+  {c:'Newman-Crows Landing USD',rev:139104.00,cost:115920.00,profit:23184.00,margin:16.7,items:1,orders:1},
+  {c:'Advanced Radiology and Interventional Associates',rev:83490.12,cost:74488.60,profit:9001.52,margin:10.8,items:30,orders:1},
+  {c:'Vital Care',rev:71281.33,cost:59692.39,profit:11588.94,margin:16.3,items:42,orders:14},
+  {c:'Scheurer Health',rev:66460.50,cost:54240.97,profit:12219.53,margin:18.4,items:8,orders:3},
+  {c:'Wave Dental Professionals',rev:48275.00,cost:42485.72,profit:5789.28,margin:12.0,items:2,orders:1},
+  {c:'Panoche Energy Center',rev:42857.92,cost:33129.77,profit:9728.15,margin:22.7,items:12,orders:3},
+  {c:'California Rural Legal Assistance, Inc',rev:31365.03,cost:26137.07,profit:5227.96,margin:16.7,items:4,orders:1},
+  {c:'Encore Glass Inc.',rev:22344.92,cost:20104.00,profit:2240.92,margin:10.0,items:5,orders:2},
+  {c:'Shiloh Elementary School District',rev:11211.36,cost:8873.04,profit:2338.32,margin:20.9,items:3,orders:1},
+  {c:'Hopebridge Autism Therapy Centers',rev:8947.34,cost:8002.40,profit:944.94,margin:10.6,items:4,orders:2},
+  {c:'Covington Exempted village',rev:8737.16,cost:7280.97,profit:1456.19,margin:16.7,items:3,orders:2},
+  {c:'Graceada Partners',rev:8594.98,cost:7162.46,profit:1432.52,margin:16.7,items:4,orders:1},
+  {c:'Inland Star Distribution Center - Fresno',rev:7972.70,cost:5720.00,profit:2252.70,margin:28.3,items:4,orders:2},
+  {c:'Carmel Unified School District',rev:6581.08,cost:5484.23,profit:1096.85,margin:16.7,items:4,orders:1},
+  {c:'City of Selma',rev:6474.24,cost:5391.36,profit:1082.88,margin:16.7,items:1,orders:1},
+  {c:'City of Turlock',rev:6430.44,cost:5355.82,profit:1074.62,margin:16.7,items:9,orders:1},
+  {c:'North Shore High School',rev:6334.60,cost:5325.91,profit:1008.69,margin:15.9,items:7,orders:3},
+  {c:'Constellation Brands',rev:4344.60,cost:3495.50,profit:849.10,margin:19.5,items:4,orders:2},
+  {c:'Weakley & Arendt, LLP',rev:4215.27,cost:4210.16,profit:5.11,margin:0.1,items:5,orders:1},
+  {c:'Imagine Groveport Community School',rev:3962.87,cost:3461.37,profit:501.50,margin:12.7,items:2,orders:2},
+  {c:'PASCO',rev:3910.52,cost:3358.59,profit:551.93,margin:14.1,items:4,orders:1},
+  {c:'City Day Community School',rev:3442.51,cost:2659.87,profit:782.64,margin:22.7,items:15,orders:5},
+  {c:'Formulation Technology, Inc.',rev:2820.62,cost:2226.77,profit:593.85,margin:21.1,items:1,orders:1},
+  {c:'Borba Farms Partners',rev:2810.30,cost:2341.92,profit:468.38,margin:16.7,items:2,orders:1},
+  {c:'HHHC',rev:2703.29,cost:2323.97,profit:379.32,margin:14.0,items:2,orders:2},
+  {c:'Circle of Life - First Nations - Soaring Eagles',rev:2129.17,cost:1753.48,profit:375.69,margin:17.6,items:4,orders:1},
+  {c:'Arts and College Preparatory Academy',rev:1951.00,cost:1815.24,profit:135.76,margin:7.0,items:5,orders:1},
+  {c:'River Gate HS',rev:1769.94,cost:1474.95,profit:294.99,margin:16.7,items:2,orders:2},
+  {c:'Millennium Comm School',rev:1697.00,cost:1236.00,profit:461.00,margin:27.2,items:2,orders:2},
+  {c:'Imagine Sullivant',rev:1680.00,cost:1398.72,profit:281.28,margin:16.7,items:1,orders:1},
+  {c:'Devoted Guardians',rev:1602.09,cost:1373.53,profit:228.56,margin:14.3,items:3,orders:1},
+  {c:'Sargent & Bryan, Inc',rev:1487.52,cost:1239.60,profit:247.92,margin:16.7,items:5,orders:1},
+  {c:'Team Public Choices, LLC',rev:1482.19,cost:1508.13,profit:-25.94,margin:-1.8,items:18,orders:3},
+  {c:'DeHart Plumbing, Heating & Air, Inc.',rev:1332.40,cost:1110.33,profit:222.07,margin:16.7,items:2,orders:1},
+  {c:'Sunbridge Schools',rev:1196.67,cost:997.22,profit:199.45,margin:16.7,items:3,orders:1},
+  {c:'Imagine Madison Ave',rev:1131.91,cost:943.25,profit:188.66,margin:16.7,items:4,orders:1},
+  {c:"Pearl's Hope",rev:1104.91,cost:929.38,profit:175.53,margin:15.9,items:2,orders:1},
+  {c:'Cristo Rey High School',rev:1046.76,cost:843.60,profit:203.16,margin:19.4,items:6,orders:2},
+  {c:'Valley Iron',rev:900.00,cost:765.00,profit:135.00,margin:15.0,items:1,orders:1},
+  {c:'Invictus HS',rev:889.99,cost:749.99,profit:140.00,margin:15.7,items:2,orders:1},
+  {c:'Impact Home Health',rev:873.17,cost:746.87,profit:126.30,margin:14.5,items:3,orders:1},
+  {c:'City of Mendota',rev:812.18,cost:684.30,profit:127.88,margin:15.7,items:2,orders:1},
+  {c:'Garretson Team',rev:776.16,cost:729.12,profit:47.04,margin:6.1,items:1,orders:1},
+  {c:'Alliance Services',rev:728.92,cost:626.66,profit:102.26,margin:14.0,items:2,orders:1},
+  {c:'DiMare',rev:620.18,cost:533.70,profit:86.48,margin:13.9,items:1,orders:1},
+  {c:'Project Hope Alliance',rev:505.56,cost:399.98,profit:105.58,margin:20.9,items:3,orders:1},
+  {c:'Jame O Bookkeeping',rev:312.24,cost:257.12,profit:55.12,margin:17.7,items:2,orders:1},
+  {c:'Kaplan & Trombi',rev:312.24,cost:256.50,profit:55.74,margin:17.9,items:1,orders:1},
+  {c:'test company',rev:258.00,cost:199.00,profit:59.00,margin:22.9,items:1,orders:1},
+];
+const SNI_TOTALS = {rev:631272.90, cost:531444.53, profit:99828.37, margin:15.8, customers:49, items:254, orders:84, asOf:'3/6/2026'};
 
 function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, incomeTax) {
   // ── Labor Reallocation ──
-  // Direct Labor (techs) → 100% into Managed Services COGS (they deliver MS work)
-  // 25% of Project Labor → also into Managed Services COGS (supports MS)
-  // PS head ($11K/mo) → into Security COGS
-  // Remaining Project Labor → stays in Project Services
-  const directLabor = labor.direct;
-  const projLabAlloc_MS = Math.round(labor.project * 0.25);  // 25% of project labor → MS
-  const projLabAlloc_Sec = 11000;                             // PS head → Security
-  const projLabRemaining = labor.project - projLabAlloc_MS - projLabAlloc_Sec;
-  const totalMSLabor = directLabor + projLabAlloc_MS;         // All labor going into MS COGS
+  // Two modes:
+  //   NEW (2026+): labor.byDept = {managed_services: X, security: Y, ...} — per-department allocation
+  //   LEGACY (2025-): labor.direct + labor.project with fixed split rules
+  const useByDept = labor.byDept != null;
+  let directLabor, projLabAlloc_MS, projLabAlloc_Sec, projLabRemaining, totalMSLabor;
+
+  if (!useByDept) {
+    // Legacy allocation: Direct → MS, 25% Project → MS, $11K → Security, rest → PS
+    directLabor = labor.direct;
+    projLabAlloc_MS = Math.round(labor.project * 0.25);
+    projLabAlloc_Sec = 11000;
+    projLabRemaining = labor.project - projLabAlloc_MS - projLabAlloc_Sec;
+    totalMSLabor = directLabor + projLabAlloc_MS;
+  } else {
+    directLabor = 0; projLabAlloc_MS = 0; projLabAlloc_Sec = 0;
+    projLabRemaining = 0; totalMSLabor = labor.byDept.managed_services || 0;
+  }
 
   const d = {};
   let totRev=0, totCogs=0;
@@ -454,17 +509,21 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
     const rev = revs[dept.id]||0;
     let cogs = cogss[dept.id]||0;
     let labAlloc = 0;
-    if (dept.id === 'managed_services') labAlloc = totalMSLabor;  // Direct labor + 25% project
-    if (dept.id === 'security') labAlloc = projLabAlloc_Sec;
-    if (dept.id === 'professional_services') labAlloc = projLabRemaining;  // Remaining project labor → PS COGS
+    if (useByDept) {
+      labAlloc = labor.byDept[dept.id] || 0;
+    } else {
+      if (dept.id === 'managed_services') labAlloc = totalMSLabor;
+      if (dept.id === 'security') labAlloc = projLabAlloc_Sec;
+      if (dept.id === 'professional_services') labAlloc = projLabRemaining;
+    }
     cogs += labAlloc;
     const gp = rev - cogs, gpM = rev>0?(gp/rev*100):0;
     d[dept.id] = {rev, cogs, lab: labAlloc, gp, gpM, hc: labor.hc[dept.id]||0,
       cogsBeforeAlloc: cogss[dept.id]||0, labAlloc,
-      directLabor: dept.id === 'managed_services' ? directLabor : 0,
-      projLabAlloc: dept.id === 'managed_services' ? projLabAlloc_MS : (dept.id === 'security' ? projLabAlloc_Sec : (dept.id === 'professional_services' ? projLabRemaining : 0))};
+      directLabor: dept.id === 'managed_services' ? (useByDept ? 0 : directLabor) : 0,
+      projLabAlloc: useByDept ? 0 : (dept.id === 'managed_services' ? projLabAlloc_MS : (dept.id === 'security' ? projLabAlloc_Sec : (dept.id === 'professional_services' ? projLabRemaining : 0)))};
     totRev += rev;
-    totCogs += cogs; // COGS now includes all labor allocations in department totals
+    totCogs += cogs;
   });
 
   // GP = Revenue - all dept COGS (which now include all labor allocations)
@@ -480,7 +539,9 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
   // For backward compat, also compute "GP before any labor" for reference
   const rawCogs = Object.values(cogss).reduce((s,v) => s + (v||0), 0);
   const gpBeforeLabor = totRev - rawCogs;
-  const totLab = labor.direct + labor.project;  // total labor spend (for reference)
+  const totLab = useByDept
+    ? Object.values(labor.byDept).reduce((s,v) => s+(v||0), 0)
+    : (labor.direct + labor.project);  // total labor spend (for reference)
 
   // Add-backs default to 0 — override per month after makeMonth() call
   // e.g. JAN26.addBacks = {ownerPerks: 5000, oneTime: 10000, ...}
@@ -491,7 +552,7 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
   return {
     month, totRev, totCogs: totalDeptCogs, gp,
     totLab, salesLab, adminLab: opexData.payroll,
-    directLabor: labor.direct, projectLabor: labor.project,
+    directLabor: labor.direct || 0, projectLabor: labor.project || 0,
     projLabAlloc_MS, projLabAlloc_Sec, projLabRemaining,
     totalMSLabor,
     opex: totalOpex, ga: opexData.ga,
@@ -506,34 +567,7 @@ function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, inco
     gpBeforeLaborM: totRev>0?(gpBeforeLabor/totRev*100):0,
     workingDays: WORKING_DAYS[month] || 0,
     otherInc, incomeTax, netIncome,
-    d,
-    detail: {
-      // Detailed revenue lines for P&L drill-down
-      rev: {
-        managedIT: 558871, managedSecurity: 5055, managedVoice: 8250, managedBackup: 10551,
-        usacErate: 4679, publicCloud: 1144, privateCloud: 25891, cloudSaas: 39621,
-        haas: 33254, chromebook: 562, m365: 125654, securityResale: 157727,
-        toolResale: 5466, voiceResale: 2546, spamFilter: 894,
-        projectService: 24005, subcontracted: 36848,
-        productSales: 289324, freight: 6435, commissions: 15537,
-      },
-      cogs: {
-        managedIT: 44031, backup: 4917, spamFilter: 373, domain: 990, voice: 2272,
-        publicCloud: 401, privateCloud: 11154,
-        recurResale: 24815, haas: 18879, chromebook: 1111, m365: 100058,
-        securityResale: 70636, voiceResale: 5254, managedSecurity: 5622,
-        subcontractor: 30947,
-        productSales: 248701, freight: 5572,
-      },
-      opex: {
-        adminPayroll: 70635, facilities: 36668, softwareMaint: 54781,
-        profServices: 59667, badDebt: -12431, auto: 8102,
-        marketing: 20060, officeSupplies: 10459, charitable: 13141,
-        education: 5287, financeCharges: 16493, travel: 5678,
-        insurance: 6884, taxes: 4311,
-        officeLease: 21807, repairs: 781, utilities: 14080,
-      }
-    }
+    d
   };
 }
 
@@ -549,7 +583,7 @@ const JAN26 = makeMonth('Jan 26',
     hw_sw_resale: 478778,           // HaaS + Chromebook + M365 + ToolResale + VoiceResale + ProductSales + Freight + Commissions
     professional_services: 24005,   // ProjectService only
     subcontracted: 36848,           // Subcontracted labor
-    ai_consulting: 0,
+    ai_consulting: 0, r_and_d: 0,
   },
   // COGS by department (before labor)
   {
@@ -560,36 +594,67 @@ const JAN26 = makeMonth('Jan 26',
     professional_services: 0,       // No COGS for internal project services
     subcontracted: 30947,           // Subcontractor costs only
     ai_consulting: 0,
+    r_and_d: 4628,               // Haskell Macarcig 1099 (reclassed from marketing)
   },
-  // Labor
-  {direct: 226198, project: 60926, hc: {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0}},
+  // Labor — per-department allocation based on headcount roster (proportional to gross wages)
+  // Total direct+project labor: $287,124 redistributed across depts + R&D
+  // Jan-specific: Hughes+Morozov still on payroll, Jacob Berlin not yet hired, R&D people in labor pool
+  {byDept: {
+    managed_services: 194236,    // Service: 169475 + Account Mgmt: 24761
+    professional_services: 34099,// 5 engineers @ 75% each
+    security: 21626,             // Angelica, Cory, Walski 50%
+    cloud_hosting: 2776,         // Peter Annabel 25%
+    hw_sw_resale: 10092,         // David Craig + 2 BruntWork
+    r_and_d: 24295,              // James Bates, Peter 75%, Tim (from labor pool, not yet reclassed in accounting)
+    ai_consulting: 0, subcontracted: 0
+  }, direct:226198, project:60926,
+  hc:{managed_services:27, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:4}},
   // Sales labor
   128659,
   // OpEx breakdown
-  {payroll:70635, facilities:36668, operating:110119, marketing:20060, ga:51058, taxIns:11195},
+  {payroll:70635, facilities:36668, operating:105491, marketing:20060, ga:51058, taxIns:11195},
   // Other income/expense
   -60762,
   // Income tax
   0
 );
+JAN26.detail = {
+  rev: {managedIT:558871, managedSecurity:5055, managedVoice:8250, managedBackup:10551,
+    usacErate:4679, publicCloud:1144, privateCloud:25891, cloudSaas:39621,
+    haas:33254, chromebook:562, m365:125654, securityResale:157727,
+    toolResale:5466, voiceResale:2546, spamFilter:894,
+    projectService:24005, subcontracted:36848,
+    productSales:289324, freight:6435, commissions:15537},
+  cogs: {managedIT:44031, backup:4917, spamFilter:373, domain:990, voice:2272,
+    publicCloud:401, privateCloud:11154,
+    recurResale:24815, haas:18879, chromebook:1111, m365:100058,
+    securityResale:70636, voiceResale:5254, managedSecurity:5622,
+    subcontractor:30947, productSales:248701, freight:5572},
+  opex: {adminPayroll:70635, facilities:36668, softwareMaint:54781,
+    profServices:59667, badDebt:-12431, auto:8102,
+    marketing:20060, officeSupplies:10459, charitable:13141,
+    education:5287, financeCharges:16493, travel:5678,
+    insurance:6884, taxes:4311,
+    officeLease:21807, repairs:781, utilities:14080}
+};
 
 // ═══════════════════════════════════════════════════════════════
 // 2023 — Estimated monthly from annual totals ($27.7M rev / $3.4M net)
 // Labor not separated in accounting until 2024. Using estimated splits.
 // Source: Citrin Cooperman annual P&L (3/24/2026 export)
 // ═══════════════════════════════════════════════════════════════
-const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0};
+const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0, r_and_d:0};
 // FY 2023 Year End — Annual totals from Citrin Cooperman ($27.7M revenue)
 const FY23 = makeMonth('FY 2023',
-  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0, subcontracted:0},
-  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0, subcontracted:0},
+  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:3500004, project:500004, hc:HC}, 1500000,
   {payroll:1819356, facilities:443736, operating:769380, marketing:75780, ga:399336, taxIns:105660}, -759576, 40560);
 
 // FY 2024 Year End — Annual totals from Citrin Cooperman ($22.1M revenue)
 const FY24 = makeMonth('FY 2024',
-  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0, subcontracted:0},
-  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0, subcontracted:0},
+  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:4111560, project:600000, hc:HC}, 1706640,
   {payroll:1417800, facilities:485556, operating:857964, marketing:132240, ga:389424, taxIns:78084}, -884388, 60996);
 
@@ -599,64 +664,64 @@ const FY24 = makeMonth('FY 2024',
 // COGS "Recurring Resale" split across depts by revenue proportion
 // ═══════════════════════════════════════════════════════════════
 const JAN25 = makeMonth('Jan 25',
-  {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0, subcontracted:0},
-  {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0, subcontracted:0},
+  {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:227678, project:69884, hc:HC}, 174805,
   {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:20205, taxIns:7425}, -17131, 2920);
 const FEB25 = makeMonth('Feb 25',
-  {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0, subcontracted:0},
-  {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0, subcontracted:0},
+  {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:203182, project:64602, hc:HC}, 166242,
   {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:23341, taxIns:7419}, -56287, 2691);
 const MAR25 = makeMonth('Mar 25',
-  {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0, subcontracted:0},
-  {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0, subcontracted:0},
+  {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:227117, project:71122, hc:HC}, 145044,
   {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:18959, taxIns:7430}, -25355, 15867);
 const APR25 = makeMonth('Apr 25',
-  {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0, subcontracted:0},
-  {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0, subcontracted:0},
+  {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:194932, project:67481, hc:HC}, 128044,
   {payroll:76476, facilities:39645, operating:94847, marketing:8153, ga:15130, taxIns:6410}, -26506, 0);
 const MAY25 = makeMonth('May 25',
-  {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0, subcontracted:0},
-  {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0, subcontracted:0},
+  {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:203541, project:64595, hc:HC}, 136510,
   {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:18050, taxIns:5501}, -37385, 1202);
 const JUN25 = makeMonth('Jun 25',
-  {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0, subcontracted:0},
-  {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0, subcontracted:0},
+  {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:205476, project:61677, hc:HC}, 129570,
   {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:17197, taxIns:6826}, -43058, 2047);
 const JUL25 = makeMonth('Jul 25',
-  {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0, subcontracted:0},
-  {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0, subcontracted:0},
+  {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:218508, project:65070, hc:HC}, 147139,
   {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:23977, taxIns:6081}, -30397, 1048);
 const AUG25 = makeMonth('Aug 25',
-  {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0, subcontracted:0},
-  {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0, subcontracted:0},
+  {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:189126, project:64553, hc:HC}, 145868,
   {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:16742, taxIns:6091}, -52865, 1470);
 const SEP25 = makeMonth('Sep 25',
-  {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0, subcontracted:0},
-  {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0, subcontracted:0},
+  {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:210696, project:55387, hc:HC}, 147595,
   {payroll:75368, facilities:32562, operating:124862, marketing:14315, ga:22849, taxIns:14268}, -16860, 5382);
 const OCT25 = makeMonth('Oct 25',
-  {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0, subcontracted:0},
-  {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0, subcontracted:0},
+  {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:206820, project:57904, hc:HC}, 197590,
   {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:25910, taxIns:9950}, -66612, 0);
 const NOV25 = makeMonth('Nov 25',
-  {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0, subcontracted:0},
-  {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0, subcontracted:0},
+  {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:174861, project:51988, hc:HC}, 111629,
   {payroll:54724, facilities:44444, operating:125361, marketing:15176, ga:33809, taxIns:7787}, -21706, 0);
 // ⚠️ Dec 25: Year-end adjustments including $325K direct labor (YE payroll corrections), $135K insurance cleanup, $302K operating expenses, and $601K favorable other income adjustments.
 const DEC25 = makeMonth('Dec 25',
-  {managed_services:581894, security:152186, cloud_hosting:11863, hw_sw_resale:324300, professional_services:66099, ai_consulting:0, subcontracted:0},
-  {managed_services:35508, security:66787, cloud_hosting:40783, hw_sw_resale:220424, professional_services:2305, ai_consulting:0, subcontracted:0},
+  {managed_services:581894, security:152186, cloud_hosting:11863, hw_sw_resale:324300, professional_services:66099, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:35508, security:66787, cloud_hosting:40783, hw_sw_resale:220424, professional_services:2305, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:325620, project:-2116, hc:HC}, 31075,
   {payroll:71324, facilities:46712, operating:301681, marketing:13014, ga:33590, taxIns:143390}, 193794, 6023);
 DEC25._note = 'Dec 25: YE payroll adjustments +$161K, insurance cleanup $135K, operating expenses $302K including PAGA accrual $137K, other income favorable +$601K';
@@ -669,11 +734,29 @@ DEC25._note = 'Dec 25: YE payroll adjustments +$161K, insurance cleanup $135K, o
 // GP after labor: 575,657 | Sales Labor: 114,856 | OpEx: 363,333
 // Operating Net Income: 97,468 | Other: -34,560 | Tax: 104 | Net Income: 62,804
 const FEB26 = makeMonth('Feb 26',
-  {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620, professional_services:20890, subcontracted:3570, ai_consulting:0},
-  {managed_services:43304, security:72977, cloud_hosting:9883, hw_sw_resale:367999, professional_services:0, subcontracted:2975, ai_consulting:0},
-  {direct:134465, project:49371, hc:{managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0}},
+  // Revenue by department
+  {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620,
+   professional_services:20890, subcontracted:3570, ai_consulting:0, r_and_d:0},
+  // COGS by department (before labor)
+  {managed_services:43304, security:72977, cloud_hosting:9883, hw_sw_resale:367999,
+   professional_services:0, subcontracted:2975, ai_consulting:0, r_and_d:75331},
+  // Labor — per-department allocation based on headcount roster (proportional to gross wages)
+  // Total direct+project labor: $183,836 redistributed across depts
+  // MS: 62.3% Service ($114,494) + 10.9% AM ($19,982) = $134,476
+  // PS: 13.3%, Security: 8.5%, Cloud: 1.1%, HW/SW: 4.0%
+  {byDept: {
+    managed_services: 134476,    // Service: 114494 + Account Mgmt: 19982
+    professional_services: 24538,// 5 engineers @ 75% each
+    security: 15562,             // Angelica, Cory, Walski 50%
+    cloud_hosting: 1998,         // Peter Annabel 25%
+    hw_sw_resale: 7263,          // David Craig + 2 BruntWork
+    ai_consulting: 0, subcontracted: 0, r_and_d: 0  // R&D labor already in COGS ($75,331)
+  }, direct:134465, project:49371,
+  hc:{managed_services:25, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:5}},
+  // Sales labor (Sales team: DinYero, Danny, Dan 50%, Jay 80%, Nathan 50%, Joel 50%, Ricky 50%)
   114856,
-  {payroll:33491, facilities:37777, operating:216811, marketing:8685, ga:63602, taxIns:2967},
+  // OpEx breakdown (admin payroll includes G&A sub-buckets, Central Services)
+  {payroll:33491, facilities:37777, operating:141480, marketing:8685, ga:63602, taxIns:2967},
   -34560, 104
 );
 FEB26.detail = {
@@ -717,6 +800,8 @@ const ANOMALIES = {
     {type:'adjustment', category:'Internal Use Software', description:'Capitalized $91K of internal-use software development costs (moved from Direct Labor to balance sheet)', impact: 90648, dept:'general'},
   ],
   'Jan 26': [
+    {type:'adjustment', category:'New: R&D Department', description:'R&D established as a new COGS department for AI solutions initiative. James Bates (Co-CEO), Peter Annabel (75%), Timothy Stewart, Jacob Berlin, and Haskell Macaraig (1099) allocated to R&D. Jan R&D COGS: $24,295 labor + $4,628 contractor (Haskell 1099) = $28,923. YTD salary reclass posted 2/28/2026.', impact: 0, dept:'r_and_d'},
+    {type:'adjustment', category:'New: Roster-Based Labor Allocation', description:'Starting Jan 2026, direct+project labor ($287,124) is allocated across all COGS departments proportionally by gross wages from the headcount roster, replacing the legacy model that lumped all labor into Managed Services. MS: $194K, PS: $34K, Security: $22K, Cloud: $3K, HW/SW: $10K, R&D: $24K.', impact: 0, dept:'general'},
     {type:'adjustment', category:'R&D Salary Reallocation', description:'Tim, Peter, Jacob (Direct Labor) + James (Officer Comp) wages moved to R&D for AI solutions team. ~$71K in R&D wages/taxes/pension. YTD adjustment posted 2/28/2026.', impact: 71331, dept:'general'},
     {type:'expense', category:'Bad Debt Write-Off', description:'Write-off of old AP ($47,924 CA) + Luther Memorial ($12,431 OH) = $60K total bad debt', impact: -60355, dept:'general'},
     {type:'expense', category:'Business Travel', description:'Flywire Travel charge of ~$37K — one-time credit card charges', impact: -37458, dept:'general'},
@@ -726,6 +811,8 @@ const ANOMALIES = {
     {type:'expense', category:'Charitable Donation', description:'49ers Foundation $10K donation via AmEx on 1/30', impact: -10000, dept:'general'},
   ],
   'Feb 26': [
+    {type:'adjustment', category:'New: R&D Department (Month 2)', description:'R&D continues as COGS department. Feb R&D COGS: $75,331 (includes YTD retroactive adjustment from 2/28/2026 that moved Jan+Feb R&D wages from Direct Labor and Officer Comp into R&D GL accounts 61900-61940). 5 people: James Bates, Peter Annabel (75%), Tim Stewart, Jacob Berlin, Haskell Macaraig.', impact: 0, dept:'r_and_d'},
+    {type:'adjustment', category:'Roster-Based Labor Allocation (Month 2)', description:'Feb labor allocation: $183,836 direct+project labor distributed across COGS departments by headcount roster. MS: $134K (62.3%), PS: $25K (13.3%), Security: $16K (8.5%), Cloud: $2K (1.1%), HW/SW: $7K (4.0%). R&D labor tracked separately in GL.', impact: 0, dept:'general'},
     {type:'adjustment', category:'R&D Salary Reallocation', description:'YTD adjustment on 2/28/2026 finalized — Direct Labor (Tim, Peter, Jacob) and Officer Comp (co-CEO James) wages moved to R&D for AI solutions build. Feb R&D shows only $4.6K after retroactive adjustment.', impact: 0, dept:'general'},
     {type:'expense', category:'Business Travel', description:'Flywire Travel charge of $20,542 — one-time credit card expense', impact: -20542, dept:'general'},
     {type:'expense', category:'Professional Services', description:'Citrin Cooperman bill increased ~$9K + Silvermine AI $3,750 for AI consulting', impact: -12750, dept:'general'},
@@ -848,6 +935,7 @@ const NAV = [
   {id:'departments', label:'Departments', icon:'🏢'},
   {id:'grossprofit', label:'Gross Profit', icon:'💰'},
   {id:'pnl', label:'P&L Detail', icon:'📄'},
+  {id:'labor', label:'Labor Allocation', icon:'👥'},
   {id:'advisor', label:'Intelligence', icon:'🧠'},
   {id:'data', label:'Import Data', icon:'📤'},
 ];
@@ -885,6 +973,7 @@ function render() {
   else if (state.view === 'departments') renderDeptList(main);
   else if (state.view === 'grossprofit') renderGrossProfit(main);
   else if (state.view === 'pnl') renderPnL(main);
+  else if (state.view === 'labor') renderLaborAllocation(main);
   else if (state.view === 'advisor') renderAdvisor(main);
 }
 
@@ -972,36 +1061,33 @@ function renderDashboard(el) {
       <div class="chart-card"><div class="chart-title">Stacked Revenue by Department</div><canvas id="chart-stacked" height="150"></canvas></div>
       <div class="chart-card"><div class="chart-title">Gross Margin vs. Benchmarks</div><canvas id="chart-margins" height="150"></canvas></div>
     </div>
-    <!-- SOLD NOT INVOICED SECTION -->
-    <div class="section-title" style="margin-top:20px">Pipeline Revenue — Sold Not Yet Invoiced</div>
-    <div class="section-sub">Products ordered and received but not yet invoiced — revenue and profit not yet recognized</div>
-    <div class="sni-grid">
-      <div class="sni-card">
-        <div class="sni-header">📦 Ordered — Not Invoiced</div>
-        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue)}</span></div>
-        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost)}</span></div>
-        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${SNI_DATA.ordered.profit >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit)}</span></div>
-        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${SNI_DATA.ordered.revenue > 0 ? fmtP(SNI_DATA.ordered.profit / SNI_DATA.ordered.revenue * 100) : '—'}</span></div>
-        <div class="sni-count">${SNI_DATA.ordered.count} orders</div>
-      </div>
-      <div class="sni-card">
-        <div class="sni-header">✅ Received — Not Invoiced</div>
-        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.received.revenue)}</span></div>
-        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.received.cost)}</span></div>
-        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${SNI_DATA.received.profit >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.received.profit)}</span></div>
-        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${SNI_DATA.received.revenue > 0 ? fmtP(SNI_DATA.received.profit / SNI_DATA.received.revenue * 100) : '—'}</span></div>
-        <div class="sni-count">${SNI_DATA.received.count} orders</div>
-      </div>
-      <div class="sni-card sni-card-total">
-        <div class="sni-header">🚚 Ordered — Not Yet Received</div>
-        <div class="sni-row"><span class="sni-label">Revenue (Sell Price)</span><span class="sni-val">${fmt(SNI_DATA.ordered.revenue - SNI_DATA.received.revenue)}</span></div>
-        <div class="sni-row"><span class="sni-label">Cost</span><span class="sni-val" style="color:var(--red)">${fmt(SNI_DATA.ordered.cost - SNI_DATA.received.cost)}</span></div>
-        <div class="sni-row sni-total"><span class="sni-label">Gross Profit</span><span class="sni-val" style="color:${(SNI_DATA.ordered.profit - SNI_DATA.received.profit) >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(SNI_DATA.ordered.profit - SNI_DATA.received.profit)}</span></div>
-        <div class="sni-row"><span class="sni-label">Margin</span><span class="sni-val">${(SNI_DATA.ordered.revenue - SNI_DATA.received.revenue) > 0 ? fmtP((SNI_DATA.ordered.profit - SNI_DATA.received.profit) / (SNI_DATA.ordered.revenue - SNI_DATA.received.revenue) * 100) : '—'}</span></div>
-        <div class="sni-count">${Math.max(0, SNI_DATA.ordered.count - SNI_DATA.received.count)} orders in transit</div>
-      </div>
+    <!-- PRODUCTS ORDERED NOT INVOICED — Customer Detail Table -->
+    <div class="section-title" style="margin-top:20px">Products Ordered — Not Yet Invoiced</div>
+    <div class="section-sub">Products sold but not yet delivered/invoiced — revenue and profit not yet recognized | ${SNI_TOTALS.customers} customers, ${SNI_TOTALS.items.toLocaleString()} line items, ${SNI_TOTALS.orders} orders</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+      <div class="kpi-card" style="padding:12px 16px"><div class="kpi-label">Total Sell Price</div><div class="kpi-value" style="font-size:18px">${fmt(SNI_TOTALS.rev)}</div></div>
+      <div class="kpi-card" style="padding:12px 16px"><div class="kpi-label">Total Cost</div><div class="kpi-value" style="font-size:18px;color:var(--red)">${fmt(SNI_TOTALS.cost)}</div></div>
+      <div class="kpi-card" style="padding:12px 16px"><div class="kpi-label">Gross Profit</div><div class="kpi-value" style="font-size:18px;color:var(--green)">${fmt(SNI_TOTALS.profit)}</div></div>
+      <div class="kpi-card" style="padding:12px 16px"><div class="kpi-label">Blended Margin</div><div class="kpi-value" style="font-size:18px">${SNI_TOTALS.margin}%</div></div>
     </div>
-    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: Power BI — Sold Not Invoiced Report | Data as of: ${SNI_DATA.asOf} | Last synced: ${SNI_DATA.lastSynced ? new Date(SNI_DATA.lastSynced).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true}) : '—'}</div>
+    <div style="margin-bottom:8px"><input id="sni-search" placeholder="Search customers..." oninput="filterSNI()" style="padding:6px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;width:280px;outline:none"></div>
+    <div style="max-height:500px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px">
+      <table id="sni-table" style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead style="position:sticky;top:0;background:#f8f9fa;z-index:1">
+          <tr style="border-bottom:2px solid #e0e0e0;color:#6b7280;font-size:11px">
+            <th style="text-align:left;padding:8px 10px;cursor:pointer" onclick="sortSNI('c')">Customer</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('rev')">Sell Price</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('cost')">Cost</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('profit')">Profit</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('margin')">Margin</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('items')">Items</th>
+            <th style="text-align:right;padding:8px 10px;cursor:pointer" onclick="sortSNI('orders')">Orders</th>
+          </tr>
+        </thead>
+        <tbody id="sni-body"></tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: C360 Procurement — Product Ordered Not Invoiced | Date range: 4/1/2025 – 3/31/2026 | Exported: ${SNI_TOTALS.asOf}</div>
   </div>`;
 
   // Charts
@@ -1045,8 +1131,40 @@ function renderDashboard(el) {
       }, options:{responsive:true, scales:{y:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#e5e7eb'}},x:{grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10}}}}
     });
     // (Waterfall chart removed)
+    // Render SNI table
+    renderSNITable();
   }, 50);
 }
+
+// ── SNI Table (Products Ordered Not Invoiced) ──
+let sniSortKey = 'rev', sniSortAsc = false;
+function renderSNITable() {
+  const body = document.getElementById('sni-body');
+  if (!body) return;
+  const search = (document.getElementById('sni-search')?.value || '').toLowerCase();
+  let data = SNI_CUSTOMERS.filter(r => !search || r.c.toLowerCase().includes(search));
+  data.sort((a,b) => {
+    const va = a[sniSortKey], vb = b[sniSortKey];
+    if (typeof va === 'string') return sniSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return sniSortAsc ? va - vb : vb - va;
+  });
+  const fc = v => v===0?'—':'$'+Math.abs(Math.round(v)).toLocaleString();
+  body.innerHTML = data.map((r,i) => `<tr style="border-bottom:1px solid #f0f0f0;${i%2?'background:#fafafa':''}">
+    <td style="padding:6px 10px;font-weight:500;color:#1a1a1a;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.c}</td>
+    <td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums">${fc(r.rev)}</td>
+    <td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums;color:#dc2626">${fc(r.cost)}</td>
+    <td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums;color:${r.profit>=0?'#16a34a':'#dc2626'}">${r.profit<0?'($'+Math.abs(Math.round(r.profit)).toLocaleString()+')':fc(r.profit)}</td>
+    <td style="padding:6px 10px;text-align:right;color:${r.margin>=40?'#16a34a':r.margin<20?'#dc2626':'#1a1a1a'}">${r.margin.toFixed(1)}%</td>
+    <td style="padding:6px 10px;text-align:right;color:#6b7280">${r.items}</td>
+    <td style="padding:6px 10px;text-align:right;color:#6b7280">${r.orders}</td>
+  </tr>`).join('');
+}
+function sortSNI(key) {
+  if (sniSortKey === key) sniSortAsc = !sniSortAsc;
+  else { sniSortKey = key; sniSortAsc = key === 'c'; }
+  renderSNITable();
+}
+function filterSNI() { renderSNITable(); }
 
 function kpiCard(title, value, change, sub, color, isPP) {
   const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '';
@@ -1191,7 +1309,8 @@ function getDeptDetailLines(deptId, m) {
       hw_sw_resale: {rev:[], cogs:[]},
       professional_services: {rev:[], cogs: psLabor},
       subcontracted: {rev:[], cogs:[]},
-      ai_consulting: {rev:[], cogs:[]}
+      ai_consulting: {rev:[], cogs:[]},
+      r_and_d: {rev:[], cogs:[]}
     };
     const dept = laborOnly[deptId] || {rev:[], cogs:[]};
     return {rev: dept.rev, cogs: dept.cogs.filter(r => r.val > 0)};
@@ -1224,7 +1343,8 @@ function getDeptDetailLines(deptId, m) {
       rev: [{name:'Subcontracted',val:d.rev.subcontracted||0}],
       cogs: [{name:'Subcontracted',val:d.cogs.subcontractor||0}]
     },
-    ai_consulting: { rev:[], cogs:[] }
+    ai_consulting: { rev:[], cogs:[] },
+    r_and_d: { rev:[], cogs:[] }
   };
   const dept = lines[deptId] || {rev:[], cogs:[]};
   return {rev: dept.rev.filter(r=>r.val>0), cogs: dept.cogs.filter(r=>r.val>0)};
@@ -1258,7 +1378,7 @@ function renderDeptList(el) {
 
 // ═══════════════════════════════════════════════════════════════
 // SHARED TABLE ENGINE for Gross Profit & P&L views
-// Columns: 3 prior months | Current (bold) | MOM Δ | MOM % | 3-MO AVG | VS AVG Δ | VS AVG %
+// Columns: 3 prior months | Current (bold) | MOM Δ | MOM % | 3-MO AVG | VS AVG Δ | VS AVG % | L12M BEST (high rev/low cost) | VS L12M Δ | VS L12M % | ATH | VS ATH Δ | VS ATH %
 // ═══════════════════════════════════════════════════════════════
 function pnlTableEngine() {
   const si = getSelIdx();
@@ -1278,7 +1398,7 @@ function pnlTableEngine() {
   // Check if previous entry in window is FY (suppress MOM if mixing FY vs monthly)
   const prevInWindow = curIdx > 0 ? mData[curIdx - 1] : null;
   const suppressMOM = !isCurFY && prevInWindow && prevInWindow.month.startsWith('FY');
-  const activeDepts = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0));
+  const activeDepts = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0 || m.d[d.id].cogs > 0));
 
   function fc(v) {
     if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
@@ -1309,12 +1429,50 @@ function pnlTableEngine() {
     return avgData.reduce((s, m) => s + (getter(m) || 0), 0) / avgData.length;
   }
 
+  // Months to exclude from ATH/L12M comparisons (one-off anomalies that distort benchmarks)
+  const ATH_EXCLUDE = ['Dec 25'];
+
+  // Last 12 months data (monthly only, exclude FY, exclude current, exclude anomalous)
+  const l12Idxs = [];
+  for (let i = si - 1; i >= 0; i--) {
+    if (DATA[i].month.startsWith('FY')) continue;
+    if (ATH_EXCLUDE.includes(DATA[i].month)) continue;
+    l12Idxs.push(i);
+    if (l12Idxs.length >= 12) break;
+  }
+  const l12Data = l12Idxs.map(i => DATA[i]);
+  // L12M Best: for revenue = highest in L12M, for costs = lowest in L12M
+  function l12Best(getter, isCost) {
+    if (l12Data.length === 0) return {val: 0, month: '—'};
+    let bestIdx = 0;
+    let bestVal = getter(l12Data[0]) || 0;
+    l12Data.forEach((m, i) => {
+      const v = getter(m) || 0;
+      if (isCost ? v < bestVal : v > bestVal) { bestVal = v; bestIdx = i; }
+    });
+    return {val: bestVal, month: l12Data[bestIdx].month};
+  }
+
+  // All-time high data (monthly only, exclude FY, exclude current, exclude anomalous)
+  // Always returns the HIGHEST value — true all-time high for revenue or cost
+  const athMonthly = DATA.filter((m, i) => !m.month.startsWith('FY') && i !== si && !ATH_EXCLUDE.includes(m.month));
+  function ath(getter) {
+    if (athMonthly.length === 0) return {val: 0, month: '—'};
+    let bestIdx = 0;
+    let bestVal = getter(athMonthly[0]) || 0;
+    athMonthly.forEach((m, i) => {
+      const v = getter(m) || 0;
+      if (v > bestVal) { bestVal = v; bestIdx = i; }
+    });
+    return {val: bestVal, month: athMonthly[bestIdx].month};
+  }
+
   // Suppress MOM/AVG analysis for 2023-2024 (estimated from annual totals, not real monthly data)
   const isEstimated = cur.month && cur.month.startsWith('FY');
-  const analysisCols = isEstimated ? 0 : 5;
+  const analysisCols = isEstimated ? 0 : 11;
   const colCount = mData.length + analysisCols + (isEstimated ? 0 : 1);
   const thMonths = mData.map((m, i) => `<th class="${i === curIdx ? 'gp-cur' : ''}">${m.month}</th>`).join('');
-  const thAnalysis = isEstimated ? '<th class="gp-sep" style="font-size:11px;color:#9ca3af;font-style:italic" colspan="1">Estimated from annual totals</th>' : `<th class="gp-sep">MOM Δ</th><th>MOM %</th><th class="gp-sep">3-MO AVG</th><th>VS AVG Δ</th><th>VS AVG %</th>`;
+  const thAnalysis = isEstimated ? '<th class="gp-sep" style="font-size:11px;color:#9ca3af;font-style:italic" colspan="1">Estimated from annual totals</th>' : `<th class="gp-sep">MOM Δ</th><th>MOM %</th><th class="gp-sep">3-MO AVG</th><th>VS AVG Δ</th><th>VS AVG %</th><th class="gp-sep">L12M BEST</th><th>VS L12M Δ</th><th>VS L12M %</th><th class="gp-sep">ATH</th><th>VS ATH Δ</th><th>VS ATH %</th>`;
 
   function divRow(label) {
     return `<tr class="gp-div-row"><td colspan="${colCount}">${label}</td></tr>`;
@@ -1332,9 +1490,18 @@ function pnlTableEngine() {
 
     if (isPct) {
       const dash = '<span style="color:#9ca3af">—</span>';
+      // For margin % rows, L12M best = highest margin, ATH = highest margin
+      const l12b = l12Data.length > 0 ? l12Best(getter, false) : {val: null, month: '—'};
+      const vsL12 = l12b.val !== null ? curVal - l12b.val : null;
+      const athObj = ath(getter);
+      const vsAth = athObj.val ? curVal - athObj.val : null;
       const pctAnalysis = isEstimated ? '' : `<td class="gp-sep" style="font-family:inherit">${suppressMOM ? dash : (prevVal !== null ? (momD >= 0 ? '+' : '') + momD.toFixed(1) + 'pts' : '—')}</td><td>${suppressMOM ? '' : ''}</td>
         <td class="gp-sep" style="font-family:inherit">${avgData.length > 0 ? fmtP(a) : '—'}</td>
-        <td style="font-family:inherit">${avgData.length > 0 ? (vsA >= 0 ? '+' : '') + vsA.toFixed(1) + 'pts' : '—'}</td><td></td>`;
+        <td style="font-family:inherit">${avgData.length > 0 ? (vsA >= 0 ? '+' : '') + vsA.toFixed(1) + 'pts' : '—'}</td><td></td>
+        <td class="gp-sep" style="font-family:inherit">${l12b.val !== null ? fmtP(l12b.val) + ' <span style="color:#9ca3af;font-size:10px">('+l12b.month+')</span>' : '—'}</td>
+        <td style="font-family:inherit">${vsL12 !== null ? (vsL12 >= 0 ? '+' : '') + vsL12.toFixed(1) + 'pts' : '—'}</td><td></td>
+        <td class="gp-sep" style="font-family:inherit">${athObj.val ? fmtP(athObj.val) + ' <span style="color:#9ca3af;font-size:10px">('+athObj.month+')</span>' : '—'}</td>
+        <td style="font-family:inherit">${vsAth !== null ? (vsAth >= 0 ? '+' : '') + vsAth.toFixed(1) + 'pts' : '—'}</td><td></td>`;
       return `<tr class="gp-gpm-row"><td>${label}</td>
         ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-family:inherit">${fmtP(v)}</td>`).join('')}
         ${pctAnalysis}</tr>`;
@@ -1345,8 +1512,17 @@ function pnlTableEngine() {
     const inv = !!isCost;
     const momDelta = suppressMOM ? dash : fDelta(momD, inv);
     const momPct = suppressMOM ? '' : fPct(curVal, prevVal, inv);
+    // L12M Best: revenue=highest, cost=lowest in last 12 months
+    const l12b = l12Best(getter, inv);
+    const vsL12D = curVal - l12b.val;
+    // ATH columns — all-time high value for this line item
+    const athObj = ath(getter);
+    const vsAthD = curVal - athObj.val;
+    const ml = '<span style="color:#9ca3af;font-size:10px">';
     const dataAnalysis = isEstimated ? '' : `<td class="gp-sep">${momDelta}</td><td>${momPct}</td>
-      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA, inv)}</td><td>${fPct(curVal, a, inv)}</td>`;
+      <td class="gp-sep">${fc(a)}</td><td>${fDelta(vsA, inv)}</td><td>${fPct(curVal, a, inv)}</td>
+      <td class="gp-sep">${fc(l12b.val)} ${ml}(${l12b.month})</span></td><td>${fDelta(vsL12D, inv)}</td><td>${fPct(curVal, l12b.val, inv)}</td>
+      <td class="gp-sep">${fc(athObj.val)} ${ml}(${athObj.month})</span></td><td>${fDelta(vsAthD, inv)}</td><td>${fPct(curVal, athObj.val, inv)}</td>`;
     return `<tr class="${cls}"><td>${label}${flagHtml}</td>
       ${vals.map((v, i) => {
         const style = colorBySign ? (v > 0 ? 'color:var(--green);' : v < 0 ? 'color:var(--red);' : '') : isCost ? 'color:var(--red);' : isTotal ? (v < 0 ? 'color:var(--red);' : '') : '';
@@ -1357,15 +1533,23 @@ function pnlTableEngine() {
 
   // Net row for product-level: Revenue - COGS = Net, with color
   function netRow(label, revGetter, cogsGetter) {
-    const vals = mData.map(m => (revGetter(m) || 0) - (cogsGetter(m) || 0));
+    const netGetter = m => (revGetter(m) || 0) - (cogsGetter(m) || 0);
+    const vals = mData.map(m => netGetter(m));
     const curVal = vals[curIdx];
     const prevVal = curIdx > 0 ? vals[curIdx - 1] : null;
     const momD = prevVal !== null ? curVal - prevVal : 0;
-    const a = avgData.length > 0 ? avgData.reduce((s, m) => s + ((revGetter(m)||0) - (cogsGetter(m)||0)), 0) / avgData.length : 0;
+    const a = avgData.length > 0 ? avgData.reduce((s, m) => s + netGetter(m), 0) / avgData.length : 0;
     const vsA = curVal - a;
+    const l12bNet = l12Best(netGetter, false); // net = higher is better
+    const vsL12D = curVal - l12bNet.val;
+    const athNet = ath(netGetter);
+    const vsAthD = curVal - athNet.val;
     const nDash = '<span style="color:#9ca3af">—</span>';
+    const ml = '<span style="color:#9ca3af;font-size:10px">';
     const netAnalysis = isEstimated ? '' : `<td class="gp-sep">${suppressMOM ? nDash : fDelta(momD)}</td><td>${suppressMOM ? '' : fPct(curVal, prevVal)}</td>
-      <td class="gp-sep">${fNeg(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td>`;
+      <td class="gp-sep">${fNeg(a)}</td><td>${fDelta(vsA)}</td><td>${fPct(curVal, a)}</td>
+      <td class="gp-sep">${fNeg(l12bNet.val)} ${ml}(${l12bNet.month})</span></td><td>${fDelta(vsL12D)}</td><td>${fPct(curVal, l12bNet.val)}</td>
+      <td class="gp-sep">${fNeg(athNet.val)} ${ml}(${athNet.month})</span></td><td>${fDelta(vsAthD)}</td><td>${fPct(curVal, athNet.val)}</td>`;
     return `<tr class="gp-net-row"><td style="padding-left:28px">${label}</td>
       ${vals.map((v, i) => `<td class="${i === curIdx ? 'gp-cur' : ''}" style="color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${fNeg(v)}</td>`).join('')}
       ${netAnalysis}</tr>`;
@@ -1380,16 +1564,22 @@ function pnlTableEngine() {
     const momD = prevWd !== null ? curWd - prevWd : 0;
     const a = avgData.length > 0 ? Math.round(avgData.reduce((s, m) => s + (m.workingDays || 0), 0) / avgData.length) : 0;
     const vsA = curWd - a;
+    const l12bWd = l12Data.length > 0 ? l12Data.reduce((best, m) => (m.workingDays || 0) > best.val ? {val: m.workingDays, month: m.month} : best, {val: l12Data[0].workingDays || 0, month: l12Data[0].month}) : {val: 0, month: '—'};
+    const vsL12wd = curWd - l12bWd.val;
+    const athWd = athMonthly.reduce((best, m) => (m.workingDays || 0) > best.val ? {val: m.workingDays, month: m.month} : best, {val: 0, month: '—'});
+    const vsAthWd = curWd - athWd.val;
     return `<tr style="background:#f0f4ff;font-size:12px;color:#4b5563;font-weight:500"><td>Working Days (Fed. Holidays excl.)</td>
       ${vals.map((v, i) => {
         const isFY = mData[i].month.startsWith('FY');
         return `<td class="${i === curIdx ? 'gp-cur' : ''}" style="font-weight:${i === curIdx ? '700' : '500'};color:${isFY ? '#9ca3af' : v >= 22 ? '#059669' : v <= 19 ? '#d97706' : '#4b5563'}">${isFY ? '—' : v}</td>`;
       }).join('')}
       <td class="gp-sep" style="color:${momD > 0 ? '#059669' : momD < 0 ? '#dc2626' : '#9ca3af'}">${momD > 0 ? '+' : ''}${momD || '—'}</td><td></td>
-      <td class="gp-sep">${a}</td><td style="color:${vsA > 0 ? '#059669' : vsA < 0 ? '#dc2626' : '#9ca3af'}">${vsA > 0 ? '+' : ''}${vsA || '—'}</td><td></td></tr>`;
+      <td class="gp-sep">${a}</td><td style="color:${vsA > 0 ? '#059669' : vsA < 0 ? '#dc2626' : '#9ca3af'}">${vsA > 0 ? '+' : ''}${vsA || '—'}</td><td></td>
+      <td class="gp-sep">${l12bWd.val} <span style="color:#9ca3af;font-size:10px">(${l12bWd.month})</span></td><td style="color:${vsL12wd > 0 ? '#059669' : vsL12wd < 0 ? '#dc2626' : '#9ca3af'}">${vsL12wd > 0 ? '+' : ''}${vsL12wd || '—'}</td><td></td>
+      <td class="gp-sep">${athWd.val} <span style="color:#9ca3af;font-size:10px">(${athWd.month})</span></td><td style="color:${vsAthWd > 0 ? '#059669' : vsAthWd < 0 ? '#dc2626' : '#9ca3af'}">${vsAthWd > 0 ? '+' : ''}${vsAthWd || '—'}</td><td></td></tr>`;
   }
 
-  return {cur, mData, curIdx, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData, fc, fNeg, fDelta, fPct, isEstimated};
+  return {cur, mData, curIdx, colCount, thMonths, thAnalysis, activeDepts, divRow, dataRow, netRow, workingDaysRow, avgData, l12Data, athMonthly, fc, fNeg, fDelta, fPct, l12Best, ath, isEstimated};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1609,13 +1799,17 @@ function renderPnL(el) {
   rows += divRow('Gross Profit');
   rows += dataRow('Gross Profit', m => m.gp, {isTotal: true});
   rows += dataRow('GP %', m => m.gpM, {isPct: true});
+  activeDepts.forEach(dept => {
+    rows += dataRow(dept.name + ' GP', m => m.d[dept.id].gp, {indent: true, colorBySign: true});
+    rows += dataRow(dept.name + ' GP %', m => m.d[dept.id].gpM, {isPct: true});
+  });
 
   // Labor allocation reference (info only — already included in COGS above)
   rows += divRow('Labor Allocation Detail (for reference)');
-  rows += dataRow('Direct Labor → Managed Services', m => m.directLabor, {indent: true, isCost: true, flag: 'IN MS COGS', flagType: 'gp-flag-alloc'});
-  rows += dataRow('25% Project Labor → Managed Services', m => m.projLabAlloc_MS, {indent: true, isCost: true, flag: 'IN MS COGS', flagType: 'gp-flag-alloc'});
-  rows += dataRow('PS Head ($11K) → Security', m => m.projLabAlloc_Sec, {indent: true, isCost: true, flag: 'IN SEC COGS', flagType: 'gp-flag-alloc'});
-  rows += dataRow('Project Labor (Remaining) → Prof. Services', m => m.projLabRemaining, {indent: true, isCost: true, flag: 'IN PS COGS', flagType: 'gp-flag-alloc'});
+  rows += dataRow('Total COGS Labor', m => m.totLab, {bold: true, isCost: true, flag: 'ALLOCATED', flagType: 'gp-flag-alloc'});
+  activeDepts.forEach(dept => {
+    rows += dataRow('Labor → ' + dept.name, m => m.d[dept.id].labAlloc || 0, {indent: true, isCost: true, flag: 'IN COGS', flagType: 'gp-flag-alloc'});
+  });
 
   // Sales
   rows += divRow('Sales Labor');
@@ -1736,6 +1930,286 @@ function buildAnomalyHtml() {
   return html;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// LABOR ALLOCATION VIEW
+// ═══════════════════════════════════════════════════════════════
+function renderLaborAllocation(el) {
+  const L = latest();
+  const fc = v => v===0?'—':'$'+Math.round(Math.abs(v)).toLocaleString();
+
+  // ── LABOR ALLOCATION DATA (Feb 2026 headcount roster-based) ──
+  const LABOR_DATA = {
+    cogs: [
+      { name:'Managed IT — Service Delivery', emoji:'🖥️', color:'#3b82f6',
+        pnlAlloc: 114494, pnlPct:'62.3%',
+        people:[
+          {n:'Brandon Johnson',t:'Natl Dir. of Service Delivery',type:'W-2',g:8464,p:'100%'},
+          {n:'William Doyle',t:'Service Escalation Engineer',type:'W-2',g:9024,p:'100%'},
+          {n:'Gabriel Espinoza',t:'Service Escalation Engineer',type:'W-2',g:7387,p:'100%'},
+          {n:'Kerr Conkle',t:'Service Manager',type:'W-2',g:6541,p:'100%'},
+          {n:'Michelle Contreras',t:'Service Team Lead',type:'W-2',g:6150,p:'100%'},
+          {n:'Nathan Lanning',t:'Service Engineer I',type:'W-2',g:6138,p:'100%'},
+          {n:'Mark Mercer',t:'Escalation Technician II',type:'W-2',g:6337,p:'100%'},
+          {n:'Henry Martinez',t:'Service Technician',type:'W-2',g:5928,p:'100%'},
+          {n:'Matthew Irick',t:'Service Escalation Engineer',type:'W-2',g:5904,p:'100%'},
+          {n:'Colton Keim',t:'Field Service Technician I',type:'W-2',g:5455,p:'100%'},
+          {n:'Michael Trude',t:'Service Team Lead',type:'W-2',g:5385,p:'100%'},
+          {n:'Sam Dean',t:'Service Team Lead',type:'W-2',g:5252,p:'100%'},
+          {n:'Luis Pena',t:'Team Lead',type:'W-2',g:5137,p:'100%'},
+          {n:'Arnold Vega',t:'Service Technician I',type:'W-2',g:4552,p:'100%'},
+          {n:'Brandon Hulsey-Cedeno',t:'Service Team Lead',type:'W-2',g:4398,p:'100%'},
+          {n:'Cristina Chavez Soto',t:'Service Technician I',type:'W-2',g:4286,p:'100%'},
+          {n:'Oscar Contreras',t:'Service Technician I',type:'W-2',g:4366,p:'100%'},
+          {n:'Tommy Wijaya',t:'Service Technician I',type:'W-2',g:4027,p:'100%'},
+          {n:'Nathaniel Dupray',t:'Service Technician I',type:'W-2',g:4003,p:'100%'},
+          {n:'Kevin Barr',t:'Helpdesk Technician',type:'W-2',g:3848,p:'100%'},
+          {n:'Cole Matuszynski',t:'Tier 1 Service Technician',type:'W-2',g:3282,p:'100%'},
+          {n:'Christopher Vouis',t:'Bench Technician',type:'W-2',g:3057,p:'100%'},
+          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:2212,p:'25%'},
+          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:2080,p:'25%'},
+          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:1866,p:'25%'},
+          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:1767,p:'25%'},
+          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:1524,p:'25%'},
+          {n:'Hoover Dimson',t:'Service Technician I',type:'BruntWork',g:1265,p:'100%'},
+          {n:'Jenny Magcalayo',t:'Service Technician I',type:'BruntWork',g:1323,p:'100%'},
+          {n:'Girly De La Pena',t:'Service Technician I',type:'BruntWork',g:1309,p:'100%'},
+        ]},
+      { name:'Managed IT — Account Management', emoji:'🖥️', color:'#60a5fa',
+        pnlAlloc: 19982, pnlPct:'10.9%',
+        people:[
+          {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
+          {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
+          {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
+          {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:1385,p:'20%'},
+          {n:'Edwin De Guzman',t:'Sales Coordinator',type:'Microsourcing',g:2074,p:'100%'},
+          {n:'Hermella Mulugeta',t:'Inside Account Manager',type:'CRDLE',g:1600,p:'100%'},
+          {n:'MJ Martinez',t:'Business Ops Sales Specialist',type:'Gusto 1099',g:2308,p:'100%'},
+          {n:'Julissa Martinez Duran',t:'Inside Account Manager',type:'Gusto 1099',g:2123,p:'100%'},
+          {n:'Carla Humber Munguia',t:'Inside Account Manager',type:'Direct',g:2500,p:'100%'},
+        ]},
+      { name:'Projects / Prof. Services', emoji:'🔧', color:'#10b981',
+        pnlAlloc: 24538, pnlPct:'13.3%',
+        people:[
+          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:6636,p:'75%'},
+          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:6239,p:'75%'},
+          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:5598,p:'75%'},
+          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:5302,p:'75%'},
+          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:4571,p:'75%'},
+        ]},
+      { name:'Security (MDR/SOC)', emoji:'🛡️', color:'#ef4444',
+        pnlAlloc: 15562, pnlPct:'8.5%',
+        people:[
+          {n:'Angelica Jackson',t:'Security Analyst',type:'W-2',g:6540,p:'100%'},
+          {n:'Cory Strassell',t:'Service Escalation Engineer',type:'W-2',g:5937,p:'100%'},
+          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
+        ]},
+      { name:'Cloud & Hosting', emoji:'☁️', color:'#8b5cf6',
+        pnlAlloc: 1998, pnlPct:'1.1%',
+        people:[
+          {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:2308,p:'25%'},
+        ]},
+      { name:'HW/SW Resale', emoji:'📦', color:'#f59e0b',
+        pnlAlloc: 7263, pnlPct:'4.0%',
+        people:[
+          {n:'David Craig',t:'Procurement Manager',type:'W-2',g:5771,p:'100%'},
+          {n:'Genelyn Terrones',t:'Procurement Specialist',type:'BruntWork',g:1540,p:'100%'},
+          {n:'Carrlyne David',t:'Procurement Specialist',type:'BruntWork',g:1079,p:'100%'},
+        ]},
+    ],
+    rd: { name:'R&D', emoji:'🧪', color:'#7c3aed', pnlTotal:75331,
+      people:[
+        {n:'James Bates',t:'Co-CEO',type:'W-2',g:6550,p:'100%'},
+        {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:6925,p:'75%'},
+        {n:'Timothy Stewart',t:'Dir. of Service Optimization',type:'W-2',g:6722,p:'100%'},
+        {n:'Jacob Berlin',t:'Data Engineer',type:'W-2',g:1000,p:'100%'},
+        {n:'Haskell Macaraig',t:'Data Engineer',type:'1099',g:4000,p:'100%'},
+      ]},
+    sales: { name:'Sales', emoji:'💼', pnlTotal:114856,
+      people:[
+        {n:'DinYero Johnson',t:'Sales',type:'W-2',g:14618,p:'100%'},
+        {n:'Daniel Chadwell',t:'Sales Engineer Lead',type:'W-2',g:7156,p:'100%'},
+        {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
+        {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:5540,p:'80%'},
+        {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
+        {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
+        {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
+      ]},
+    ga: [
+      { name:'G&A > Sr Leadership', emoji:'👔',
+        people:[
+          {n:'David Darmstandler',t:'Co-CEO',type:'W-2',g:8299,p:'100%'},
+          {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
+          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
+          {n:'Consulting & Office Space',t:'',type:'Consulting',g:25500,p:''},
+        ]},
+      { name:'G&A > Central Services', emoji:'🏢',
+        people:[
+          {n:'Marshall Rownd',t:'IT Director',type:'W-2',g:9233,p:'100%'},
+          {n:'Devin Peterson',t:'Sr. Systems Analyst',type:'W-2',g:7156,p:'100%'},
+        ]},
+      { name:'G&A > Finance', emoji:'💰',
+        people:[
+          {n:'Melinda Hennington',t:'Admin Finance',type:'W-2',g:6975,p:'100%'},
+          {n:'Jaquelene Dizon',t:'Payroll Analyst',type:'Microsourcing',g:1922,p:'100%'},
+        ]},
+      { name:'G&A > Marketing', emoji:'📣',
+        people:[
+          {n:'Myca Villanueva',t:'RevOps Specialist',type:'Microsourcing',g:1985,p:'100%'},
+        ]},
+      { name:'G&A > HR', emoji:'🧑‍💼',
+        people:[
+          {n:'Nahili Bekele',t:'HR Manager',type:'CRDLE',g:1600,p:'100%'},
+        ]},
+      { name:'G&A > Admin', emoji:'📋',
+        people:[
+          {n:'Colin Bates',t:'Part-time',type:'W-2',g:1760,p:'100%'},
+          {n:'Hudson Darmstandler',t:'Part-time',type:'W-2',g:1760,p:'100%'},
+        ]},
+    ],
+  };
+
+  // ── Helper: type badge ──
+  function typeBadge(t) {
+    const colors = {'W-2':['#dbeafe','#1e40af'],'BruntWork':['#f3e8ff','#6b21a8'],
+      'Microsourcing':['#f3e8ff','#6b21a8'],'CRDLE':['#f3e8ff','#6b21a8'],
+      'Gusto 1099':['#fef3c7','#92400e'],'1099':['#fef3c7','#92400e'],
+      'Direct':['#dcfce7','#166534'],'Consulting':['#fef3c7','#92400e']};
+    const c = colors[t]||['#f1f5f9','#475569'];
+    return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;background:${c[0]};color:${c[1]}">${t}</span>`;
+  }
+
+  // ── Helper: people table ──
+  function peopleTable(people) {
+    const totalGross = people.reduce((s,p)=>s+p.g,0);
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
+      <tr style="color:#6b7280;font-size:11px;border-bottom:1px solid #e0e0e0">
+        <th style="text-align:left;padding:4px 8px">Name</th>
+        <th style="text-align:left;padding:4px 8px">Title</th>
+        <th style="text-align:center;padding:4px 8px">Type</th>
+        <th style="text-align:right;padding:4px 8px">Gross/Mo</th>
+        <th style="text-align:right;padding:4px 8px">Alloc %</th>
+      </tr>
+      ${people.map(p => `<tr style="border-bottom:1px solid #f0f0f0">
+        <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">${p.n}</td>
+        <td style="padding:4px 8px;color:#6b7280">${p.t}</td>
+        <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}</td>
+        <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:#374151">${fc(p.g)}</td>
+        <td style="padding:4px 8px;text-align:right;color:${p.p==='100%'?'#6b7280':'#b45309'};font-size:11px">${p.p}</td>
+      </tr>`).join('')}
+      <tr style="border-top:2px solid #d1d5db;font-weight:700;color:#1a1a1a">
+        <td style="padding:6px 8px" colspan="3">Total (${people.filter(p=>p.t).length} people)</td>
+        <td style="padding:6px 8px;text-align:right">${fc(totalGross)}</td><td></td>
+      </tr></table>`;
+  }
+
+  // ── Helper: collapsible dept block ──
+  function deptBlock(dept, pnlLine, expanded, opts) {
+    const locked = opts && opts.locked;
+    const totalGross = dept.people.reduce((s,p)=>s+p.g,0);
+    const id = dept.name.replace(/[^a-z]/gi,'');
+    if (locked) {
+      // No headcount, no drill-through — aggregate only
+      return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
+          </div>
+          <div style="display:flex;gap:16px;align-items:center">
+            ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+            <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.chevron').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾'"
+           style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="chevron" style="color:#9ca3af;font-size:12px">${expanded?'▾':'▸'}</span>
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
+          <span style="font-size:11px;color:#6b7280">${dept.people.filter(p=>p.t).length} people</span>
+          ${dept.pnlPct?`<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${dept.pnlPct} of labor pool</span>`:''}
+        </div>
+        <div style="display:flex;gap:16px;align-items:center">
+          ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+          <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
+        </div>
+      </div>
+      <div style="padding:0 16px 12px;display:${expanded?'block':'none'}">${peopleTable(dept.people)}</div>
+    </div>`;
+  }
+
+  // ── Build HTML ──
+  let html = `<div class="fade-in">${monthSelector()}
+    <div class="section-title">Labor Allocation — ${L.month}</div>
+    <div class="section-sub" style="margin-bottom:4px">Per-person allocation based on headcount roster • 58 total headcount</div>
+    <div style="font-size:11px;color:#ef4444;font-weight:600;margin-bottom:16px">CONFIDENTIAL — Do not distribute</div>`;
+
+  // Summary cards
+  const totalCogsLabor = LABOR_DATA.cogs.reduce((s,d)=>s+d.pnlAlloc,0);
+  html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #3b82f6;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">COGS Labor</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalCogsLabor)}</div>
+      <div style="font-size:10px;color:#9ca3af">6 revenue depts</div>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #7c3aed;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">R&D</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.rd.pnlTotal)}</div>
+      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.rd.people.length} people</div>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #f59e0b;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">Sales Labor</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.sales.pnlTotal)}</div>
+      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.sales.people.length} people</div>
+    </div>
+    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #9ca3af;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">G&A Total</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.ga.reduce((s,d)=>s+d.people.reduce((ss,p)=>ss+p.g,0),0))}</div>
+      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.ga.reduce((s,d)=>s+d.people.filter(p=>p.t).length,0)} people + consulting</div>
+    </div>
+  </div>`;
+
+  // COGS departments
+  html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
+    COGS Labor — Allocated to Revenue Departments
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">$183,836 total direct+project labor redistributed by gross wages</span>
+  </div>`;
+  LABOR_DATA.cogs.forEach(d => { html += deptBlock(d, d.pnlAlloc, false); });
+
+  // R&D
+  html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
+    R&D — Separate COGS
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">GL 61900/61910/61930/61940 — reclassed from operating</span>
+  </div>`;
+  html += deptBlock(LABOR_DATA.rd, LABOR_DATA.rd.pnlTotal, false);
+
+  // Sales
+  html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
+    Sales Labor — OpEx Line Item
+  </div>`;
+  html += deptBlock(LABOR_DATA.sales, LABOR_DATA.sales.pnlTotal, false);
+
+  // G&A
+  html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
+    G&A — Sub-Buckets
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Admin payroll + operating expenses</span>
+  </div>`;
+  LABOR_DATA.ga.forEach(d => {
+    const tot = d.people.reduce((s,p)=>s+p.g,0);
+    const isLocked = d.name.includes('Sr Leadership');
+    html += deptBlock(d, tot, false, isLocked ? {locked:true} : null);
+  });
+
+  html += `<div style="font-size:11px;color:#9ca3af;margin-top:16px;font-style:italic">
+    P&L line item totals include employer taxes, benefits, and overhead beyond gross wages shown per person.
+    COGS labor uses gross wages as proportional weights to redistribute $183,836 across revenue departments.
+  </div>`;
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function renderAdvisor(el) {
   const anomHtml = buildAnomalyHtml();
 
@@ -1757,6 +2231,13 @@ function renderAdvisor(el) {
         </div>
         <div class="intel-panel-body">
           <div class="intel-chat-wrap">
+            <div id="api-key-bar" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-bottom:8px;font-size:12px">
+              <span style="font-size:14px">🔑</span>
+              <input type="password" id="api-key-input" placeholder="Enter Anthropic API key (sk-ant-...)" style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;background:#fff;color:#1a1a1a">
+              <button onclick="connectApiKey()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Connect</button>
+              <button onclick="disconnectApiKey()" style="padding:6px 10px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;display:none" id="api-disconnect-btn" title="Disconnect">✕</button>
+            </div>
+            <div id="api-status" style="display:none;padding:6px 12px;border-radius:6px;margin-bottom:8px;font-size:11px;font-weight:600"></div>
             <div class="intel-chat-messages chat-messages" id="chat-messages"></div>
             <div id="quick-btns"></div>
             <div class="intel-chat-input-row">
@@ -1802,13 +2283,132 @@ function renderAdvisor(el) {
   </div>`;
   renderMessages();
   renderQuickButtons();
+  setTimeout(initApiKeyUI, 50);
 }
 
-const QUICK_QUESTIONS = ['How do we improve EBITDA?','Whats our valuation?','Analyze labor costs','Security deep dive','Benchmark us vs top MSPs','Cloud growth strategy','Add-backs strategy','R&D investment'];
+// ═══════════════════════════════════════════════════════════════
+// CLAUDE API — MSP Strategy Advisor (powered by Claude Sonnet)
+// ═══════════════════════════════════════════════════════════════
+let ANTHROPIC_API_KEY = localStorage.getItem('datapath_anthropic_key') || '';
+let conversationHistory = [];
+let advisorStreaming = false;
+
+function buildFinancialSnapshot() {
+  const L = latest(), F = DATA[0];
+  const annRev = L.totRev * 12;
+  const hc = totalHC();
+  const deptSnap = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0 || m.d[d.id].cogs > 0)).map(d => {
+    const dd = L.d[d.id];
+    return `  ${d.name}: Rev ${fmt(dd.rev)}, COGS ${fmt(dd.cogs)}, GP ${fmt(dd.gp)} (${fmtP(dd.gpM)}), HC ${dd.hc}, Labor Alloc ${fmt(dd.labAlloc||0)}`;
+  }).join('\n');
+  const momGrowth = DATA.length > 1 ? ((L.totRev - DATA[DATA.length-2].totRev) / DATA[DATA.length-2].totRev * 100).toFixed(1) : 'N/A';
+  const allLabPct = ((L.totLab + L.salesLab + L.adminLab) / L.totRev * 100).toFixed(1);
+
+  return `LIVE FINANCIAL DATA (as of ${L.month}):
+Total Revenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)
+Total COGS: ${fmt(L.totCogs)}
+Gross Profit: ${fmt(L.gp)} (${fmtP(L.gpM)})
+GP Before Labor: ${fmtP(L.gpBeforeLaborM)}
+EBITDA: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)
+Net Income: ${fmt(L.netIncome)}
+MoM Revenue Growth: ${momGrowth}%
+Headcount: ${hc} employees
+All-In Labor % of Revenue: ${allLabPct}%
+COGS Labor: ${fmt(L.totLab)} | Sales Labor: ${fmt(L.salesLab)} | Admin Payroll: ${fmt(L.adminLab)}
+
+DEPARTMENT BREAKDOWN:
+${deptSnap}
+
+OPERATING EXPENSES:
+  Admin Payroll: ${fmt(L.adminLab)}
+  Facilities: ${fmt(L.facilities)}
+  Marketing: ${fmt(L.marketing)}
+  G&A: ${fmt(L.ga)}
+  Tax & Insurance: ${fmt(L.taxIns)}
+  Total OpEx: ${fmt(L.opex)}
+
+TREND (${DATA.length} periods loaded): ${DATA.map(m => m.month + ': Rev ' + fmt(m.totRev) + ', EBITDA ' + fmtP(m.ebitdaM)).join(' | ')}`;
+}
+
+const DATAPATH_SYSTEM_PROMPT = `You are the Datapath MSP Strategy Advisor — an expert financial analyst and MSP consultant embedded in Datapath's executive dashboard. You have deep knowledge of MSP industry benchmarks, valuation multiples, and operational best practices.
+
+COMPANY CONTEXT:
+- Company: Datapath (Managed Service Provider)
+- Locations: California (primary) + Ohio
+- Co-CEOs: James Bates (R&D focus) and David Darmstandler (operations)
+- COO: Scott Gordon (consultant via CLevelAdvising LLC)
+- Accounting Firm: Citrin Cooperman (monthly P&L)
+- Goal: Maximize EBITDA for business exit at maximum valuation ($30M–$35M strategic purchase price target)
+- Headcount: ~58 employees (W-2 + offshore contractors via BruntWork, Microsourcing, CRDLE)
+
+REVENUE DEPARTMENTS (8):
+1. Managed Services (MS) — largest, recurring MRR (~$593K/mo)
+2. Security (MDR/SOC) — high-growth (~$150K/mo)
+3. Cloud & Hosting (~$66K/mo)
+4. Projects / Professional Services (~$21K/mo)
+5. Subcontracted Services (~$4K/mo)
+6. HW/SW Resale — lumpy, low margin (~$423K/mo)
+7. AI Consulting — $0 currently (future revenue line)
+8. R&D — cost center only, $0 revenue, ~$75K/mo COGS (new Jan 2026)
+
+LABOR MODEL (Jan 2026+):
+- New roster-based allocation: each employee assigned to specific department(s) with split percentages
+- Direct+project labor redistributed proportionally by gross wages across COGS departments
+- R&D team: James Bates, Peter Annabel (75%), Timothy Stewart, Jacob Berlin, Haskell Macaraig
+- R&D wages reclassified FROM Direct Labor & Officer's Comp TO R&D (YTD adjustment 2/28/2026)
+- Legacy model (2025 and prior): Direct Labor → 100% MS, 25% Project Labor → MS, rest → PS
+
+MSP INDUSTRY BENCHMARKS:
+- MS GP target: 72% (median 65%, top 78%)
+- Security GP target: 65% (top 72%)
+- Cloud GP target: 70%
+- PS GP target: 55%
+- HW/SW GP target: 22% (top 28%)
+- EBITDA: Top 22%+, Above Avg 16-22%, Median 10-16%
+- All-in labor target: <50% of revenue
+- Revenue per employee target: $200K+ (top quartile)
+
+VALUATION:
+- Target multiple: 8-11x adjusted EBITDA (strategic acquisition)
+- Every $100K in defensible add-backs = $800K–$1.1M in enterprise value
+- Key add-back categories: owner comp above market, one-time legal ($137K CA class action), bad debt ($60K Jan 26), R&D capitalization, non-recurring expenses
+- Premium drivers: >20% EBITDA margin, >70% MRR mix, strong security practice, 3-year contracts, low client concentration, documented IP/AI capabilities
+
+KEY RECENT CHANGES:
+- R&D department established Jan 2026 as separate COGS line
+- Labor allocation switched from legacy formula to roster-based per-department model (Jan+Feb 2026)
+- DinYero Johnson (sales, $14.6K/mo) and Henry Martinez (service, $5.9K/mo) departing — costs dropping
+- Products Ordered Not Invoiced (SNI): $631K across 49 customers (as of 3/6/2026)
+
+CONFIDENTIALITY:
+- Do NOT break out Scott Gordon's compensation individually — include only in aggregate Sr Leadership totals
+- Do NOT reveal individual salaries unless explicitly asked about a specific person
+
+INSTRUCTIONS:
+- Always ground your analysis in the LIVE financial data provided below
+- Reference specific numbers, not just generalities
+- Compare to industry benchmarks where relevant
+- Frame recommendations in terms of exit value impact
+- Be direct and actionable — this is for C-suite executives
+- Use dollar amounts and percentages from the actual data
+- When discussing improvements, quantify the impact (e.g., "improving MS margin by 2pp = $X/mo in GP")
+- Keep responses focused and structured but conversational`;
+
+const QUICK_QUESTIONS = [
+  'How do we improve EBITDA?',
+  'What is our valuation?',
+  'Analyze labor costs',
+  'Security deep dive',
+  'Benchmark us vs top MSPs',
+  'Cloud growth strategy',
+  'Add-backs strategy',
+  'R&D investment ROI'
+];
 
 function renderQuickButtons() {
   const el = document.getElementById('quick-btns');
   if (!el) return;
+  if (state.chatMessages.length > 1) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="quick-btns">${QUICK_QUESTIONS.map(q => `<button class="quick-btn" onclick="askQuick(this.textContent)">${q}</button>`).join('')}</div>`;
 }
 
@@ -1820,114 +2420,145 @@ function askQuick(q) {
 function renderMessages() {
   const el = document.getElementById('chat-messages');
   if (!el) return;
-  el.innerHTML = state.chatMessages.map(m => `<div class="chat-msg ${m.role}"><div class="chat-bubble">${m.content}</div></div>`).join('');
+  el.innerHTML = state.chatMessages.map(m => {
+    const escaped = m.content.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    return `<div class="chat-msg ${m.role}"><div class="chat-bubble">${escaped}</div></div>`;
+  }).join('');
   el.scrollTop = el.scrollHeight;
 }
 
-function sendChat() {
+function setApiStatus(msg, type) {
+  const el = document.getElementById('api-status');
+  if (!el) return;
+  const colors = {success:['#f0fdf4','#166534','#bbf7d0'], error:['#fef2f2','#991b1b','#fecaca'], info:['#eff6ff','#1e40af','#bfdbfe']};
+  const c = colors[type] || colors.info;
+  el.style.display = 'block';
+  el.style.background = c[0];
+  el.style.color = c[1];
+  el.style.border = '1px solid ' + c[2];
+  el.textContent = msg;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function connectApiKey() {
+  const input = document.getElementById('api-key-input');
+  const key = input.value.trim();
+  if (!key || !key.startsWith('sk-ant-')) {
+    setApiStatus('Invalid key — must start with sk-ant-', 'error');
+    return;
+  }
+  ANTHROPIC_API_KEY = key;
+  localStorage.setItem('datapath_anthropic_key', key);
+  input.value = '';
+  input.type = 'text';
+  input.value = '••••••••' + key.slice(-6);
+  input.disabled = true;
+  document.getElementById('api-disconnect-btn').style.display = 'inline-block';
+  document.querySelector('#api-key-bar button:nth-of-type(1)').style.display = 'none';
+  setApiStatus('Connected to Claude API — AI advisor is live', 'success');
+  // Re-init welcome message
+  if (state.chatMessages.length <= 1) clearChat();
+}
+
+function disconnectApiKey() {
+  ANTHROPIC_API_KEY = '';
+  localStorage.removeItem('datapath_anthropic_key');
+  const input = document.getElementById('api-key-input');
+  input.value = '';
+  input.disabled = false;
+  input.type = 'password';
+  document.getElementById('api-disconnect-btn').style.display = 'none';
+  document.querySelector('#api-key-bar button:nth-of-type(1)').style.display = 'inline-block';
+  setApiStatus('API key removed', 'info');
+  conversationHistory = [];
+}
+
+function initApiKeyUI() {
+  if (ANTHROPIC_API_KEY) {
+    const input = document.getElementById('api-key-input');
+    if (input) {
+      input.value = '••••••••' + ANTHROPIC_API_KEY.slice(-6);
+      input.disabled = true;
+      input.type = 'text';
+      document.getElementById('api-disconnect-btn').style.display = 'inline-block';
+      document.querySelector('#api-key-bar button:nth-of-type(1)').style.display = 'none';
+    }
+  }
+}
+
+async function sendChat() {
   const input = document.getElementById('chat-input');
   const q = input.value.trim();
-  if (!q) return;
+  if (!q || advisorStreaming) return;
   state.chatMessages.push({role:'user', content:q});
   input.value = '';
   renderMessages();
-  setTimeout(() => {
-    state.chatMessages.push({role:'assistant', content: genAdvisorResponse(q)});
+  renderQuickButtons();
+
+  // If no API key, fall back to a helpful message
+  if (!ANTHROPIC_API_KEY) {
+    state.chatMessages.push({role:'assistant', content:'🔑 Please connect your Anthropic API key above to enable the AI advisor.\n\nGet your key at: console.anthropic.com → API Keys → Create Key\n\nThe advisor uses Claude Sonnet to analyze your real financial data against MSP industry benchmarks.'});
     renderMessages();
-  }, 600 + Math.random()*800);
+    return;
+  }
+
+  // Build conversation with live financial context
+  const snapshot = buildFinancialSnapshot();
+  conversationHistory.push({role:'user', content:q});
+
+  // Show typing indicator
+  state.chatMessages.push({role:'assistant', content:'⏳ Analyzing...'});
+  renderMessages();
+  advisorStreaming = true;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: DATAPATH_SYSTEM_PROMPT + '\n\n' + snapshot,
+        messages: conversationHistory
+      })
+    });
+
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      throw new Error(`API ${resp.status}: ${errBody.slice(0,200)}`);
+    }
+
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || 'No response received.';
+
+    // Replace typing indicator with real response
+    state.chatMessages[state.chatMessages.length - 1].content = reply;
+    conversationHistory.push({role:'assistant', content:reply});
+    renderMessages();
+  } catch(err) {
+    console.error('Claude API error:', err);
+    state.chatMessages[state.chatMessages.length - 1].content = '❌ API Error: ' + err.message + '\n\nCheck your API key and try again. Make sure you have credits at console.anthropic.com.';
+    renderMessages();
+    // Remove failed exchange from history
+    conversationHistory.pop();
+  } finally {
+    advisorStreaming = false;
+  }
 }
 
 function clearChat() {
-  state.chatMessages = [{role:'assistant', content: 'Welcome to the Datapath MSP Advisor.\n\nI analyze your P&L data against industry benchmarks from Service Leadership, ConnectWise Peer Groups, and Kaseya.\n\nTry asking:\n• "How do we improve our EBITDA margin?"\n• "What\'s our business worth?"\n• "How does our security division compare?"\n• "Where should we focus to maximize exit value?"\n• "Analyze our labor costs"\n• "Compare us to top-performing MSPs"'}];
+  conversationHistory = [];
+  const isConnected = !!ANTHROPIC_API_KEY;
+  state.chatMessages = [{role:'assistant', content: isConnected
+    ? '🧠 Datapath MSP Strategy Advisor (powered by Claude)\n\nI have access to your live P&L data, department breakdowns, labor allocations, and industry benchmarks.\n\nAsk me anything about:\n• EBITDA optimization & valuation\n• Department margins vs benchmarks\n• Labor efficiency & allocation\n• Exit readiness & add-backs\n• Growth strategies by service line\n• R&D investment ROI'
+    : '🔑 Connect your Anthropic API key above to enable AI-powered analysis.\n\nGet your key at: console.anthropic.com → API Keys\n\nOnce connected, I can analyze your real financial data against MSP industry benchmarks using Claude AI.'}];
   renderMessages();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ADVISOR KNOWLEDGE BASE — Add custom topics here
-// Each entry: { keywords: [...], response: (L, annRev, dM) => string }
-// The advisor checks these AFTER the built-in topics. Add new business
-// intel, strategies, or context here and the advisor will use it.
-// ═══════════════════════════════════════════════════════════════
-const ADVISOR_KB = [
-  {
-    keywords: ['r&d', 'research', 'ai team', 'ai investment', 'innovation'],
-    response: (L, annRev) => {
-      const rdSpend = 75331; // Feb 26 R&D line — update monthly
-      return `🤖 R&D / AI Team Investment\n\nCurrent Team: Tim, Peter, Jacob (engineers) + James (co-CEO)\nMonthly R&D Spend: ~${fmt(rdSpend)}\nAnnualized: ~${fmt(rdSpend*12)}\n\nStrategy:\n• Building AI-powered solutions for MSP operations\n• R&D wages reclassified from Direct Labor & Officer's Comp (Jan 2026)\n• YTD adjustment finalized 2/28/2026\n\nExit Impact:\n• Productized AI IP can command 2-3x revenue multiples on that line\n• R&D investment signals innovation to strategic acquirers\n• Consider capitalizing internal-use software development (reduces OpEx, increases asset value)\n• Document all IP, patents, and proprietary tooling for due diligence\n\n📌 Key: Frame R&D as a competitive moat, not just a cost center. Acquirers pay premiums for differentiated technology.`;
-    }
-  },
-  {
-    keywords: ['add-back', 'adjusted', 'normalize', 'normalization', 'owner comp'],
-    response: (L, annRev) => {
-      const ebitda = L.ebitda * 12;
-      return `📋 EBITDA Add-Backs & Adjustments\n\nReported EBITDA: ~${fmt(ebitda)}\n\nCommon MSP Add-Backs for Adjusted EBITDA:\n1. Owner/Officer Compensation above market rate\n2. One-time legal expenses (CA Class Action reserves: $137K)\n3. One-time bad debt write-offs ($60K Jan 26)\n4. Non-recurring charitable donations\n5. Non-recurring travel/conference expenses\n6. R&D expenses (if capitalizable)\n7. Above-market rent (if owner-owned property)\n8. Personal expenses run through business\n\nTarget: Adjusted EBITDA at 8-11x multiple → $30M–$35M strategic purchase price\n\n⚠️ Add-backs must be defensible in due diligence. Work with Citrin Cooperman to document each adjustment with supporting evidence.\n\n📌 Every $100K in defensible add-backs = $800K–$1.1M in enterprise value at target multiples.`;
-    }
-  },
-  {
-    keywords: ['contract', 'term', 'agreement', 'renewal', 'churn', 'retention'],
-    response: (L, annRev) => {
-      return `📄 Contract & Retention Strategy\n\nFor Maximum Exit Value:\n\n1. Contract Terms:\n• Minimum 3-year terms with auto-renewal\n• 90-day termination notice (not 30-day)\n• Annual escalators of 3-5% (built-in growth)\n• Bundled security into base contracts (increases stickiness)\n\n2. Churn Targets:\n• Logo churn: <5% annually\n• Revenue churn: <3% (net negative with upsells)\n• Track and report monthly — acquirers will ask\n\n3. Concentration Risk:\n• No single client >10% of MRR\n• Top 10 clients <40% of total revenue\n• Document client tenure (longer = more valuable)\n\n📌 Acquirers discount for short-term contracts and high churn. Every client on a 3-year contract is worth more than one on month-to-month.`;
-    }
-  },
-];
-
-function genAdvisorResponse(question) {
-  const q = question.toLowerCase();
-  const L = latest(), F = DATA[0];
-  const annRev = L.totRev*12;
-  const dM = DEPTS.map(d=>({...d, margin:L.d[d.id].gpM, rev:L.d[d.id].rev, tgt:BM[d.id].tgt, gap:L.d[d.id].gpM-BM[d.id].tgt}));
-  const weakest = [...dM].sort((a,b)=>a.gap-b.gap)[0];
-  const strongest = [...dM].sort((a,b)=>b.gap-a.gap)[0];
-  const growth = (L.totRev-F.totRev)/F.totRev*100;
-
-  if (q.includes('ebitda') || q.includes('margin') || q.includes('profit')) {
-    const tier = L.ebitdaM>=22?'Top Performer':L.ebitdaM>=16?'Above Average':L.ebitdaM>=10?'Median':'Below Average';
-    const evPer1Pct = Math.round(annRev * 0.01 * 9.5 / 1000); // midpoint of 8-11x
-    return `📊 EBITDA Analysis for Datapath\n\nCurrent EBITDA margin: ${fmtP(L.ebitdaM)} — "${tier}" category\n\nBenchmarks (Service Leadership / ConnectWise):\n• Top Performer: 22%+\n• Above Average: 16-22%\n• Median: 10-16%\n• Below Average: <10%\n\nKey Levers:\n\n1. Managed Services Margin — Currently ${fmtP(L.d.managed_services.gpM)} vs 72% target. ${L.d.managed_services.gpM<72?'Every 1% improvement = ~$'+Math.round(L.d.managed_services.rev*0.01).toLocaleString()+'/mo':''}\n\n2. Labor Efficiency — ${fmtP(L.totLab/L.totRev*100)} of revenue. World-class MSPs target <50%\n\n3. Revenue Mix — Shift to higher-margin recurring (MS, security, cloud). Target 70%+ recurring\n\nValuation Impact: At target 8-11x adjusted EBITDA, every 1% EBITDA improvement = ~$${evPer1Pct}K in enterprise value.\n\n📌 Target: $30M–$35M strategic purchase price. Ask about "add-backs" to learn how adjusted EBITDA can boost your multiple.`;
-  }
-  if (q.includes('valuation') || q.includes('sell') || q.includes('exit') || q.includes('multiple') || q.includes('worth')) {
-    const ebitda = L.ebitda*12;
-    const adjEbitda = ebitda; // TODO: add documented add-backs for adjusted EBITDA
-    const lowEst = Math.round(adjEbitda * 8);
-    const highEst = Math.round(adjEbitda * 11);
-    return `💰 Valuation & Exit Readiness\n\nAnnualized:\n• Revenue: ~${fmt(annRev)}\n• EBITDA: ~${fmt(ebitda)}\n• EBITDA Margin: ${fmtP(L.ebitdaM)}\n\nDatapath-Specific Multiples (Strategic Acquisition):\n• Expected Range: 8-11x adjusted EBITDA\n• Estimated Strategic Purchase Price: ${fmt(lowEst)} – ${fmt(highEst)}\n• Target: $30M–$35M strategic purchase price\n\nGeneral MSP Market Multiples:\n• Premium (>20% EBITDA, >70% MRR): 8-12x\n• Above Average (15-20%): 6-8x\n• Average (10-15%): 4-6x\n• Below Average (<10%): 2-4x\n\nTo Maximize Exit Multiple:\n1. Push EBITDA to 20%+ (shifts from 6-8x to 8-11x territory)\n2. MRR to 75%+ (predictability premium — acquirers pay more for recurring)\n3. Reduce owner dependency (build management layer that runs without founders)\n4. Clean GAAP financials with documented add-backs\n5. Grow security & cloud (highest-multiple service lines)\n6. No single client >10% of revenue (concentration risk kills multiples)\n7. 3-year contracts with auto-renewal (reduces churn risk for buyer)\n8. Build AI/R&D story — differentiated IP commands premium valuations\n\n📌 Key Gap: Get adjusted EBITDA documented with defensible add-backs (one-time expenses, owner comp normalization, R&D capitalization) to reach the 8-11x range.`;
-  }
-  if (q.includes('managed service') || q.includes('recurring') || q.includes('mrr')) {
-    const ms = L.d.managed_services;
-    return `🖥️ Managed Services Deep Dive\n\nRevenue: ${fmt(ms.rev)}/mo at ${fmtP(ms.gpM)} gross margin\n\nBenchmark: ${fmtP(ms.gpM)} vs Target 78% / Median 65%\nRev per Employee: $${Math.round(ms.rev*12/ms.hc).toLocaleString()}\n\nOptimization:\n1. Stack Optimization — negotiate 15-20% below list on RMM/PSA\n2. Tiered Service Model — Gold/Silver/Bronze increases ARPU 15-25%\n3. Automation — resolve 40%+ of L1 tickets without human touch\n4. Per-User Pricing — shift from per-device for 20-30% value increase\n5. QBR-Driven Upsell — every QBR includes security & cloud roadmap\n6. Hybrid NOC — onshore L2-L3, offshore L1 saves 25-35% on labor`;
-  }
-  if (q.includes('security') || q.includes('mdr') || q.includes('soc') || q.includes('cyber')) {
-    const sec = L.d.security;
-    return `🛡️ Security Division Analysis\n\nRevenue: ${fmt(sec.rev)}/mo at ${fmtP(sec.gpM)} margin\nHighest-growth opportunity — cybersecurity MSP market growing 25-30% annually\n\nBenchmark: ${fmtP(sec.gpM)} vs Target 65% / Top 72%\n\nGrowth Strategies:\n1. Named Product — "Datapath Shield" or "Datapath SecureOps"\n2. Compliance Bundling — MDR + CMMC/SOC2/HIPAA = $500-2K/user/mo\n3. SOC Efficiency — 200+ endpoints per analyst minimum\n4. Stack Margins — target 40-50% on security tools at scale\n5. 100% Attach Rate — every MS client should be on your security stack\n\nAcquirers pay 1.5-2x higher multiples for strong security practices.`;
-  }
-  if (q.includes('labor') || q.includes('headcount') || q.includes('employee') || q.includes('staff')) {
-    const hc = totalHC();
-    return `👥 Labor & Workforce\n\nHeadcount: ${hc}\nRev/Employee: $${Math.round(annRev/hc).toLocaleString()}\nLabor % Revenue: ${fmtP(L.totLab/L.totRev*100)}\n\nBenchmarks: Top: $200K+, Above Avg: $165-200K, Median: $130-165K\n\nBy Department:\n${DEPTS.map(d=>`• ${d.name}: ${L.d[d.id].hc} people, $${Math.round(L.d[d.id].rev*12/L.d[d.id].hc).toLocaleString()}/emp`).join('\n')}\n\nActions:\n1. PS team: 70-75% billable utilization, tracked weekly\n2. Offshore L1 helpdesk: 50-60% cost savings per seat\n3. Each tech manages 150+ endpoints minimum\n4. Cross-train to improve utilization 10-15%\n5. Every $1 in automation should save $3-5 in labor annually`;
-  }
-  if (q.includes('cloud') || q.includes('hosting') || q.includes('azure') || q.includes('aws')) {
-    const cl = L.d.cloud_hosting;
-    return `☁️ Cloud & Hosting\n\nRevenue: ${fmt(cl.rev)}/mo at ${fmtP(cl.gpM)} margin (Target: 70%+)\n\nStrategies:\n1. Mark up cloud 20-40% + bundle management on top\n2. Cloud Management fee: $5-15/user/mo (pure margin)\n3. Every on-prem client = migration project ($30-80K + MRR uplift)\n4. Maximize CSP incentives (Azure consumed revenue rebates)\n5. Offer FinOps as a service — take % of optimization savings\n\nTarget: Cloud = 20%+ of total revenue within 18 months`;
-  }
-  if (q.includes('benchmark') || q.includes('compare') || q.includes('industry') || q.includes('peer')) {
-    return `📈 Datapath vs. Industry (${L.month})\n\nOperating Margin: ${fmtP(L.ebitdaM)} (Median: 10%, Top: 22%)\nGross Margin (after labor): ${fmtP(L.gpM)} (Median: 52%, Top: 62%)\nGross Margin (before labor): ${fmtP(L.gpBeforeLaborM)}\nMoM Revenue Growth: ${fmtP(growth)}\nAll-In Labor: ${fmtP((L.totLab+L.salesLab+L.adminLab)/L.totRev*100)} of rev\n\nDept Margins vs. Targets:\n${DEPTS.filter(d=>L.d[d.id].rev>0).map(d=>{const m=L.d[d.id].gpM,t=BM[d.id].tgt;return `${m>=t?'✅':m>=t-5?'⚠️':'🔴'} ${d.name}: ${fmtP(m)} (target: ${t}%)`}).join('\n')}\n\nBiggest Opportunity: ${weakest.name} is ${Math.abs(weakest.gap).toFixed(1)}pp below target → ~${fmt(Math.abs(weakest.gap)*weakest.rev/100)}/mo in gross profit recovery`;
-  }
-  if (q.includes('opex') || q.includes('expense') || q.includes('cost') || q.includes('overhead')) {
-    const opexPct = L.totRev>0?(L.opex/L.totRev*100):0;
-    return `📋 OpEx Breakdown — ${L.month}\n\nTotal Operating Expenses: ${fmt(L.opex)} (${fmtP(opexPct)} of revenue)\n\nBy Category:\n• Admin Payroll: ${fmt(L.adminLab)} — ${fmtP(L.adminLab/L.totRev*100)}\n• Facilities & Rent: ${fmt(L.facilities)} — ${fmtP(L.facilities/L.totRev*100)}\n• Operating (SW, Prof Svcs): ${fmt(L.operating||0)} — ${fmtP((L.operating||0)/L.totRev*100)}\n• Marketing: ${fmt(L.marketing)} — ${fmtP(L.marketing/L.totRev*100)}\n• G&A: ${fmt(L.ga)} — ${fmtP(L.ga/L.totRev*100)}\n• Tax & Insurance: ${fmt(L.taxIns)} — ${fmtP(L.taxIns/L.totRev*100)}\n\nLabor Summary:\n• Direct Labor: ${fmt(L.directLabor)}\n• IT Project Labor: ${fmt(L.projectLabor)}\n• Sales Labor: ${fmt(L.salesLab)}\n• Admin Payroll: ${fmt(L.adminLab)}\n• TOTAL ALL LABOR: ${fmt(L.totLab+L.salesLab+L.adminLab)} — ${fmtP((L.totLab+L.salesLab+L.adminLab)/L.totRev*100)} of revenue\n\nBenchmark: World-class MSPs keep total OpEx under 25% and all-in labor under 50%.`;
-  }
-  if (q.includes('product') || q.includes('resale') || q.includes('hardware') || q.includes('hw')) {
-    const hw = L.d.hw_sw_resale;
-    return `📦 HW/SW Resale Analysis — ${L.month}\n\nRevenue: ${fmt(hw.rev)} at ${fmtP(hw.gpM)} margin\nBenchmark: Target 22%, Top Quartile 28%\n\nTop Revenue Lines:\n• Product Sales: ${fmt(L.detail?.rev?.productSales||0)} (COGS: ${fmt(L.detail?.cogs?.productSales||0)} = ${L.detail?.rev?.productSales>0?fmtP((L.detail.rev.productSales-L.detail.cogs.productSales)/L.detail.rev.productSales*100):''} margin)\n• M365 Licensing: ${fmt(L.detail?.rev?.m365||0)} (COGS: ${fmt(L.detail?.cogs?.m365||0)} = ${L.detail?.rev?.m365>0?fmtP((L.detail.rev.m365-L.detail.cogs.m365)/L.detail.rev.m365*100):''} margin)\n• HaaS: ${fmt(L.detail?.rev?.haas||0)} (COGS: ${fmt(L.detail?.cogs?.haas||0)})\n\n⚠️ This is ${fmtP(hw.rev/L.totRev*100)} of total revenue — high dependency on low-margin, lumpy product sales.\n\nActions:\n1. Negotiate better M365 CSP tier pricing\n2. Bundle HaaS into managed services contracts\n3. Mark up product sales minimum 15-20%\n4. Shift client conversations toward managed services (higher margin, more predictable)`;
-  }
-  // Check knowledge base for custom topics
-  const kbMatch = ADVISOR_KB.find(kb => kb.keywords.some(kw => q.includes(kw)));
-  if (kbMatch) {
-    return kbMatch.response(L, annRev, dM);
-  }
-
-  // Fallback — honest about limitations + show snapshot
-  const insights = generateInsights(L, F);
-  return `🤔 I don't have a specific analysis for "${question}" yet.\n\nHere's what I can help with:\n• EBITDA / margins / profitability\n• Valuation / exit / multiples\n• Managed services / MRR\n• Security / MDR / SOC\n• Cloud / hosting\n• Labor / headcount / staffing\n• OpEx / expenses / overhead\n• HW/SW resale / product sales\n• Benchmarks / industry comparisons\n\n📊 Quick Snapshot — ${L.month}:\nRevenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)\nEBITDA: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)\nNet Income: ${fmt(L.netIncome)}\n\n${insights.good.length > 0 ? '✅ ' + insights.good[0] : ''}\n${insights.bad.length > 0 ? '⚠️ ' + insights.bad[0] : ''}\n\n💡 Tip: You can teach me new topics! Ask the dashboard admin to add entries to the ADVISOR_KB knowledge base.`;
+  renderQuickButtons();
 }
 
 // ═══════════════════════════════════════════════════════════════
