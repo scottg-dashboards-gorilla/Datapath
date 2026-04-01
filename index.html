@@ -645,13 +645,206 @@ JAN26.detail = {
 // ═══════════════════════════════════════════════════════════════
 const HC = {managed_services:20, professional_services:5, cloud_hosting:1, security:1, hw_sw_resale:2, ai_consulting:0, subcontracted:0, r_and_d:0};
 // FY 2023 Year End — Annual totals from Citrin Cooperman ($27.7M revenue)
-const FY23 = makeMonth('FY 2023',
-  {managed_services:8102460, security:1859004, cloud_hosting:1034436, hw_sw_resale:14923092, professional_services:1822272, ai_consulting:0, subcontracted:0, r_and_d:0},
-  {managed_services:384240, security:713064, cloud_hosting:712356, hw_sw_resale:12111816, professional_services:502368, ai_consulting:0, subcontracted:0, r_and_d:0},
-  {direct:3500004, project:500004, hc:HC}, 1500000,
-  {payroll:1819356, facilities:443736, operating:769380, marketing:75780, ga:399336, taxIns:105660}, -759576, 40560);
+// ═══════════════════════════════════════════════════════════════
+// 2023 MONTHLY DATA — from '2023 monthly details.xlsx' (Combined Company tab)
+// Note: Security revenue embedded in managed_services for 2023
+// Note: Jan-Mar Cloud ~$480K (included recurring resale); Apr+ Cloud = private cloud only
+// Note: Payroll split estimated (direct 47.8%, project 6.8%, sales 20.5%, admin 24.9%)
+// Note: 'operating' bucket absorbs unclassified OpEx residuals (year-end adjustments)
+// ═══════════════════════════════════════════════════════════════
+const JAN23 = makeMonth('Jan 23',
+  {managed_services:618563, security:0, cloud_hosting:482810, hw_sw_resale:1489240, professional_services:162392, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:61481, security:0, cloud_hosting:147592, hw_sw_resale:1229969, professional_services:53982, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:258707, project:36804, hc:HC}, 110952,
+  {payroll:134766, facilities:36312, operating:45055, marketing:430, ga:25279, taxIns:27328}, -20805, 7548);
+JAN23.detail = {
+  rev: {managedIT:618563, cloud:482810, recurringResale:0,
+    projectServices:98569, subcontracted:63823, productSales:1465094, commissions:24146},
+  cogs: {managedIT:61481, cloud:147592, recurringResale:0,
+    projectServiceCosts:0, subcontractor:53982, productSales:1229969},
+  opex: {payrollAllIn:541229, utilitiesFacilities:36312,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:430, officeSupplies:11061, charitable:1000, education:384,
+    financeCharges:5925, travelMeals:6909, insurance:0, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-10982, partnershipExpense:-9822, otherExpenses:-1, incomeTax:7548}
+};
+const FEB23 = makeMonth('Feb 23',
+  {managed_services:622840, security:0, cloud_hosting:477754, hw_sw_resale:712190, professional_services:217880, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:87723, security:0, cloud_hosting:152612, hw_sw_resale:544122, professional_services:67209, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:277362, project:39457, hc:HC}, 118952,
+  {payroll:144485, facilities:38163, operating:64157, marketing:6417, ga:50338, taxIns:11065}, -22366, 1516);
+FEB23.detail = {
+  rev: {managedIT:622840, cloud:477754, recurringResale:0,
+    projectServices:139411, subcontracted:78469, productSales:681484, commissions:30706},
+  cogs: {managedIT:87723, cloud:152612, recurringResale:0,
+    projectServiceCosts:942, subcontractor:66267, productSales:544122},
+  opex: {payrollAllIn:580256, utilitiesFacilities:38163,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:6417, officeSupplies:15433, charitable:1515, education:747,
+    financeCharges:10413, travelMeals:22230, insurance:0, taxes:0},
+  other: {interestIncome:0, otherIncome:20, interestExpense:-2758, partnershipExpense:-19616, otherExpenses:-12, incomeTax:1516}
+};
+const MAR23 = makeMonth('Mar 23',
+  {managed_services:676399, security:0, cloud_hosting:507829, hw_sw_resale:700366, professional_services:147783, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:99230, security:0, cloud_hosting:153032, hw_sw_resale:544407, professional_services:34642, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:332811, project:47345, hc:HC}, 142733,
+  {payroll:173368, facilities:34502, operating:51614, marketing:1910, ga:57412, taxIns:19054}, -20901, 0);
+MAR23.detail = {
+  rev: {managedIT:676399, cloud:507829, recurringResale:0,
+    projectServices:106978, subcontracted:40805, productSales:671999, commissions:28436},
+  cogs: {managedIT:99230, cloud:153032, recurringResale:0,
+    projectServiceCosts:1071, subcontractor:33571, productSales:544407},
+  opex: {payrollAllIn:696257, utilitiesFacilities:34502,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:1910, officeSupplies:25552, charitable:2250, education:551,
+    financeCharges:5218, travelMeals:23841, insurance:0, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-10982, partnershipExpense:-9917, otherExpenses:-2, incomeTax:0}
+};
+const APR23 = makeMonth('Apr 23',
+  {managed_services:804317, security:0, cloud_hosting:70464, hw_sw_resale:1011599, professional_services:117233, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:27668, security:0, cloud_hosting:39868, hw_sw_resale:822656, professional_services:25077, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:289049, project:41120, hc:HC}, 123964,
+  {payroll:150571, facilities:35778, operating:69987, marketing:4000, ga:25917, taxIns:4272}, -28245, 94);
+APR23.detail = {
+  rev: {managedIT:804317, cloud:70464, recurringResale:251582,
+    projectServices:87200, subcontracted:30033, productSales:746285, commissions:13732},
+  cogs: {managedIT:27668, cloud:39868, recurringResale:190790,
+    projectServiceCosts:0, subcontractor:25077, productSales:631866},
+  opex: {payrollAllIn:604704, utilitiesFacilities:35778,
+    auto:13580, profServices:44878, softwareMaint:11529, otherOpExp:0,
+    marketing:4000, officeSupplies:5873, charitable:5500, education:30,
+    financeCharges:5293, travelMeals:9221, insurance:4272, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-11178, partnershipExpense:-17067, otherExpenses:-0, incomeTax:94}
+};
+const MAY23 = makeMonth('May 23',
+  {managed_services:771921, security:0, cloud_hosting:70467, hw_sw_resale:1381593, professional_services:193884, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:29657, security:0, cloud_hosting:40621, hw_sw_resale:1084691, professional_services:30438, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:312498, project:44456, hc:HC}, 134021,
+  {payroll:162786, facilities:0, operating:91416, marketing:5896, ga:32768, taxIns:6612}, -29285, 441);
+MAY23.detail = {
+  rev: {managedIT:771921, cloud:70467, recurringResale:298554,
+    projectServices:157359, subcontracted:36525, productSales:1072158, commissions:10881},
+  cogs: {managedIT:29657, cloud:40621, recurringResale:179145,
+    projectServiceCosts:0, subcontractor:30438, productSales:905546},
+  opex: {payrollAllIn:653761, utilitiesFacilities:0,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:5896, officeSupplies:10971, charitable:3195, education:195,
+    financeCharges:4211, travelMeals:14196, insurance:6612, taxes:0},
+  other: {interestIncome:0, otherIncome:504, interestExpense:-11489, partnershipExpense:-18300, otherExpenses:-0, incomeTax:441}
+};
+const JUN23 = makeMonth('Jun 23',
+  {managed_services:816214, security:0, cloud_hosting:68677, hw_sw_resale:1171187, professional_services:85555, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:20710, security:0, cloud_hosting:52167, hw_sw_resale:939341, professional_services:22057, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:312487, project:44454, hc:HC}, 134016,
+  {payroll:162782, facilities:38163, operating:30328, marketing:5720, ga:37305, taxIns:2919}, -25793, 3419);
+JUN23.detail = {
+  rev: {managedIT:816214, cloud:68677, recurringResale:299810,
+    projectServices:58967, subcontracted:26588, productSales:854343, commissions:17034},
+  cogs: {managedIT:20710, cloud:52167, recurringResale:212008,
+    projectServiceCosts:0, subcontractor:22057, productSales:727333},
+  opex: {payrollAllIn:653739, utilitiesFacilities:38163,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:5720, officeSupplies:9129, charitable:5733, education:3530,
+    financeCharges:6331, travelMeals:12582, insurance:5919, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-11541, partnershipExpense:-14252, otherExpenses:-0, incomeTax:3419}
+};
+const JUL23 = makeMonth('Jul 23',
+  {managed_services:723940, security:0, cloud_hosting:63312, hw_sw_resale:1136493, professional_services:342868, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:25579, security:0, cloud_hosting:42698, hw_sw_resale:877507, professional_services:138134, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:299390, project:42591, hc:HC}, 128399,
+  {payroll:155958, facilities:28934, operating:61214, marketing:7191, ga:20749, taxIns:12969}, -37614, 0);
+JUL23.detail = {
+  rev: {managedIT:723940, cloud:63312, recurringResale:289268,
+    projectServices:180502, subcontracted:162366, productSales:835308, commissions:11917},
+  cogs: {managedIT:25579, cloud:42698, recurringResale:146217,
+    projectServiceCosts:0, subcontractor:138134, productSales:731290},
+  opex: {payrollAllIn:626338, utilitiesFacilities:28934,
+    auto:0, profServices:0, softwareMaint:0, otherOpExp:0,
+    marketing:7191, officeSupplies:6500, charitable:2000, education:580,
+    financeCharges:3452, travelMeals:8217, insurance:6527, taxes:6442},
+  other: {interestIncome:781, otherIncome:2256, interestExpense:-11356, partnershipExpense:-29295, otherExpenses:-0, incomeTax:0}
+};
+const AUG23 = makeMonth('Aug 23',
+  {managed_services:716281, security:0, cloud_hosting:58680, hw_sw_resale:2075801, professional_services:236266, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:40069, security:0, cloud_hosting:26890, hw_sw_resale:1667017, professional_services:50730, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:297172, project:42276, hc:HC}, 127448,
+  {payroll:154803, facilities:37666, operating:60328, marketing:7283, ga:30731, taxIns:7661}, -33128, 42);
+AUG23.detail = {
+  rev: {managedIT:716281, cloud:58680, recurringResale:291785,
+    projectServices:176019, subcontracted:60247, productSales:1773163, commissions:10853},
+  cogs: {managedIT:40069, cloud:26890, recurringResale:204709,
+    projectServiceCosts:525, subcontractor:50205, productSales:1462308},
+  opex: {payrollAllIn:621699, utilitiesFacilities:37666,
+    auto:17399, profServices:29352, softwareMaint:13578, otherOpExp:0,
+    marketing:7283, officeSupplies:12606, charitable:2906, education:741,
+    financeCharges:6117, travelMeals:8361, insurance:7661, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-11869, partnershipExpense:-21259, otherExpenses:-0, incomeTax:42}
+};
+const SEP23 = makeMonth('Sep 23',
+  {managed_services:633625, security:0, cloud_hosting:49426, hw_sw_resale:1794212, professional_services:153163, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:9079, security:0, cloud_hosting:42899, hw_sw_resale:1449497, professional_services:35454, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:287682, project:40925, hc:HC}, 123378,
+  {payroll:149860, facilities:45659, operating:30161, marketing:8952, ga:33630, taxIns:11258}, -24209, 6689);
+SEP23.detail = {
+  rev: {managedIT:633625, cloud:49426, recurringResale:270887,
+    projectServices:124873, subcontracted:28290, productSales:1500169, commissions:23156},
+  cogs: {managedIT:9079, cloud:42899, recurringResale:179856,
+    projectServiceCosts:5449, subcontractor:30005, productSales:1269641},
+  opex: {payrollAllIn:601845, utilitiesFacilities:45659,
+    auto:14359, profServices:20853, softwareMaint:24959, otherOpExp:0,
+    marketing:8952, officeSupplies:10500, charitable:1990, education:288,
+    financeCharges:3960, travelMeals:16892, insurance:11258, taxes:0},
+  other: {interestIncome:0, otherIncome:1433, interestExpense:-11145, partnershipExpense:-14497, otherExpenses:-0, incomeTax:6689}
+};
+const OCT23 = makeMonth('Oct 23',
+  {managed_services:592078, security:0, cloud_hosting:33323, hw_sw_resale:1151401, professional_services:114190, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:18714, security:0, cloud_hosting:12623, hw_sw_resale:884195, professional_services:27578, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:277769, project:39515, hc:HC}, 119127,
+  {payroll:144695, facilities:36689, operating:84398, marketing:15252, ga:34887, taxIns:5689}, -26506, 0);
+OCT23.detail = {
+  rev: {managedIT:592078, cloud:33323, recurringResale:267726,
+    projectServices:84028, subcontracted:30162, productSales:873395, commissions:10280},
+  cogs: {managedIT:18714, cloud:12623, recurringResale:181262,
+    projectServiceCosts:2916, subcontractor:24662, productSales:702933},
+  opex: {payrollAllIn:581106, utilitiesFacilities:36689,
+    auto:16439, profServices:52286, softwareMaint:15674, otherOpExp:0,
+    marketing:15252, officeSupplies:8851, charitable:4549, education:393,
+    financeCharges:4108, travelMeals:16986, insurance:5689, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-10330, partnershipExpense:-16176, otherExpenses:-0, incomeTax:0}
+};
+const NOV23 = makeMonth('Nov 23',
+  {managed_services:635168, security:0, cloud_hosting:34007, hw_sw_resale:1923679, professional_services:58217, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:19429, security:0, cloud_hosting:17899, hw_sw_resale:1567834, professional_services:15781, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:275908, project:39251, hc:HC}, 118329,
+  {payroll:143726, facilities:21278, operating:105909, marketing:6862, ga:39995, taxIns:4398}, -32500, 7562);
+NOV23.detail = {
+  rev: {managedIT:635168, cloud:34007, recurringResale:242938,
+    projectServices:39227, subcontracted:18990, productSales:1659476, commissions:21265},
+  cogs: {managedIT:19429, cloud:17899, recurringResale:167095,
+    projectServiceCosts:0, subcontractor:15781, productSales:1400739},
+  opex: {payrollAllIn:577214, utilitiesFacilities:21278,
+    auto:15551, profServices:39734, softwareMaint:34952, otherOpExp:0,
+    marketing:6862, officeSupplies:9384, charitable:0, education:613,
+    financeCharges:7324, travelMeals:22674, insurance:4396, taxes:2},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-11177, partnershipExpense:-22239, otherExpenses:-0, incomeTax:7562}
+};
+const DEC23 = makeMonth('Dec 23',
+  {managed_services:464521, security:0, cloud_hosting:19383, hw_sw_resale:1350254, professional_services:59563, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:19840, security:0, cloud_hosting:13321, hw_sw_resale:1091882, professional_services:1290, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:109312, project:15551, hc:HC}, 46881,
+  {payroll:56943, facilities:9891, operating:622265, marketing:5872, ga:28749, taxIns:6317}, 408597, 0);
+DEC23.detail = {
+  rev: {managedIT:464521, cloud:19383, recurringResale:213581,
+    projectServices:57136, subcontracted:2427, productSales:1123606, commissions:13067},
+  cogs: {managedIT:19840, cloud:13321, recurringResale:148195,
+    projectServiceCosts:0, subcontractor:1290, productSales:943687},
+  opex: {payrollAllIn:228687, utilitiesFacilities:9891,
+    auto:18765, profServices:21898, softwareMaint:25275, otherOpExp:0,
+    marketing:5872, officeSupplies:12390, charitable:2120, education:386,
+    financeCharges:4182, travelMeals:9671, insurance:6317, taxes:0},
+  other: {interestIncome:468, otherIncome:454000, interestExpense:-11078, partnershipExpense:-33345, otherExpenses:-0, incomeTax:0}
+};
 
-// FY 2024 Year End — Annual totals from Citrin Cooperman ($22.1M revenue)
 // ═══════════════════════════════════════════════════════════════
 // 2024 MONTHLY DATA — from Budget vs Actual 2024 spreadsheet
 // Note: Security revenue embedded in managed_services for 2024
@@ -1180,7 +1373,7 @@ FEB26.detail = {
     officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
 };
 
-const DATA = [FY23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
 
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
@@ -1188,6 +1381,90 @@ const DATA = [FY23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP2
 // impact: dollar amount (positive = favorable, negative = unfavorable)
 // ═══════════════════════════════════════════════════════════════
 const ANOMALIES = {
+  'Jan 23': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $2.75M — strong January. Product sales $1.47M dominated revenue. Cloud revenue $483K still includes recurring resale (pre-April restructure).', impact: 0, dept:'general'},
+    {type:'expense', category:'COGS', description:'Product COGS $1.23M (84% of product sales) — thin 16% margin on product. Managed IT COGS $61.5K elevated.', impact: 0, dept:'hw_sw_resale'},
+    {type:'expense', category:'Office Supplies', description:'Office supplies $11.1K — above normal run rate.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Partnership', description:'Partnership expenses only $9.8K — lowest in 2023.', impact: 0, dept:'general'},
+  ],
+  'Feb 23': [
+    {type:'expense', category:'COGS', description:'Managed IT COGS $87.7K — highest in Q1 2023. Cloud COGS $152.6K still elevated (pre-restructure). Subcontractor $66.3K.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Travel', description:'Travel/meals $22.2K — significant jump from Jan $6.9K.', impact: -22230, dept:'general'},
+    {type:'expense', category:'Finance Charges', description:'Finance charges $10.4K — highest in 2023. Double the normal rate.', impact: -10413, dept:'general'},
+    {type:'expense', category:'Office Supplies', description:'Office supplies $15.4K — elevated.', impact: 0, dept:'general'},
+    {type:'expense', category:'Partnership', description:'Partnership expenses $19.6K.', impact: -19616, dept:'general'},
+    {type:'adjustment', category:'Payroll', description:'Payroll $580K — $39K increase from January.', impact: 0, dept:'general'},
+  ],
+  'Mar 23': [
+    {type:'expense', category:'Payroll', description:'Payroll $696K — HIGHEST month in 2023. Possible year-end adjustments or bonus payouts.', impact: 0, dept:'general'},
+    {type:'expense', category:'COGS', description:'Managed IT COGS $99.2K — highest in 2023. Cloud COGS $153K. Last month of old cloud accounting.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Travel', description:'Travel/meals $23.8K — elevated for second straight month.', impact: -23841, dept:'general'},
+    {type:'expense', category:'Office Supplies', description:'Office supplies $25.6K — highest in 2023 by far (normal ~$6-12K).', impact: -25552, dept:'general'},
+    {type:'adjustment', category:'Accounting Change', description:'Last month before cloud accounting restructure. Starting April, Cloud = Private Cloud only (~$70K/mo), with recurring resale broken out separately (~$250K/mo).', impact: 0, dept:'cloud_hosting'},
+  ],
+  'Apr 23': [
+    {type:'adjustment', category:'Accounting Restructure', description:'Cloud revenue restructured: dropped from $508K to $70K (now Private Cloud only). New Recurring Resale line at $252K captures former cloud-classified resale. Revenue categories now match 2024+ structure.', impact: 0, dept:'cloud_hosting'},
+    {type:'expense', category:'Charitable', description:'Charitable contributions $5.5K — spike from $1-2K normal.', impact: -5500, dept:'general'},
+    {type:'expense', category:'Auto', description:'Auto expenses $13.6K — first month tracked separately.', impact: -13580, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Professional services $44.9K — first month tracked separately, highest in 2023.', impact: -44878, dept:'general'},
+  ],
+  'May 23': [
+    {type:'adjustment', category:'Revenue', description:'Revenue $2.42M — strong month. Product sales $1.07M. Project services $157K elevated.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'No Facilities', description:'Utilities/facilities dropped to $0 this month — data gap or offset. Unusual.', impact: 0, dept:'general'},
+    {type:'expense', category:'Payroll', description:'Payroll $654K — elevated from Apr $605K.', impact: 0, dept:'general'},
+  ],
+  'Jun 23': [
+    {type:'adjustment', category:'Revenue', description:'Revenue $2.14M. Product sales $854K. Recurring services $816K — highest in 2023.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Charitable', description:'Charitable $5.7K — elevated.', impact: -5733, dept:'general'},
+    {type:'expense', category:'Education', description:'Education $3.5K — highest in 2023 (normal $0-$750).', impact: -3530, dept:'general'},
+    {type:'adjustment', category:'Tax/Insurance', description:'Tax & insurance only $2.9K vs normal $5-12K — possible credit or timing.', impact: 0, dept:'general'},
+    {type:'expense', category:'Income Taxes', description:'State/local income taxes $3.4K.', impact: -3419, dept:'general'},
+  ],
+  'Jul 23': [
+    {type:'adjustment', category:'Revenue', description:'Revenue $2.27M. Subcontracted $162K — highest in 2023. Project services $181K also strong.', impact: 0, dept:'professional_services'},
+    {type:'expense', category:'Taxes', description:'Property/other taxes $6.4K (quarterly payment). Total tax & insurance $13K.', impact: -6442, dept:'general'},
+    {type:'expense', category:'Partnership', description:'Partnership expenses $29.3K — elevated.', impact: -29295, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Interest income $781 + other income $2.3K. First significant other income since Jan.', impact: 3037, dept:'general'},
+  ],
+  'Aug 23': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $3.09M — HIGHEST month in 2023! Product sales $1.77M drove the spike.', impact: 0, dept:'general'},
+    {type:'expense', category:'EBITDA', description:'Net operating income $537K — best EBITDA month in 2023.', impact: 0, dept:'general'},
+    {type:'expense', category:'Auto', description:'Auto expenses $17.4K — elevated.', impact: -17399, dept:'general'},
+    {type:'expense', category:'Office Supplies', description:'Office supplies $12.6K.', impact: 0, dept:'general'},
+  ],
+  'Sep 23': [
+    {type:'adjustment', category:'Revenue', description:'Revenue $2.63M — strong. Product sales $1.50M. Managed IT $634K declining from $716K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Utilities', description:'Utilities/facilities $45.7K — HIGHEST in 2023 (normal $28-38K).', impact: -45659, dept:'general'},
+    {type:'expense', category:'Software', description:'Software $25K — elevated.', impact: 0, dept:'general'},
+    {type:'expense', category:'Travel', description:'Travel/meals $16.9K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Insurance', description:'Insurance $11.3K — highest in 2023 (semi-annual premium?).', impact: -11258, dept:'general'},
+    {type:'expense', category:'State Taxes', description:'State/local taxes $6.7K — quarterly payment.', impact: -6689, dept:'general'},
+  ],
+  'Oct 23': [
+    {type:'adjustment', category:'Revenue Decline', description:'Revenue $1.89M — sharp decline from Sep $2.63M. Managed IT $592K — lowest since restructure. Cloud $33K — lowest in 2023.', impact: 0, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Professional services $52.3K — highest in 2023. Significant legal/consulting spend.', impact: -52286, dept:'general'},
+    {type:'expense', category:'Marketing', description:'Marketing $15.3K — highest in 2023.', impact: -15252, dept:'general'},
+    {type:'expense', category:'Auto', description:'Auto $16.4K — elevated.', impact: 0, dept:'general'},
+    {type:'expense', category:'Travel', description:'Travel/meals $17K.', impact: 0, dept:'general'},
+  ],
+  'Nov 23': [
+    {type:'adjustment', category:'Revenue', description:'Revenue $2.65M — strong recovery. Product sales $1.66M — second highest in 2023.', impact: 0, dept:'general'},
+    {type:'expense', category:'Software', description:'Software $35K — HIGHEST in 2023 (normal $12-25K). Possible annual renewal.', impact: -34952, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Professional services $39.7K — second highest in 2023.', impact: -39734, dept:'general'},
+    {type:'expense', category:'Travel', description:'Travel/meals $22.7K — elevated.', impact: -22674, dept:'general'},
+    {type:'expense', category:'Finance Charges', description:'Finance charges $7.3K — elevated.', impact: -7324, dept:'general'},
+    {type:'adjustment', category:'Facilities', description:'Utilities/facilities $21.3K — lowest in 2023 (vs normal $28-46K).', impact: 0, dept:'general'},
+    {type:'expense', category:'State Taxes', description:'State/local taxes $7.6K.', impact: -7562, dept:'general'},
+  ],
+  'Dec 23': [
+    {type:'credit', category:'Other Income', description:'Other income $454K — MASSIVE year-end item (likely DLL Finance Free Flooring or similar settlement). Saved the month from a -$134K operating loss.', impact: 454000, dept:'general'},
+    {type:'adjustment', category:'Payroll', description:'Payroll $229K — LOWEST in 2023 (normal $540-700K). Likely year-end adjustment reversing accruals or timing shift.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Revenue', description:'Revenue $1.89M — lowest in 2023 (tied with Oct). Managed IT $465K — year low. Cloud $19K — year low.', impact: 0, dept:'general'},
+    {type:'expense', category:'Auto', description:'Auto $18.8K — highest in 2023.', impact: -18765, dept:'general'},
+    {type:'adjustment', category:'Facilities', description:'Utilities/facilities only $9.9K — lowest in 2023 (vs normal $21-46K). Year-end credit/adjustment.', impact: 0, dept:'general'},
+    {type:'expense', category:'Partnership', description:'Partnership expenses $33.3K — highest in 2023.', impact: -33345, dept:'general'},
+    {type:'adjustment', category:'Year End', description:'Operating loss of -$134K offset by $454K other income = $274K net income. Total OpEx $902K anomalous (includes year-end adjustments). Without the $454K, December would have been deeply negative.', impact: 0, dept:'general'},
+  ],
   'Jan 24': [
     {type:'credit', category:'Other Income', description:'$600K other income — likely DLL Finance or major one-time settlement. Largest single other-income item in any 2024 month.', impact: 600000, dept:'general'},
     {type:'expense', category:'Repairs', description:'Repairs & maintenance $8.2K vs normal $200-$1K — unusual spike.', impact: -8164, dept:'general'},
