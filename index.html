@@ -652,11 +652,215 @@ const FY23 = makeMonth('FY 2023',
   {payroll:1819356, facilities:443736, operating:769380, marketing:75780, ga:399336, taxIns:105660}, -759576, 40560);
 
 // FY 2024 Year End — Annual totals from Citrin Cooperman ($22.1M revenue)
-const FY24 = makeMonth('FY 2024',
-  {managed_services:6936432, security:1295592, cloud_hosting:620412, hw_sw_resale:10909812, professional_services:2302080, ai_consulting:0, subcontracted:0, r_and_d:0},
-  {managed_services:244428, security:633144, cloud_hosting:421812, hw_sw_resale:8926776, professional_services:585048, ai_consulting:0, subcontracted:0, r_and_d:0},
-  {direct:4111560, project:600000, hc:HC}, 1706640,
-  {payroll:1417800, facilities:485556, operating:857964, marketing:132240, ga:389424, taxIns:78084}, -884388, 60996);
+// ═══════════════════════════════════════════════════════════════
+// 2024 MONTHLY DATA — from Budget vs Actual 2024 spreadsheet
+// Note: Security revenue embedded in managed_services for 2024
+// (Citrin Cooperman department-level P&L not available for 2024)
+// ═══════════════════════════════════════════════════════════════
+const JAN24 = makeMonth('Jan 24',
+  {managed_services:519442, security:0, cloud_hosting:21937, hw_sw_resale:780769, professional_services:53575, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:18726, security:0, cloud_hosting:13334, hw_sw_resale:606343, professional_services:7025, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:353924, project:0, hc:HC}, 121354,
+  {payroll:132611, facilities:41103, operating:50835, marketing:9098, ga:28912, taxIns:7175}, 561855, 6327);
+JAN24.detail = {
+  rev: {recurringServices:519442, privateCloud:21937, recurringResale:226368,
+    projectServices:47766, subcontracted:5809, productSales:542234, other:12167},
+  cogs: {managedIT:18726, cloud:13334, recurringResale:151839,
+    projectServiceCosts:2444, subcontractor:4581, productSales:454504},
+  opex: {adminPayroll:132611, officeLease:26252, repairs:8164, utilities:6687,
+    softwareMaint:18816, profServices:15147, auto:16872,
+    marketing:9098, officeSupplies:6387, charitable:1000, education:1072,
+    financeCharges:8055, travelMeals:12398, insurance:7175, taxes:0},
+  other: {interestIncome:1028, otherIncome:600000, interestExpense:-11201, partnershipExpense:-27972, incomeTax:6327},
+  location: {ca:{rev:840270, cogs:539675, gp:300595}, oh:{rev:535453, cogs:459677, gp:75776}}
+};
+const FEB24 = makeMonth('Feb 24',
+  {managed_services:533709, security:0, cloud_hosting:24564, hw_sw_resale:983757, professional_services:166638, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:21728, security:0, cloud_hosting:12968, hw_sw_resale:782238, professional_services:62933, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:333332, project:0, hc:HC}, 157627,
+  {payroll:111986, facilities:43234, operating:41923, marketing:10745, ga:46681, taxIns:7544}, -44387, 52);
+FEB24.detail = {
+  rev: {recurringServices:533709, privateCloud:24564, recurringResale:220002,
+    projectServices:91984, subcontracted:74654, productSales:756837, other:6918},
+  cogs: {managedIT:21728, cloud:12968, recurringResale:162704,
+    projectServiceCosts:371, subcontractor:62562, productSales:619534},
+  opex: {adminPayroll:111986, officeLease:27157, repairs:839, utilities:15238,
+    softwareMaint:25015, profServices:3458, auto:13450,
+    marketing:10745, officeSupplies:7131, charitable:1250, education:1304,
+    financeCharges:5245, travelMeals:31751, insurance:7544, taxes:0},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-10191, partnershipExpense:-34196, incomeTax:52},
+  location: {ca:{rev:1238032, cogs:859392, gp:378640}, oh:{rev:470636, cogs:353807, gp:116829}}
+};
+const MAR24 = makeMonth('Mar 24',
+  {managed_services:522308, security:0, cloud_hosting:18807, hw_sw_resale:613982, professional_services:101649, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:23839, security:0, cloud_hosting:8745, hw_sw_resale:476207, professional_services:13704, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:333234, project:0, hc:HC}, 132452,
+  {payroll:115934, facilities:43001, operating:65297, marketing:8518, ga:37051, taxIns:8980}, -54114, 3171);
+MAR24.detail = {
+  rev: {recurringServices:522308, privateCloud:18807, recurringResale:206276,
+    projectServices:85429, subcontracted:16220, productSales:392152, other:15554},
+  cogs: {managedIT:23839, cloud:8745, recurringResale:153411,
+    projectServiceCosts:270, subcontractor:13434, productSales:322796},
+  opex: {adminPayroll:115934, officeLease:31350, repairs:300, utilities:11351,
+    softwareMaint:26440, profServices:25620, auto:13237,
+    marketing:8518, officeSupplies:5421, charitable:6181, education:340,
+    financeCharges:4393, travelMeals:20716, insurance:8116, taxes:864},
+  other: {interestIncome:0, otherIncome:35, interestExpense:-10597, partnershipExpense:-43552, incomeTax:3171},
+  location: {ca:{rev:837354, cogs:537603, gp:299751}, oh:{rev:419392, cogs:318126, gp:101266}}
+};
+const APR24 = makeMonth('Apr 24',
+  {managed_services:514855, security:0, cloud_hosting:20511, hw_sw_resale:1008289, professional_services:196781, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:31075, security:0, cloud_hosting:5436, hw_sw_resale:783155, professional_services:12314, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:345633, project:0, hc:HC}, 157259,
+  {payroll:130035, facilities:38922, operating:105092, marketing:6314, ga:28680, taxIns:5500}, -18118, 9351);
+APR24.detail = {
+  rev: {recurringServices:514855, privateCloud:20511, recurringResale:218674,
+    projectServices:185976, subcontracted:10805, productSales:784945, other:4670},
+  cogs: {managedIT:31075, cloud:5436, recurringResale:150078,
+    projectServiceCosts:3310, subcontractor:9004, productSales:633077},
+  opex: {adminPayroll:130035, officeLease:26358, repairs:324, utilities:12240,
+    softwareMaint:23064, profServices:67833, auto:14195,
+    marketing:6314, officeSupplies:7310, charitable:1250, education:342,
+    financeCharges:5004, travelMeals:14774, insurance:4860, taxes:640},
+  other: {interestIncome:0, otherIncome:19789, interestExpense:-9419, partnershipExpense:-28488, incomeTax:9351},
+  location: {ca:{rev:947573, cogs:568964, gp:378609}, oh:{rev:792863, cogs:608649, gp:184214}}
+};
+const MAY24 = makeMonth('May 24',
+  {managed_services:444256, security:0, cloud_hosting:20275, hw_sw_resale:857863, professional_services:188073, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:21136, security:0, cloud_hosting:9138, hw_sw_resale:680220, professional_services:12225, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:357329, project:0, hc:HC}, 163134,
+  {payroll:132946, facilities:38066, operating:55504, marketing:15860, ga:33630, taxIns:5589}, 68489, 1257);
+MAY24.detail = {
+  rev: {recurringServices:444256, privateCloud:20275, recurringResale:216193,
+    projectServices:173843, subcontracted:14230, productSales:629848, other:11822},
+  cogs: {managedIT:21136, cloud:9138, recurringResale:150744,
+    projectServiceCosts:367, subcontractor:11858, productSales:529476},
+  opex: {adminPayroll:132946, officeLease:25407, repairs:1004, utilities:11655,
+    softwareMaint:27635, profServices:13636, auto:14233,
+    marketing:15860, officeSupplies:7708, charitable:3613, education:1846,
+    financeCharges:4091, travelMeals:16372, insurance:5589, taxes:0},
+  other: {interestIncome:0, otherIncome:90848, interestExpense:-9109, partnershipExpense:-13250, incomeTax:1257},
+  location: {ca:{rev:851142, cogs:534554, gp:316588}, oh:{rev:659325, cogs:545494, gp:113831}}
+};
+const JUN24 = makeMonth('Jun 24',
+  {managed_services:513444, security:0, cloud_hosting:18128, hw_sw_resale:1878086, professional_services:168623, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:21363, security:0, cloud_hosting:7867, hw_sw_resale:1510146, professional_services:33728, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:346405, project:0, hc:HC}, 141685,
+  {payroll:110799, facilities:36855, operating:59605, marketing:8253, ga:58256, taxIns:7749}, -34358, 0);
+JUN24.detail = {
+  rev: {recurringServices:513444, privateCloud:18128, recurringResale:221605,
+    projectServices:148908, subcontracted:19715, productSales:1645749, other:10732},
+  cogs: {managedIT:21363, cloud:7867, recurringResale:147044,
+    projectServiceCosts:19990, subcontractor:13738, productSales:1363102},
+  opex: {adminPayroll:110799, officeLease:25212, repairs:100, utilities:11543,
+    softwareMaint:21565, profServices:21985, auto:16055,
+    marketing:8253, officeSupplies:8439, charitable:1000, education:880,
+    financeCharges:4971, travelMeals:42966, insurance:7749, taxes:0},
+  other: {interestIncome:0, otherIncome:3246, interestExpense:-8905, partnershipExpense:-28699, incomeTax:0},
+  location: {ca:{rev:1863270, cogs:1371873, gp:491397}, oh:{rev:715011, cogs:547636, gp:167375}}
+};
+const JUL24 = makeMonth('Jul 24',
+  {managed_services:505165, security:0, cloud_hosting:18272, hw_sw_resale:1389662, professional_services:485903, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:22325, security:0, cloud_hosting:8470, hw_sw_resale:1123375, professional_services:247222, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:340442, project:0, hc:HC}, 149494,
+  {payroll:104268, facilities:38255, operating:76801, marketing:7388, ga:31108, taxIns:11941}, -29647, 4450);
+JUL24.detail = {
+  rev: {recurringServices:505165, privateCloud:18272, recurringResale:221399,
+    projectServices:190189, subcontracted:295714, productSales:1162232, other:6031},
+  cogs: {managedIT:22325, cloud:8470, recurringResale:143293,
+    projectServiceCosts:794, subcontractor:246428, productSales:980082},
+  opex: {adminPayroll:104268, officeLease:27192, repairs:200, utilities:10863,
+    softwareMaint:25718, profServices:32756, auto:18327,
+    marketing:7388, officeSupplies:6835, charitable:11000, education:310,
+    financeCharges:5373, travelMeals:7590, insurance:5678, taxes:6263},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-8816, partnershipExpense:-20831, incomeTax:4450},
+  location: {ca:{rev:1324908, cogs:929270, gp:395638}, oh:{rev:1074094, cogs:812564, gp:261530}}
+};
+const AUG24 = makeMonth('Aug 24',
+  {managed_services:534210, security:0, cloud_hosting:18250, hw_sw_resale:1757232, professional_services:476841, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:16009, security:0, cloud_hosting:7841, hw_sw_resale:1342756, professional_services:112041, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:349505, project:0, hc:HC}, 130111,
+  {payroll:110147, facilities:40314, operating:83788, marketing:9686, ga:38197, taxIns:6234}, -24365, 1538);
+AUG24.detail = {
+  rev: {recurringServices:534210, privateCloud:18250, recurringResale:219968,
+    projectServices:344196, subcontracted:132645, productSales:1529705, other:7559},
+  cogs: {managedIT:16009, cloud:7841, recurringResale:145211,
+    projectServiceCosts:245, subcontractor:111796, productSales:1197545},
+  opex: {adminPayroll:110147, officeLease:26310, repairs:225, utilities:13779,
+    softwareMaint:27694, profServices:39581, auto:16513,
+    marketing:9686, officeSupplies:10690, charitable:6098, education:2291,
+    financeCharges:5321, travelMeals:13797, insurance:5936, taxes:298},
+  other: {interestIncome:0, otherIncome:0, interestExpense:-8753, partnershipExpense:-15612, incomeTax:1538},
+  location: {ca:{rev:1360378, cogs:868905, gp:491473}, oh:{rev:1426155, cogs:959247, gp:466908}}
+};
+const SEP24 = makeMonth('Sep 24',
+  {managed_services:521714, security:0, cloud_hosting:22059, hw_sw_resale:738060, professional_services:125505, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:17427, security:0, cloud_hosting:9617, hw_sw_resale:569521, professional_services:22771, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:325154, project:0, hc:HC}, 119660,
+  {payroll:105538, facilities:46937, operating:72901, marketing:12243, ga:27544, taxIns:5710}, -24027, 4118);
+SEP24.detail = {
+  rev: {recurringServices:521714, privateCloud:22059, recurringResale:225338,
+    projectServices:100536, subcontracted:24969, productSales:494557, other:18165},
+  cogs: {managedIT:17427, cloud:9617, recurringResale:156493,
+    projectServiceCosts:0, subcontractor:22771, productSales:413028},
+  opex: {adminPayroll:105538, officeLease:28017, repairs:3123, utilities:15797,
+    softwareMaint:25409, profServices:32764, auto:14728,
+    marketing:12243, officeSupplies:12177, charitable:3700, education:644,
+    financeCharges:4803, travelMeals:6220, insurance:5581, taxes:129},
+  other: {interestIncome:1090, otherIncome:0, interestExpense:-8541, partnershipExpense:-16576, incomeTax:4118},
+  location: {ca:{rev:939557, cogs:589974, gp:349583}, oh:{rev:467781, cogs:354516, gp:113265}}
+};
+const OCT24 = makeMonth('Oct 24',
+  {managed_services:507617, security:0, cloud_hosting:26554, hw_sw_resale:863259, professional_services:122744, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:13618, security:0, cloud_hosting:10737, hw_sw_resale:677244, professional_services:27250, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:333772, project:0, hc:HC}, 181705,
+  {payroll:117800, facilities:43133, operating:82968, marketing:17257, ga:31137, taxIns:7074}, -11743, 7291);
+OCT24.detail = {
+  rev: {recurringServices:507617, privateCloud:26554, recurringResale:234350,
+    projectServices:90248, subcontracted:32496, productSales:621149, other:7760},
+  cogs: {managedIT:13618, cloud:10737, recurringResale:155761,
+    projectServiceCosts:0, subcontractor:27250, productSales:521483},
+  opex: {adminPayroll:117800, officeLease:27465, repairs:3960, utilities:11708,
+    softwareMaint:19695, profServices:52844, auto:10429,
+    marketing:17257, officeSupplies:9305, charitable:1180, education:156,
+    financeCharges:5202, travelMeals:15294, insurance:7074, taxes:0},
+  other: {interestIncome:2411, otherIncome:9520, interestExpense:-8212, partnershipExpense:-15462, incomeTax:7291},
+  location: {ca:{rev:914158, cogs:592545, gp:321613}, oh:{rev:606016, cogs:470076, gp:135940}}
+};
+const NOV24 = makeMonth('Nov 24',
+  {managed_services:551943, security:0, cloud_hosting:17924, hw_sw_resale:1173312, professional_services:58883, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:20756, security:0, cloud_hosting:7273, hw_sw_resale:933666, professional_services:11137, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:359057, project:0, hc:HC}, 125281,
+  {payroll:109515, facilities:40975, operating:82455, marketing:13742, ga:30224, taxIns:6275}, -21560, 12733);
+NOV24.detail = {
+  rev: {recurringServices:551943, privateCloud:17924, recurringResale:238967,
+    projectServices:46132, subcontracted:12751, productSales:927230, other:7115},
+  cogs: {managedIT:20756, cloud:7273, recurringResale:165048,
+    projectServiceCosts:562, subcontractor:10575, productSales:768618},
+  opex: {adminPayroll:109515, officeLease:26216, repairs:2053, utilities:12706,
+    softwareMaint:29417, profServices:46023, auto:7015,
+    marketing:13742, officeSupplies:4929, charitable:1000, education:45,
+    financeCharges:5353, travelMeals:18897, insurance:6275, taxes:0},
+  other: {interestIncome:1801, otherIncome:0, interestExpense:-8053, partnershipExpense:-15308, incomeTax:12733},
+  location: {ca:{rev:1324777, cogs:937048, gp:387729}, oh:{rev:477285, cogs:394841, gp:82444}}
+};
+const DEC24 = makeMonth('Dec 24',
+  {managed_services:577780, security:0, cloud_hosting:21850, hw_sw_resale:532436, professional_services:64850, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {managed_services:16438, security:0, cloud_hosting:9786, hw_sw_resale:385673, professional_services:22708, ai_consulting:0, subcontracted:0, r_and_d:0},
+  {direct:333778, project:0, hc:HC}, 126880,
+  {payroll:149557, facilities:38488, operating:78843, marketing:13146, ga:37293, taxIns:6513}, -23843, 4718);
+DEC24.detail = {
+  rev: {recurringServices:577780, privateCloud:21850, recurringResale:241544,
+    projectServices:39163, subcontracted:25687, productSales:263714, other:27178},
+  cogs: {managedIT:16438, cloud:9786, recurringResale:166833,
+    projectServiceCosts:0, subcontractor:22708, productSales:218840},
+  opex: {adminPayroll:149557, officeLease:26216, repairs:0, utilities:12272,
+    softwareMaint:30329, profServices:42410, auto:6104,
+    marketing:13146, officeSupplies:6232, charitable:1100, education:273,
+    financeCharges:6945, travelMeals:22743, insurance:6513, taxes:0},
+  other: {interestIncome:1994, otherIncome:0, interestExpense:-7787, partnershipExpense:-18050, incomeTax:4718},
+  location: {ca:{rev:839015, cogs:489719, gp:349296}, oh:{rev:783365, cogs:585290, gp:198075}}
+};
 
 // ═══════════════════════════════════════════════════════════════
 // 2025 FULL YEAR — All Locations (from "P&L EBITDA 12 Mos.xlsx")
@@ -667,52 +871,251 @@ const JAN25 = makeMonth('Jan 25',
   {managed_services:527467, security:104679, cloud_hosting:51273, hw_sw_resale:330449, professional_services:138400, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:29490, security:50637, cloud_hosting:30511, hw_sw_resale:259503, professional_services:72436, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:227678, project:69884, hc:HC}, 174805,
-  {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:20205, taxIns:7425}, -17131, 2920);
+  {payroll:88384, facilities:40050, operating:89430, marketing:4520, ga:21205, taxIns:8113}, -15443, 2920);
+JAN25.detail = {
+  rev: {recurringServices:537364, privateCloud:20137, recurringResale:238972,
+    projectServices:51717, subcontracted:86683, productSales:211805, other:5590},
+  cogs: {managedIT:22885, cloud:8915, recurringResale:157949,
+    subcontractor:72436, productSales:180392},
+  opex: {adminPayroll:88384, facilities:26216, repairs:299, utilities:13535,
+    softwareMaint:27164, profServices:55295, auto:6971,
+    marketing:4520, officeSupplies:7654, charitable:1000, education:285,
+    financeCharges:4179, travelMeals:8087, insurance:7425, taxes:688},
+  other: {otherIncome:17614, interestExpense:-7608, partnershipExpense:-25449, incomeTax:2920},
+  location: {ca:{rev:869282, cogs:528672, gp:340610}, oh:{rev:282986, cogs:211467, gp:71519}},
+  personnel: {
+    terminated: [{name:'Michael Upton',dept:'OH Service Desk',category:'Direct Labor',cost:6013,payout:1144,lastDay:'2025-01-24'},
+                 {name:'Alexander Blunk',dept:'OH Sales',category:'Sales Labor',cost:10824,payout:1255,lastDay:'2025-01-24'}],
+    hired: [{name:'Lester Lobo',dept:'OH Sales',category:'Sales Labor',cost:8904,startDay:'2024-12-27'}]
+  }
+};
 const FEB25 = makeMonth('Feb 25',
   {managed_services:534165, security:104764, cloud_hosting:60907, hw_sw_resale:674135, professional_services:150612, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:30850, security:51824, cloud_hosting:34080, hw_sw_resale:549156, professional_services:48356, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:203182, project:64602, hc:HC}, 166242,
-  {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:23341, taxIns:7419}, -56287, 2691);
+  {payroll:107567, facilities:40343, operating:109242, marketing:3121, ga:24341, taxIns:7444}, -55262, 2691);
+FEB25.detail = {
+  rev: {recurringServices:541962, privateCloud:22726, recurringResale:247561,
+    projectServices:92496, subcontracted:58116, productSales:554032, other:7690},
+  cogs: {managedIT:24343, cloud:10352, recurringResale:159224,
+    subcontractor:48356, productSales:471991},
+  opex: {adminPayroll:107567, facilities:26216, repairs:1117, utilities:13010,
+    softwareMaint:27450, profServices:75479, auto:6313,
+    marketing:3121, officeSupplies:8580, charitable:1000, education:110,
+    financeCharges:3502, travel:7466, meals:3683, insurance:7419, taxes:25},
+  other: {interestIncome:1250, otherIncome:0, interestExpense:-7396, partnershipExpense:-49116, incomeTax:2691},
+  location: {ca:{rev:1062607, cogs:641485, gp:421122}, oh:{rev:461976, cogs:340565, gp:121411}},
+  personnel: {
+    terminated: [{name:'John Barcelos Jr',dept:'CA Service Delivery',category:'Direct Labor',cost:6408,payout:2112,lastDay:'2025-02-14',note:'Vacation payout'},
+                 {name:'Stefan Briney',dept:'CA Fresno Service',category:'Direct Labor',cost:7193,payout:1915,lastDay:'2025-02-14',note:'Vacation payout'},
+                 {name:'Katrina Johnson',dept:'CA Sales',category:'Sales Labor',cost:7279,payout:3142,lastDay:'2025-02-19',note:'Vacation payout'},
+                 {name:'Brian Jump',dept:'Procurement/Sales Eng',category:'Admin',cost:29078,payout:19742,lastDay:'2025-02-07',note:'Vacation payout'}],
+    hired: [{name:'Oscar Contreras',dept:'CA Service Delivery',category:'Direct Labor',cost:569,startDay:'2025-02-24'},
+            {name:'Wayne Corder',dept:'CA Service Delivery',category:'Direct Labor',cost:700,startDay:'2025-02-24',note:'Terminated 3/17'},
+            {name:'Nathaniel Dupray',dept:'OH Service Desk',category:'Direct Labor',cost:2185,startDay:'2025-02-10'},
+            {name:'Brandon Hulsey-Cedeno',dept:'CA Service Delivery',category:'Direct Labor',cost:723,startDay:'2025-02-24'},
+            {name:'Daniel Kuphal',dept:'OH Sales',category:'Sales Labor',cost:1494,startDay:'2025-02-24'},
+            {name:'Steve Morozov',dept:'CA Service Delivery',category:'Direct Labor',cost:0,startDay:'2025-03-10',note:'Wages pending'}]
+  }
+};
 const MAR25 = makeMonth('Mar 25',
   {managed_services:542851, security:112444, cloud_hosting:61631, hw_sw_resale:573290, professional_services:140255, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:29001, security:54797, cloud_hosting:34332, hw_sw_resale:456007, professional_services:29343, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:227117, project:71122, hc:HC}, 145044,
-  {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:18959, taxIns:7430}, -25355, 15867);
+  {payroll:86712, facilities:58379, operating:79928, marketing:7987, ga:22559, taxIns:7430}, -21755, 15867);
+MAR25.detail = {
+  rev: {recurringServices:550648, privateCloud:22726, recurringResale:265320,
+    projectServices:105235, subcontracted:35020, productSales:440383, other:11139},
+  cogs: {managedIT:22148, cloud:10286, recurringResale:171015, projectServiceCosts:24,
+    subcontractor:29319, productSales:370688},
+  opex: {adminPayroll:86712, facilities:26216, repairs:19286, utilities:12877,
+    softwareMaint:26429, profServices:48202, auto:5297,
+    marketing:7987, officeSupplies:6798, charitable:3600, education:175,
+    financeCharges:3053, travel:7199, meals:1734, insurance:7430, taxes:0},
+  other: {interestIncome:832, otherIncome:800, interestExpense:-7200, partnershipExpense:-16187, incomeTax:15867},
+  location: {ca:{rev:1032867, cogs:604185, gp:428682}, oh:{rev:397603, cogs:297533, gp:100070}},
+  personnel: {
+    terminated: [{name:'Wayne Corder',dept:'CA Service Delivery',category:'Direct Labor',cost:2945,payout:0,lastDay:'2025-03-17',note:'Short tenure hire from Feb'},
+                 {name:'Kenneth Freeburg',dept:'OH Service Desk',category:'Direct Labor',cost:9475,payout:6030,lastDay:'2025-03-07',note:'PTO payout'},
+                 {name:'Hildria Williams III',dept:'CA Service Delivery',category:'Direct Labor',cost:3531,payout:509,lastDay:'2025-03-07',note:'PTO payout'},
+                 {name:'Tiffany Finkton',dept:'OH Sales',category:'Sales Labor',cost:9420,payout:4768,lastDay:'2025-03-13',note:'Severance + PTO payout'},
+                 {name:'Brayden Wise',dept:'CA Sales',category:'Sales Labor',cost:5339,payout:504,lastDay:'2025-03-23',note:'PTO payout'}],
+    hired: []
+  }
+};
 const APR25 = makeMonth('Apr 25',
   {managed_services:579594, security:114074, cloud_hosting:62256, hw_sw_resale:722257, professional_services:113613, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:33825, security:47515, cloud_hosting:34456, hw_sw_resale:585253, professional_services:14836, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:194932, project:67481, hc:HC}, 128044,
-  {payroll:76476, facilities:39645, operating:94847, marketing:8153, ga:15130, taxIns:6410}, -26506, 0);
+  {payroll:76475, facilities:39646, operating:94847, marketing:8152, ga:16108, taxIns:6410}, -24007, 0);
+APR25.detail = {
+  rev: {recurringServices:587391, privateCloud:23204, recurringResale:271511,
+    projectServices:99226, subcontracted:14387, productSales:584904, other:11171},
+  cogs: {managedIT:23445, cloud:10285, recurringResale:172048, projectServiceCosts:0,
+    subcontractor:14836, productSales:495275},
+  opex: {adminPayroll:76475, facilities:26302, repairs:696, utilities:12648,
+    softwareMaint:28588, profServices:59539, auto:6720,
+    marketing:8152, officeSupplies:5114, charitable:1000, education:1145,
+    financeCharges:2357, travel:2538, meals:3954, insurance:6410, taxes:0},
+  other: {interestIncome:220, otherIncome:2589, interestExpense:-7508, partnershipExpense:-19308, incomeTax:0},
+  location: {ca:{rev:1018453, cogs:542095, gp:476358}, oh:{rev:573342, cogs:436207, gp:137135}},
+  personnel: {
+    terminated: [{name:'Harry Bennett',dept:'CA Service Delivery',category:'Direct Labor',cost:4970,payout:0,lastDay:'2025-04-22'}],
+    hired: [{name:'Tommy Wijaya',dept:'CA Service Delivery',category:'Direct Labor',cost:2830,startDay:'2025-04-14'},
+            {name:'Alex McArthur',dept:'OH Service Desk',category:'Direct Labor',cost:3540,startDay:'2025-04-07',note:'Resigned May 2025'},
+            {name:'Genelyn Terrones',dept:'Procurement',category:'Admin',cost:560,startDay:'2025-04-21'}]
+  }
+};
 const MAY25 = makeMonth('May 25',
   {managed_services:576705, security:137635, cloud_hosting:74062, hw_sw_resale:637844, professional_services:63542, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:36477, security:44958, cloud_hosting:42569, hw_sw_resale:492058, professional_services:14125, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:203541, project:64595, hc:HC}, 136510,
-  {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:18050, taxIns:5501}, -37385, 1202);
+  {payroll:85672, facilities:38240, operating:106192, marketing:7303, ga:20873, taxIns:5535}, -36050, 1201);
+MAY25.detail = {
+  rev: {recurringServices:584502, privateCloud:24468, recurringResale:309155,
+    projectServices:47201, subcontracted:16341, productSales:500988, other:3645},
+  cogs: {managedIT:26243, cloud:13395, recurringResale:166533, projectServiceCosts:632,
+    subcontractor:13494, productSales:409890},
+  opex: {adminPayroll:85672, facilities:26295, repairs:100, utilities:11845,
+    softwareMaint:29920, profServices:70498, auto:5774,
+    marketing:7303, officeSupplies:5391, charitable:2800, education:7125,
+    financeCharges:2957, travel:834, meals:1766, insurance:5500, taxes:35},
+  other: {interestIncome:255, otherIncome:0, interestExpense:-6828, partnershipExpense:-29477, incomeTax:1201},
+  location: {ca:{rev:1025347, cogs:557183, gp:468164}, oh:{rev:460953, cogs:341140, gp:119813}},
+  personnel: {
+    terminated: [{name:'Alex McArthur',dept:'OH Service Desk',category:'Direct Labor',cost:1891,payout:0,lastDay:'2025-05-13',note:'Resigned mid-month'},
+                 {name:'Victor Pontes',dept:'CA Service Delivery',category:'Direct Labor',cost:5281,payout:1196,lastDay:'2025-05-21',note:'PTO payout'},
+                 {name:'Stella Santiago',dept:'Contract Wages',category:'Admin',cost:0,payout:0,lastDay:'2025-04-16'}],
+    hired: [{name:'Lyza Esteras',dept:'Contract Wages',category:'Admin',cost:376,startDay:'2025-05-28'},
+            {name:'Cole Matuszynski',dept:'OH Service Desk',category:'Direct Labor',cost:0,startDay:'2025-06-09',note:'Starts June'}]
+  }
+};
 const JUN25 = makeMonth('Jun 25',
   {managed_services:587641, security:141210, cloud_hosting:73861, hw_sw_resale:720614, professional_services:129304, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:33232, security:50896, cloud_hosting:42277, hw_sw_resale:588064, professional_services:8161, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:205476, project:61677, hc:HC}, 129570,
-  {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:17197, taxIns:6826}, -43058, 2047);
+  {payroll:83226, facilities:38662, operating:97951, marketing:10481, ga:19493, taxIns:7033}, -40150, 2048);
+JUN25.detail = {
+  rev: {recurringServices:595438, privateCloud:24486, recurringResale:301279,
+    projectServices:120765, subcontracted:8539, productSales:598232, other:3891},
+  cogs: {managedIT:22966, cloud:11665, recurringResale:173126, projectServiceCosts:1213,
+    subcontractor:6946, productSales:506704},
+  opex: {adminPayroll:83226, facilities:26366, repairs:230, utilities:12066,
+    softwareMaint:29571, profServices:60509, auto:7871,
+    marketing:10481, officeSupplies:7472, charitable:2700, education:653,
+    financeCharges:3558, travel:3623, meals:1487, insurance:6826, taxes:207},
+  other: {interestIncome:59, otherIncome:9300, interestExpense:-6628, partnershipExpense:-42881, incomeTax:2048},
+  location: {ca:{rev:1115177, cogs:603866, gp:511311}, oh:{rev:537454, cogs:385908, gp:151546}},
+  personnel: {
+    terminated: [{name:'Casey Brockett',dept:'CA Fresno Service',category:'Direct Labor',cost:7193,payout:1141,lastDay:'2025-06-25'},
+                 {name:'Lester Lobo',dept:'OH Sales',category:'Sales Labor',cost:8474,payout:0,lastDay:'2025-06-27'}],
+    hired: [{name:'Cole Matuszynski',dept:'OH Service Desk',category:'Direct Labor',cost:3090,startDay:'2025-06-09'},
+            {name:'Colin Bates',dept:'CA Service Delivery',category:'Direct Labor',cost:2216,startDay:'2025-06-05'},
+            {name:'Lyza Esteras',dept:'Contract Wages',category:'Admin',cost:1877,startDay:'2025-05-28'}]
+  }
+};
 const JUL25 = makeMonth('Jul 25',
   {managed_services:568763, security:141371, cloud_hosting:76482, hw_sw_resale:931875, professional_services:66148, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:30768, security:59210, cloud_hosting:40156, hw_sw_resale:778357, professional_services:12951, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:218508, project:65070, hc:HC}, 147139,
-  {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:23977, taxIns:6081}, -30397, 1048);
+  {payroll:88854, facilities:39315, operating:102371, marketing:10887, ga:35227, taxIns:6081}, -19147, 1048);
+JUL25.detail = {
+  rev: {recurringServices:573925, privateCloud:26261, recurringResale:307801,
+    projectServices:53462, subcontracted:12686, productSales:803455, other:7049},
+  cogs: {managedIT:24465, cloud:11187, recurringResale:177862, projectServiceCosts:1028,
+    subcontractor:11923, productSales:694977},
+  opex: {adminPayroll:88854, facilities:25846, repairs:100, utilities:13369,
+    softwareMaint:29728, profServices:63473, auto:9170,
+    marketing:10887, officeSupplies:9426, charitable:11250, education:125,
+    financeCharges:3991, travel:7751, meals:2684, insurance:6081, taxes:0},
+  other: {interestIncome:14, otherIncome:5590, interestExpense:-6582, partnershipExpense:-18169, incomeTax:1048},
+  location: {ca:{rev:1323106, cogs:823763, gp:499343}, oh:{rev:461532, cogs:381257, gp:80276}},
+  personnel: {
+    terminated: [{name:'Casey Brockett',dept:'CA Fresno Service',category:'Direct Labor',cost:0,payout:7200,lastDay:'2025-06-25'},
+                 {name:'Lester Lobo',dept:'OH Sales',category:'Sales Labor',cost:0,payout:84,lastDay:'2025-06-27'}],
+    hired: [{name:'Franz Aram Fajardo',dept:'CA Service',category:'Direct Labor',cost:1438,startDay:'2025-07-08'},
+            {name:'Mark Wallace',dept:'OH Sales',category:'Sales Labor',cost:2803,startDay:'2025-07-21'}]
+  }
+};
 const AUG25 = makeMonth('Aug 25',
   {managed_services:582673, security:143784, cloud_hosting:76516, hw_sw_resale:793747, professional_services:140832, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:34441, security:59331, cloud_hosting:41420, hw_sw_resale:652942, professional_services:31339, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:189126, project:64553, hc:HC}, 145868,
-  {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:16742, taxIns:6091}, -52865, 1470);
+  {payroll:76247, facilities:43353, operating:127923, marketing:9048, ga:17997, taxIns:6091}, -51610, 1470);
+AUG25.detail = {
+  rev: {recurringServices:587835, privateCloud:26424, recurringResale:308346,
+    projectServices:104693, subcontracted:36139, productSales:667670, other:6386},
+  cogs: {managedIT:28443, cloud:11283, recurringResale:178977, projectServiceCosts:0,
+    subcontractor:31339, productSales:569431},
+  opex: {adminPayroll:76247, facilities:22611, repairs:3821, utilities:16921,
+    softwareMaint:31004, profServices:89499, auto:7420,
+    marketing:9048, officeSupplies:9267, charitable:1255, education:65,
+    financeCharges:2942, travel:2772, meals:1696, insurance:6091, taxes:0},
+  other: {interestIncome:14, otherIncome:9769, interestExpense:-7898, partnershipExpense:-25685, otherExpenses:-27810, incomeTax:1470},
+  location: {ca:{rev:949550, cogs:486324, gp:463226}, oh:{rev:787943, cogs:586827, gp:201116}},
+  personnel: {
+    terminated: [{name:'Jack Harsch',dept:'OH Engineering',category:'Direct Labor',cost:0,payout:7700,lastDay:'2025-08-13'},
+                 {name:'Daniel Kuphal',dept:'OH Sales',category:'Sales Labor',cost:0,payout:4400,lastDay:'2025-08-15'},
+                 {name:'Rebecca Moore',dept:'Admin',category:'Admin',cost:0,payout:2500,lastDay:'2025-08-08'},
+                 {name:'Gregory Harvey',dept:'OH Procurement',category:'Admin',cost:0,payout:2000,lastDay:'2025-07-25'}],
+    hired: [{name:'Oscar Contreras',dept:'CA Service',category:'Direct Labor',cost:980,startDay:'2025-08-25'},
+            {name:'Hoover Dimson',dept:'CA Service',category:'Direct Labor',cost:1200,startDay:'2025-08-20'},
+            {name:'Jenny Rose Magcalayo',dept:'CA Service',category:'Direct Labor',cost:0,startDay:'2025-09-02'}]
+  }
+};
 const SEP25 = makeMonth('Sep 25',
   {managed_services:542161, security:148421, cloud_hosting:67217, hw_sw_resale:481103, professional_services:60551, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:35129, security:64473, cloud_hosting:31981, hw_sw_resale:405810, professional_services:13423, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:210696, project:55387, hc:HC}, 147595,
-  {payroll:75368, facilities:32562, operating:124862, marketing:14315, ga:22849, taxIns:14268}, -16860, 5382);
+  {payroll:75368, facilities:28255, operating:124862, marketing:14315, ga:30307, taxIns:14267}, -9402, 5383);
+SEP25.detail = {
+  rev: {recurringServices:547217, privateCloud:21601, recurringResale:299709,
+    projectServices:46071, subcontracted:14480, productSales:364070, other:6305},
+  cogs: {managedIT:29904, cloud:9013, recurringResale:177322, projectServiceCosts:0,
+    subcontractor:13423, productSales:321154},
+  opex: {adminPayroll:75368, facilities:17736, repairs:1143, utilities:9376,
+    softwareMaint:40748, profServices:78584, auto:5530,
+    marketing:14315, officeSupplies:10433, charitable:7458, education:450,
+    financeCharges:2791, travel:8055, meals:1120, insurance:14267, taxes:0},
+  other: {interestIncome:14, otherIncome:11994, interestExpense:-6043, partnershipExpense:-14209, otherExpenses:-1158, incomeTax:5383},
+  location: {ca:{rev:892634, cogs:504127, gp:388507}, oh:{rev:406819, cogs:312772, gp:94047}},
+  personnel: {
+    terminated: [{name:'Thomas Brennan',dept:'CA Service',category:'Direct Labor',cost:4500,payout:557,lastDay:'2025-09-25'},
+                 {name:'Luis Huizar',dept:'CA Service',category:'Direct Labor',cost:5200,payout:3200,lastDay:'2025-09-26'},
+                 {name:'Duncan Terrell',dept:'OH Service',category:'Direct Labor',cost:6800,payout:150,lastDay:'2025-09-19'},
+                 {name:'Matthew Baker',dept:'OH Sales',category:'Sales Labor',cost:7500,payout:3000,lastDay:'2025-09-22'},
+                 {name:'P. Dennis Vicencio',dept:'Admin',category:'Admin',cost:8300,payout:9000,lastDay:'2025-09-19'}],
+    hired: [{name:'Jenny Rose Magcalayo',dept:'CA Service',category:'Direct Labor',cost:2800,startDay:'2025-09-02'},
+            {name:'Carrlyn David',dept:'CA Service',category:'Direct Labor',cost:1500,startDay:'2025-09-17'}]
+  }
+};
 const OCT25 = makeMonth('Oct 25',
   {managed_services:574227, security:153443, cloud_hosting:78516, hw_sw_resale:744474, professional_services:87543, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:47465, security:66218, cloud_hosting:45156, hw_sw_resale:606257, professional_services:23040, ai_consulting:0, subcontracted:0, r_and_d:0},
   {direct:206820, project:57904, hc:HC}, 197590,
-  {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:25910, taxIns:9950}, -66612, 0);
+  {payroll:66012, facilities:32939, operating:93219, marketing:14957, ga:30627, taxIns:9950}, -61895, 0);
+OCT25.detail = {
+  rev: {recurringServices:578956, privateCloud:26997, recurringResale:356786,
+    projectServices:67554, subcontracted:19989, productSales:578813, other:9108},
+  cogs: {managedIT:38253, cloud:11403, recurringResale:229434, projectServiceCosts:0,
+    subcontractor:23040, productSales:486006},
+  opex: {adminPayroll:66012, facilities:21807, repairs:200, utilities:10932,
+    softwareMaint:35972, profServices:51470, auto:5777,
+    marketing:14957, officeSupplies:8075, charitable:4718, education:7672,
+    financeCharges:1919, travel:6275, meals:1968, insurance:9950, taxes:0},
+  other: {interestIncome:14, otherIncome:0, interestExpense:-6199, partnershipExpense:-55710, otherExpenses:0, incomeTax:0},
+  location: {ca:{rev:1112667, cogs:631472, gp:481195}, oh:{rev:525536, cogs:421388, gp:104148}},
+  personnel: {
+    terminated: [{name:'Thomas Brennan',dept:'CA Service',category:'Direct Labor',cost:0,payout:0,note:'final month'},
+                 {name:'Luis Huizar',dept:'CA Service',category:'Direct Labor',cost:0,payout:0,note:'final month'},
+                 {name:'Duncan Terrell',dept:'OH Service',category:'Direct Labor',cost:0,payout:0,note:'final month'},
+                 {name:'Matthew Baker',dept:'OH Sales',category:'Sales Labor',cost:0,payout:0,note:'final month'},
+                 {name:'P. Dennis Vicencio',dept:'Admin',category:'Admin',cost:0,payout:0,note:'final month'}],
+    hired: [{name:'Hudson Darmstandler',dept:'CA Service',category:'Direct Labor',cost:2100,startDay:'2025-09-22'},
+            {name:'Arnold Vega',dept:'CA Service',category:'Direct Labor',cost:1800,startDay:'2025-10-13'},
+            {name:'Christopher Vouis',dept:'OH Service',category:'Direct Labor',cost:2400,startDay:'2025-09-22'}]
+  }
+};
 const NOV25 = makeMonth('Nov 25',
   {managed_services:576814, security:151608, cloud_hosting:73549, hw_sw_resale:454499, professional_services:60578, ai_consulting:0, subcontracted:0, r_and_d:0},
   {managed_services:24074, security:66489, cloud_hosting:47178, hw_sw_resale:356004, professional_services:23527, ai_consulting:0, subcontracted:0, r_and_d:0},
@@ -777,7 +1180,7 @@ FEB26.detail = {
     officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
 };
 
-const DATA = [FY23, FY24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+const DATA = [FY23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
 
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
@@ -785,9 +1188,226 @@ const DATA = [FY23, FY24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25
 // impact: dollar amount (positive = favorable, negative = unfavorable)
 // ═══════════════════════════════════════════════════════════════
 const ANOMALIES = {
-  'Jan 25': [
-    {type:'credit', category:'Write-Off', description:'One-time credit of $48K due to a write-off', impact: 48000, dept:'general'},
+  'Jan 24': [
+    {type:'credit', category:'Other Income', description:'$600K other income — likely DLL Finance or major one-time settlement. Largest single other-income item in any 2024 month.', impact: 600000, dept:'general'},
+    {type:'expense', category:'Repairs', description:'Repairs & maintenance $8.2K vs normal $200-$1K — unusual spike.', impact: -8164, dept:'general'},
+    {type:'adjustment', category:'Sales Labor', description:'Commissions likely from December/prior period — noted as "should be much less than budgeted with sales so low."', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'Recurring services $519K much lower than budgeted $607K — question raised: "should be a repeat of December." IR model discrepancy.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Travel', description:'Travel/meals $12.4K. Vehicles $16.9K.', impact: 0, dept:'general'},
   ],
+  'Feb 24': [
+    {type:'expense', category:'Commissions', description:'Paid out commissions from Q4 2024 — $30.3K one-time payout.', impact: -30348, dept:'general'},
+    {type:'expense', category:'Subcontracted', description:'Subcontracted services $74.7K — highest in Q1 2024.', impact: 0, dept:'professional_services'},
+    {type:'adjustment', category:'Payroll', description:'Budget payroll updates based on onboarding/offboarding. Scott paid 2x in December (consulting/legal note).', impact: 0, dept:'general'},
+    {type:'expense', category:'Marketing', description:'$4K for logo shirts, mugs, and backpacks (CA).', impact: -4000, dept:'general'},
+    {type:'expense', category:'Travel', description:'CA: Brandon and Dan trips to Ohio, IETA conference (Orion & Jay), Boom Conference (Michael & Frankie), James travel $9.9K, Dave travel $2.2K. Total $31.8K.', impact: -31751, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: Pinnacle Minds new client not renewing. OH: Par Excellence $3K and St John Nottingham $10K agreement catch-up billing.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Partnership', description:'Partnership expenses $34.2K.', impact: -34196, dept:'general'},
+  ],
+  'Mar 24': [
+    {type:'expense', category:'Consulting/Legal', description:'CA: $6.2K for AP Logic consulting. Total consulting/legal $25.6K.', impact: -25620, dept:'general'},
+    {type:'expense', category:'Charitable', description:'CA: $5K for Aerial Recovery donation. Total charitable $6.2K.', impact: -5000, dept:'general'},
+    {type:'expense', category:'Travel', description:'CA: Brandon trip to Ohio, Boom Conference (Michael & Frankie), James travel $4.9K, Dave travel $4.7K. Total $20.7K.', impact: -20716, dept:'general'},
+    {type:'expense', category:'Partnership', description:'Partnership expenses $43.6K — highest in Q1 2024.', impact: -43552, dept:'general'},
+    {type:'adjustment', category:'OH Facilities', description:'OH: CAM catch-up invoice for Ohio offices increased lease cost.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Recurring', description:'CA: Agee Construction $1.2K duplicate invoice (correction in April). New customer Carmel USD. OH: St Sebastian and St John Nottingham catch-up billing for Feb.', impact: 0, dept:'managed_services'},
+  ],
+  'Apr 24': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $1.74M — strong month. Product sales $785K driven by OH $588K (Miami East chromebooks, Scheurer Hospital, VitalCare).', impact: 0, dept:'hw_sw_resale'},
+    {type:'expense', category:'Professional Services', description:'CA: $18K SOC2 Audit. OH: Tax returns (CPA $23K). Total prof services $67.8K — highest in 2024 to date.', impact: -67833, dept:'general'},
+    {type:'credit', category:'Other Income', description:'RAMP Cash Back Rewards applied (CA + OH). Total other income $19.8K.', impact: 19789, dept:'general'},
+    {type:'adjustment', category:'Direct Labor', description:'UMR health insurance overage affected direct labor, sales labor, and admin payroll across both locations. OH: Andrew Bays on leave.', impact: 0, dept:'general'},
+    {type:'expense', category:'Travel', description:'CA: Dan S to Bahamas, Jay to Western Steel, James $4.8K, Dave $0.5K. OH: Joel to Indiana, Ryan/Joel to Dublin, Sam/Austin to Houston.', impact: -14774, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: Agee double March invoice credit, TPC new business $1.8K, Fabricated Extrusion $1.8K credit for 2-month overbilling. Modesto City Project completed.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Commissions', description:'Commissions $26.1K — sales comp payout.', impact: -26145, dept:'general'},
+  ],
+  'May 24': [
+    {type:'credit', category:'Other Income', description:'Thomason Tractor final billing $90.8K applied as other income.', impact: 90848, dept:'general'},
+    {type:'expense', category:'Sales Labor', description:'CA: Final pays and severance for Orion, Jason, and Frankie. Dan OBrien final pay and health insurance overages.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: New business budgeted $15.8K, actual only $7.4K — significant shortfall. OH: New business budgeted $12.9K, actual only Ummah Center $1K. USAC $4.6K over budget (year-end billing).', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Marketing', description:'Marketing $15.9K — elevated, includes branding/advertising.', impact: -15860, dept:'general'},
+    {type:'expense', category:'Consulting/Legal', description:'CA: SOC compliance accrued over the year.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'CA: Orion, Jason, Frankie terminated. Dan OBrien final pay. OH: Carli Hamdi final pay.', impact: 0, dept:'general'},
+  ],
+  'Jun 24': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $2.58M — highest month in 2024! Product sales $1.65M (CA $1.18M + OH $470K). June was a blockbuster.', impact: 0, dept:'hw_sw_resale'},
+    {type:'expense', category:'COGS', description:'Product resale COGS $1.36M — proportional to massive product sales.', impact: 0, dept:'hw_sw_resale'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: New business budgeted $50.6K, actual only $9.2K. Sunny Valley $6K under (cancelled), Thomason Tractor $7K under (cancelled). OH: New business budgeted $19.4K, actual $1.5K. Menlo Park $4.6K over (cancelled 7/1 not 6/1).', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Travel', description:'CA: Lucia Mar $13K, James $12K. Total travel/meals $43K — second highest in 2024.', impact: -42966, dept:'general'},
+    {type:'expense', category:'Subcontracted', description:'Subcontracted services $19.7K, COGS $13.7K. Project services $148.9K including OH West Liberty Project $39K.', impact: 0, dept:'professional_services'},
+    {type:'adjustment', category:'OH Facilities', description:'OH: Correction of double payment for Airport Executive office in April.', impact: 0, dept:'general'},
+    {type:'expense', category:'Marketing', description:'CA: CTE Conference $4K. OH: Shirts for Ohio team.', impact: 0, dept:'general'},
+  ],
+  'Jul 24': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $2.40M — second highest in 2024. Product sales $1.16M. Subcontracted $295.7K (Marysville Project).', impact: 0, dept:'general'},
+    {type:'expense', category:'Subcontracted', description:'Subcontracted services $295.7K / COGS $246.4K — Marysville Project (OH). Highest subcontracted month in 2024.', impact: 0, dept:'professional_services'},
+    {type:'expense', category:'Charitable', description:'CA: $10K GG San Francisco contribution. Total charitable $11K.', impact: -10000, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: New business budgeted $58K, actual only $48K. Lost clients: Lammersville, Thomas Tractor, Chatham ($16.4K combined). Project Hope Alliance credit for Jan-Jun overbilling $3K. OH: New business budgeted $25.8K, actual $8.5K — multiple under-budget clients.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Consulting/Legal', description:'CA: CLevelAdvising increase. Total consulting/legal $30.1K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Vehicles', description:'OH: Mileage reimbursement $9.1K. Total vehicles $18.3K.', impact: -9143, dept:'general'},
+    {type:'expense', category:'Property Taxes', description:'Property taxes $6.3K — quarterly payment.', impact: -6263, dept:'general'},
+    {type:'adjustment', category:'OH Revenue', description:'OH: Marysville and Imagine Great Western projects. IT project services strong at $190K.', impact: 0, dept:'professional_services'},
+  ],
+  'Aug 24': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $2.79M — HIGHEST month in all of 2024! Product sales $1.53M. Project services $344K. Subcontracted $133K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Product Sales', description:'OH products: Triad $150K, Tolles $134K, East Guernsey $80K, Imagine Great Western $61K, Mid-East $55K, North Shore $50K, Arts & College Prep $48K.', impact: 0, dept:'hw_sw_resale'},
+    {type:'adjustment', category:'EBITDA', description:'EBITDA $539.9K — best month in 2024 by far (next best: Jun $235.6K).', impact: 0, dept:'general'},
+    {type:'expense', category:'Consulting/Legal', description:'CA: CLevelAdvising increase. Total consulting/legal $38.4K.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'OH Personnel', description:'OH: Steve leaving — reduced sales labor and admin wages going forward.', impact: 0, dept:'general'},
+    {type:'expense', category:'Software', description:'Avalara Aug & Sept hit GL. KnowBe4 renewal. Software $27.7K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Marketing', description:'CA: Sweeplift LinkedIn advertising started.', impact: 0, dept:'general'},
+    {type:'expense', category:'Travel', description:'CA: DinYero $2.1K, David $3K, James $5.6K.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Project Services', description:'OH: Marysville $25K, West Liberty $22K, Triad $17K, Imagine Great Western $12K, Tolles $12K.', impact: 0, dept:'professional_services'},
+  ],
+  'Sep 24': [
+    {type:'adjustment', category:'Revenue Decline', description:'Gross sales $1.41M — sharp decline from Aug $2.79M. Product sales down 68% to $495K. Seasonal pattern.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Recurring Services', description:'CA: No new business achieved. OH: No new business. See Agreement Revenue Comparison supplemental reports.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Utilities', description:'CA: Comcast catch-up invoice from August $1.8K. Total utilities $15.8K.', impact: -1800, dept:'general'},
+    {type:'expense', category:'Supplies', description:'Office supplies $12.2K — elevated. OH: New display controller for operations $1.3K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Marketing', description:'CA: Sweeplift $5K. Total marketing $12.2K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Consulting/Legal', description:'CA: CLevelAdvising increase. Total consulting/legal $30.8K.', impact: 0, dept:'general'},
+    {type:'credit', category:'Interest Income', description:'Interest income $1.1K — Money Market returns.', impact: 1090, dept:'general'},
+    {type:'adjustment', category:'OH Subcontracted', description:'OH: Field Nation labor for Caldwell Exempted Village SO 10190.', impact: 0, dept:'professional_services'},
+  ],
+  'Oct 24': [
+    {type:'expense', category:'Consulting/Legal', description:'Consulting/legal $52.4K — highest in 2024. CA: CLevelAdvising and Phoenix Strategy.', impact: -52424, dept:'general'},
+    {type:'expense', category:'Commissions', description:'Commissions $41.6K — highest in 2024. Paid for completed projects.', impact: -41573, dept:'general'},
+    {type:'expense', category:'Marketing', description:'CA: Sweeplift $5K + $2.5K, LinkedIn Ads. Total marketing $17.3K — highest in 2024.', impact: -17257, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Pinnacle settlement (CA) + interest income $2.4K. Total other income $11.9K.', impact: 11931, dept:'general'},
+    {type:'adjustment', category:'OH Personnel', description:'OH: Andy\'s final check and PTO payout (sales labor). Steve already left.', impact: 0, dept:'general'},
+    {type:'expense', category:'Repairs', description:'OH: Painting for lobby, offices, conference room. Repairs $4K.', impact: -3960, dept:'general'},
+    {type:'adjustment', category:'EBITDA', description:'EBITDA -$23.5K — negative month driven by high consulting, commissions, and marketing.', impact: 0, dept:'general'},
+  ],
+  'Nov 24': [
+    {type:'adjustment', category:'Revenue Recovery', description:'Gross sales $1.80M — recovery from Oct $1.52M. Product sales $927K strong.', impact: 0, dept:'general'},
+    {type:'expense', category:'Consulting/Legal', description:'Consulting/legal $44.5K — elevated (CLevelAdvising + Phoenix Strategy pattern continuing).', impact: -44520, dept:'general'},
+    {type:'adjustment', category:'OH Personnel', description:'OH: Final pay for Ohio employees — wages reduced due to Andy/Steve departures.', impact: 0, dept:'general'},
+    {type:'expense', category:'Travel', description:'Travel/meals $18.9K — elevated from Sep $6.2K.', impact: -18897, dept:'general'},
+    {type:'expense', category:'State Taxes', description:'State/local income taxes $12.7K — quarterly payment.', impact: -12733, dept:'general'},
+  ],
+  'Dec 24': [
+    {type:'adjustment', category:'Revenue', description:'Gross sales $1.20M — lowest month in 2024. Product sales only $264K. Year-end slowdown.', impact: 0, dept:'general'},
+    {type:'expense', category:'Admin Payroll', description:'Admin payroll $149.6K — highest in 2024 (year-end bonuses/adjustments). Normal run rate ~$110-130K.', impact: -19557, dept:'general'},
+    {type:'expense', category:'Consulting/Legal', description:'Consulting/legal $40.9K. CA: CLevelAdvising and Phoenix Strategy.', impact: -40870, dept:'general'},
+    {type:'expense', category:'Travel', description:'CA: Peter to NYC $1.6K, James $7.2K, David $5.3K. Total $22.7K.', impact: -22743, dept:'general'},
+    {type:'expense', category:'Finance Charges', description:'Finance charges $6.9K — highest in 2024.', impact: -6945, dept:'general'},
+    {type:'adjustment', category:'Other Revenue', description:'Other revenue $27.2K — highest in 2024. Likely year-end adjustments.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'OH Revenue', description:'OH gross sales $783K — strong December for Ohio with $506K product sales. OH EBITDA $67.7K vs CA $7.7K.', impact: 0, dept:'general'},
+    {type:'credit', category:'Interest Income', description:'Interest income $2K from Money Market.', impact: 1994, dept:'general'},
+  ],
+  'Jan 25': [
+    {type:'expense', category:'Sales Bonus', description:'$20K year-end bonus paid to Dan Sturdivant (CA), hitting commissions line.', impact: -20000, dept:'general'},
+    {type:'credit', category:'Insurance Refund', description:'UMR stop loss refund checks $22K offset by $3.6K payments = $19K net reduction in admin payroll (CA).', impact: 19000, dept:'general'},
+    {type:'expense', category:'Utilities', description:'PG&E multi-month catch-up billing $1.4K — meter was not reading correctly.', impact: -1400, dept:'general'},
+    {type:'expense', category:'Software', description:'New E-Rate software $250, Avalara increase $400, Sage increase $300, Zoom $200 above normal.', impact: -1150, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Phoenix Strategy $5K, OC Secure $7.6K for paid TPC invoices, Q Comm $800 one-time fee, Connectwise $900 for new reports.', impact: -14300, dept:'general'},
+    {type:'expense', category:'HR/Recruiting', description:'Recruiting ads to fill open positions — CA $1.2K, OH $528.', impact: -1728, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Ramp Cash Back $17K applied to other income.', impact: 17000, dept:'general'},
+    {type:'adjustment', category:'Direct Labor', description:'OH Direct Labor lower due to open position (Latta vacancy).', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Admin Payroll', description:'OH admin payroll higher due to UMR carryover billing $5.6K.', impact: -5600, dept:'general'},
+    {type:'expense', category:'Finance Charges', description:'OH AMEX credit of $127 reduced finance charges.', impact: 127, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Michael Upton (OH Service Desk, 1/24, $1,144 payout), Alexander Blunk (OH Sales, 1/24, $1,255 payout). New hire: Lester Lobo (OH Sales, started 12/27).', impact: 0, dept:'general'},
+  ],
+  'Feb 25': [
+    {type:'expense', category:'Cloud COGS', description:'Field Nation datacenter decommissioning, Connectwise increase, and Jumpcloud termination fee increased recurring cloud costs (CA).', impact: -1437, dept:'cloud_hosting'},
+    {type:'adjustment', category:'Labor Timing', description:'February had 2 fewer working days than January, reducing IT Project Labor and Direct Labor across both locations.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Direct Labor', description:'CA Direct Labor lower: 2 fewer days + John Barcelos left mid-month.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Sales Bonus', description:'DinYero bonus $35K in February (CA). Dan Sturdivant January bonus -$25K reversal. Net: +$10K to sales labor.', impact: -10000, dept:'general'},
+    {type:'expense', category:'Admin Payroll', description:"Brian Jump's final payroll with vacation payout hit Feb admin payroll (CA). $29K total including $19.7K PTO payout.", impact: -29078, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'PSG up $12K for Phase 1&2 implementation/launch, Roger Gentry $8K, ZipRecruiter +$1.5K, Clevel +$3.3K, OC Secure -$3K.', impact: -21800, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: John Barcelos Jr (CA, 2/14, $2.1K PTO), Stefan Briney (CA Fresno, 2/14, $1.9K PTO), Katrina Johnson (CA Sales, 2/19, $3.1K PTO), Brian Jump (Admin, 2/7, $19.7K PTO). Hired: Oscar Contreras, Wayne Corder, Nathaniel Dupray, Brandon Hulsey-Cedeno (all Service), Daniel Kuphal (OH Sales), Steve Morozov (CA, start 3/10).', impact: 0, dept:'general'},
+    {type:'expense', category:'Meals/Entertainment', description:'Going-away meals for Johnny B and Katrina, lunch with 3 new hires (CA).', impact: -1500, dept:'general'},
+    {type:'adjustment', category:'Other Income', description:'January used Ramp cashback ($17K). February other income near zero — $7K still available to use.', impact: 0, dept:'general'},
+    {type:'expense', category:'Partnership Expense', description:'Partnership expenses $49K — David auto/CPA $12.5K, James auto/GoBundance/CPA/meals $36.7K.', impact: -49116, dept:'general'},
+    {type:'expense', category:'Interest', description:'Fresno First loan accounts and Money Market interest adjustments.', impact: 0, dept:'general'},
+  ],
+  'Mar 25': [
+    {type:'adjustment', category:'Sales Labor', description:'CA sales labor down — DinYero $35K bonus was in Feb, not recurring. OH sales labor up — one-time payout to Tiffany Finkton ($9.4K severance+PTO) and Dan Kuphal started.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Admin Payroll', description:'CA admin payroll down — Brian Jump final pay was in Feb, not recurring.', impact: 0, dept:'general'},
+    {type:'expense', category:'Repairs', description:'Dehart Plumbing maintenance visit (CA) + OH flooding repairs ($18.4K). Total R&M $19.3K vs normal ~$300-$1K.', impact: -18448, dept:'general'},
+    {type:'adjustment', category:'Professional Services', description:'CA Professional Services down from Feb — Feb had David Bates and PSG progress payment.', impact: 0, dept:'general'},
+    {type:'expense', category:'Marketing', description:'Engage Switch and Hubspot billed 3 times instead of 2 in March (CA).', impact: -2000, dept:'general'},
+    {type:'expense', category:'Charitable', description:'Donation to National Ability Center $2,600 (CA). Total charitable $3,600 vs normal $1K.', impact: -2600, dept:'general'},
+    {type:'credit', category:'Interest Rate', description:'Loan rate reduced from 10.25% to 9.25% on 2/5/2025. Payment dropped from $10,038 to $9,989/mo.', impact: 48, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Wayne Corder (CA, 3/17, short tenure), Kenneth Freeburg (OH, 3/7, $6K PTO), Hildria Williams III (CA, 3/7, $509 PTO), Tiffany Finkton (OH Sales, 3/13, $4.8K severance+PTO), Brayden Wise (CA Sales, 3/23, $504 PTO). No new hires.', impact: 0, dept:'general'},
+    {type:'expense', category:'State Taxes', description:'OH state/local taxes $13,749 — quarterly payment vs $0 in other months.', impact: -13749, dept:'general'},
+  ],
+  'Apr 25': [
+    {type:'credit', category:'Recurring Resale COGS', description:'Deep Seas ended 3/29/25, reducing recurring resale COGS in April (CA). New Huntress product started in March.', impact: 0, dept:'security'},
+    {type:'credit', category:'Admin Payroll', description:'UMR Stop Loss refund $9,500 received, reducing CA admin payroll costs.', impact: 9500, dept:'general'},
+    {type:'adjustment', category:'Direct Labor', description:'CA Direct Labor lower: Casey B. on paid family leave through April 28, OT/DOT hours down from ~180 to ~120, unpaid time off up from 85 to 294 hours.', impact: 0, dept:'managed_services'},
+    {type:'adjustment', category:'Sales Labor', description:'Contractor wages lower in April (CA). Brayden Wise terminated in March. Lower commission payouts. OH: Tiffany Finkton severance was in March, Joel Walker commissions up.', impact: 0, dept:'general'},
+    {type:'expense', category:'Software', description:'Scalepad +$1K, Intuit +$300, Timezest +$566 (CA).', impact: -1866, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'N4 Studio new website and Sensiba invoices for financial review (CA).', impact: -5000, dept:'general'},
+    {type:'expense', category:'Meals/Entertainment', description:'Team Athena bonding meal, team meals during Dan trip to Ohio (CA).', impact: -1500, dept:'general'},
+    {type:'credit', category:'Insurance', description:'Refund from Employers Insurance (CA). Insurance $6.4K vs normal ~$7.4K.', impact: 1020, dept:'general'},
+    {type:'adjustment', category:'IT Project Labor', description:'OH IT Project Labor lower — Matt Brinovec moved to service during April.', impact: 0, dept:'professional_services'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Harry Bennett (CA Service, 4/22). Hired: Tommy Wijaya (CA Service, 4/14), Alex McArthur (OH Service, 4/7), Genelyn Terrones (Procurement, 4/21).', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Revenue', description:'Product sales $585K — strong OH quarter with $397K. April was highest revenue month in 2025 at $1.59M.', impact: 0, dept:'hw_sw_resale'},
+  ],
+  'May 25': [
+    {type:'adjustment', category:'Direct Labor', description:'CA: Casey B. returned from PML (+$6.5K), Victor Pontes dismissed (-$1.4K). OH: Matt Brinovec moved from IT Project to Direct Labor (+$2.8K).', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Sales Commissions', description:'Commission payouts $6.5K higher in May (CA).', impact: -6500, dept:'general'},
+    {type:'expense', category:'Admin Payroll', description:'CA admin payroll up $9.5K — April had UMR $9,500 refund that reduced costs. May is a more normal run rate.', impact: -9500, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Greenberg Traurig LLP $15K (CA legal). Procopio $4.5K (OH). Total prof services $70.5K vs April $59.5K.', impact: -19500, dept:'general'},
+    {type:'expense', category:'Education', description:'All In Summit event $7K (CA). Education $7.1K vs normal $100-$300.', impact: -7000, dept:'general'},
+    {type:'expense', category:'Charitable', description:'Wheelchair Mission donation $1,500 (CA). Total charitable $2,800.', impact: -1500, dept:'general'},
+    {type:'adjustment', category:'Other Income', description:'April had CNA check $2.5K for vehicle damage (OH). May other income $0.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Alex McArthur (OH, 5/13, resigned), Victor Pontes (CA, 5/21, $1.2K PTO), Stella Santiago (contract, 4/16). Hired: Lyza Esteras (contract, 5/28), Cole Matuszynski (OH, starts 6/9).', impact: 0, dept:'general'},
+    {type:'expense', category:'Software', description:'Huntress internal costs and ConnectWise cost increase (CA). Software $29.9K vs April $28.6K.', impact: -1332, dept:'general'},
+    {type:'expense', category:'Partnership Expense', description:'Partnership expenses $29.5K — higher than April $19.3K.', impact: -29477, dept:'general'},
+  ],
+  'Jun 25': [
+    {type:'adjustment', category:'Working Days', description:'1 fewer working day in June reduced direct labor costs across both locations.', impact: 0, dept:'general'},
+    {type:'expense', category:'Direct Labor', description:'William D + Luis P UTO catch-up in direct labor (+$3.8K above normal).', impact: -3800, dept:'managed_services'},
+    {type:'credit', category:'Sales Commissions', description:'Lower commission payouts in June vs May.', impact: 0, dept:'general'},
+    {type:'expense', category:'Professional Services', description:'Greenberg Traurig -$15K (May only, not recurring). OC Secure +$5K, Valley Business $2.2K one-time charges.', impact: -7200, dept:'general'},
+    {type:'expense', category:'Auto', description:'Big O Tires $1.6K vehicle maintenance charge (CA).', impact: -1600, dept:'general'},
+    {type:'expense', category:'Marketing', description:'Aaron J $5K marketing + Ward Promotional $685 one-time items.', impact: -5685, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Ramp cashback CA $8K + OH $1.3K applied to other income.', impact: 9300, dept:'general'},
+    {type:'expense', category:'Partnership Expense', description:'Partnership up $14.6K net — YPO $9.9K, Hotel Villa D\'Este $4.6K, Charleston Harbor $3.3K, Sensiba $6.8K offset by Butterfield -$9K, Jarvis -$1K.', impact: -42881, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Casey Brockett (CA Fresno, 6/25, $1.1K PTO), Lester Lobo (OH Sales, 6/27). Hired: Cole Matuszynski (OH, 6/9), Colin Bates (CA, 6/5), Lyza Esteras (contract, 5/28).', impact: 0, dept:'general'},
+  ],
+  'Jul 25': [
+    {type:'expense', category:'Professional Services', description:'Citrin Cooperman up +$13.5K vs June. No Roger Gentry charge -$8K (was in prior months).', impact: -5500, dept:'general'},
+    {type:'expense', category:'Office Supplies', description:'Amazon office supplies $2.2K one-time purchase.', impact: -2200, dept:'general'},
+    {type:'expense', category:'Charitable', description:'49ers Foundation $10K donation (CA). Total charitable $11.3K vs normal ~$1-3K.', impact: -10000, dept:'general'},
+    {type:'expense', category:'Travel', description:'SB Amex travel charges $2.6K + $929 + $754 one-time trips.', impact: -4283, dept:'general'},
+    {type:'expense', category:'Meals', description:'Ruckus event meals $1.7K (to be reimbursed per Dan S).', impact: -1700, dept:'general'},
+    {type:'adjustment', category:'State Taxes', description:'CA pass-through entity tax paid in June, not July — taxes $0 in July.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Revenue', description:'Product sales $803K — highest single month in 2025. Total revenue $1.78M driven by strong OH hardware.', impact: 0, dept:'hw_sw_resale'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Casey Brockett final ($7.2K payout), Lester Lobo final ($84 payout). Hired: Franz Aram Fajardo (CA, 7/8), Mark Wallace (OH Sales, 7/21).', impact: 0, dept:'general'},
+  ],
+  'Aug 25': [
+    {type:'expense', category:'Professional Services', description:'Call And Jensen retainer $10K (CA legal). Total prof services $89.5K vs July $63.5K.', impact: -10000, dept:'general'},
+    {type:'credit', category:'Marketing', description:'Engageware cancelled saving -$700/mo in marketing costs.', impact: 700, dept:'general'},
+    {type:'expense', category:'Other Expenses', description:'MSA Corp Strategies $27.8K for R&D tax credit study — new Other Expenses line item.', impact: -27810, dept:'general'},
+    {type:'adjustment', category:'Facilities', description:'Suite 108 no longer leased — OH facilities dropped from ~$9.6K to ~$1.8K. Total facilities down $3.5K.', impact: 3500, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Gusto $2.9K for Dublin payroll audit (OH other income). Interest on CA sales tax audit $945.', impact: 9769, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Jack Harsch (OH Eng, 8/13, $7.7K payout), Daniel Kuphal (OH Sales, 8/15, $4.4K payout), Rebecca Moore (Admin, 8/8, $2.5K payout), Gregory Harvey (OH Procurement, 7/25, $2K payout). Hired: Oscar Contreras (CA, 8/25), Hoover Dimson (CA, 8/20), Jenny Rose Magcalayo (CA, starts 9/2).', impact: 0, dept:'general'},
+    {type:'adjustment', category:'Subcontracted Revenue', description:'Subcontracted revenue $36.1K — highest in 2025, up from $8.5K in June.', impact: 0, dept:'professional_services'},
+  ],
+  'Sep 25': [
+    {type:'adjustment', category:'Revenue Decline', description:'Total revenue $1.30M — lowest month in 2025. Product sales only $364K vs Aug $668K. Recurring services also down $41K.', impact: 0, dept:'general'},
+    {type:'expense', category:'Software', description:'Software/maintenance $40.7K — highest in 2025, up $10K from August.', impact: -9744, dept:'general'},
+    {type:'expense', category:'Charitable', description:'Charitable contributions $7.5K — elevated from normal $1-3K range.', impact: -6458, dept:'general'},
+    {type:'expense', category:'Insurance', description:'Insurance $14.3K — double normal rate, likely semi-annual or quarterly premium payment.', impact: -8176, dept:'general'},
+    {type:'adjustment', category:'Facilities', description:'Facilities $17.7K lowest in 2025 — continued savings from Suite 108 lease end. OH facilities ~$1.8K.', impact: 0, dept:'general'},
+    {type:'credit', category:'Other Income', description:'Other income $12K — highest in 2025. Source unclear without footnotes tab.', impact: 11994, dept:'general'},
+    {type:'expense', category:'Travel', description:'Travel $8.1K — elevated, up from Aug $2.8K.', impact: -5283, dept:'general'},
+    {type:'adjustment', category:'Personnel', description:'Terminated: Thomas Brennan (CA, 9/25, $557 PTO), Luis Huizar (CA, 9/26, $3.2K PTO), Duncan Terrell (OH, 9/19, $150 PTO), Matthew Baker (OH Sales, 9/22, $3K PTO), P. Dennis Vicencio (Admin, 9/19, $9K PTO). Hired: Jenny Rose Magcalayo (CA, 9/2), Carrlyn David (CA, 9/17). Heavy turnover month — 5 departures.', impact: 0, dept:'general'},
+  ],
+  'Oct 25': [
+    {type:'adjustment', category:'Revenue Recovery', description:'Revenue rebounded to $1.64M from Sep $1.30M. Product sales $579K and recurring resale $357K both up significantly.', impact: 0, dept:'general'},
+    {type:'adjustment', category:'HaaS Recurring', description:'HaaS recurring revenue reversal noted — reclassification discussion in progress.', impact: 0, dept:'hw_sw_resale'},
+    {type:'adjustment', category:'TPC Revenue', description:'TPC recurring revenue reclassification under discussion — may affect future managed services categorization.', impact: 0, dept:'managed_services'},
+    {type:'expense', category:'Marketing/AI Portal', description:'AI portal marketing investment noted ($100K commitment — Haskell/Peter dedicated). $14.9K marketing in Oct.', impact: -14957, dept:'general'},
+    {type:'expense', category:'Education', description:'Education $7.7K — elevated, likely conference or certification costs.', impact: -7672, dept:'general'},
+    {type:'expense', category:'Partnership Expense', description:'Partnership expenses $55.7K — highest in 2025 by far (prev high was $42.9K in June).', impact: -55710, dept:'general'},
+    {type:'adjustment', category:'COGS Increase', description:'Managed IT COGS $38.3K — highest in 2025 (avg ~$30K). Recurring resale COGS $229K also highest.', impact: 0, dept:'managed_services'},
+    {type:'adjustment', category:'Personnel', description:'Final payroll for Sep terminees (Brennan, Huizar, Terrell, Baker, Vicencio). Hired: Hudson Darmstandler (CA, 9/22), Arnold Vega (CA, 10/13), Christopher Vouis (OH, 9/22).', impact: 0, dept:'general'},
+  ],
+
   'Dec 25': [
     {type:'expense', category:'Direct Labor', description:'YE payroll corrections — Direct Labor wages adjusted +$161K (net of corrections across all labor categories). Includes contractor wages and benefit true-ups.', impact: -91087, dept:'managed_services'},
     {type:'expense', category:'Tax & Insurance', description:'Insurance prepaid cleanup $135K — balance sheet cleanup reclassified prepaid insurance to expense. Normal monthly ~$7K.', impact: -135253, dept:'general'},
