@@ -178,7 +178,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .roadmap-title { font-weight: 700; font-size: 14px; color: #1a1a1a; }
 .roadmap-sub { font-size: 11px; color: #9ca3af; margin-left: auto; }
 .roadmap-body { padding: 18px; }
-.roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 1100px) { .roadmap-grid { grid-template-columns: 1fr; } }
 .roadmap-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; background: #fafbfc; position: relative; }
 .roadmap-card-status { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
@@ -3686,12 +3686,6 @@ function renderAdvisor(el) {
       </div>
       <div class="roadmap-body">
         <div class="roadmap-grid">
-          <div class="roadmap-card">
-            <span class="roadmap-card-status roadmap-status-missing">Missing Data</span>
-            <div class="roadmap-card-title">Department-Level Resource Allocation</div>
-            <div class="roadmap-card-desc">Break out personnel costs by team so each department has a true team-level P&L. Currently labor is allocated by formula (Direct → MS, Project → PS/Security). Need actual headcount assignments and salary data per department to show real cost-of-delivery per team.</div>
-            <div class="roadmap-card-impact"><strong>Impact:</strong> Enables team-by-team profitability view, identifies which departments are overstaffed vs understaffed, and supports per-seat/per-employee margin analysis for exit readiness.</div>
-          </div>
           <div class="roadmap-card">
             <span class="roadmap-card-status roadmap-status-partial">Partial — SNI Started</span>
             <div class="roadmap-card-title">Won Revenue Not Yet Invoiced (HW/SW & Projects)</div>
