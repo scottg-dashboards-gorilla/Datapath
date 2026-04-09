@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>February 2026 — Labor Allocation Model</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#0f172a; color:#e2e8f0; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; color:#f8fafc; }
+  .subtitle { color:#94a3b8; font-size:13px; margin-bottom:24px; }
+  .section { margin-bottom:28px; }
+  .section-title { font-size:16px; font-weight:700; color:#38bdf8; margin-bottom:10px; border-bottom:1px solid #1e293b; padding-bottom:6px; }
+  .dept-block { background:#1e293b; border-radius:8px; padding:14px 18px; margin-bottom:12px; }
+  .dept-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .dept-name { font-size:14px; font-weight:700; color:#f8fafc; }
+  .dept-total { font-size:14px; font-weight:700; color:#4ade80; }
+  .dept-sub { font-size:11px; color:#94a3b8; margin-top:2px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { text-align:left; color:#94a3b8; font-weight:600; padding:4px 8px; border-bottom:1px solid #334155; }
+  th.r { text-align:right; }
+  td { padding:4px 8px; border-bottom:1px solid #1e293b; color:#cbd5e1; }
+  td.r { text-align:right; font-variant-numeric:tabular-nums; }
+  td.name { font-weight:500; }
+  .pct { color:#94a3b8; font-size:11px; }
+  .src { font-size:10px; padding:2px 6px; border-radius:3px; font-weight:600; }
+  .src-w2 { background:#1e3a5f; color:#60a5fa; }
+  .src-cont { background:#3b1f4b; color:#c084fc; }
+  .src-1099 { background:#3b2f1f; color:#fbbf24; }
+  .totals-row td { border-top:2px solid #475569; font-weight:700; color:#f8fafc; }
+  .grand-total { background:#0f172a; border:2px solid #38bdf8; border-radius:8px; padding:16px 20px; margin-top:20px; }
+  .grand-total .row { display:flex; justify-content:space-between; padding:4px 0; font-size:14px; }
+  .grand-total .row.main { font-size:16px; font-weight:700; color:#4ade80; border-top:2px solid #1e293b; margin-top:8px; padding-top:8px; }
+  .grand-total .label { color:#94a3b8; }
+  .note { font-size:11px; color:#64748b; margin-top:6px; font-style:italic; }
+  .confidential { color:#ef4444; font-size:11px; font-weight:600; }
+</style>
+</head>
+<body>
+<h1>February 2026 — Labor Allocation Model</h1>
+<div class="subtitle">Based on Datapath Headcount Roster (3/31/2026) &amp; Feb Payroll Data &bull; <span class="confidential">CONFIDENTIAL</span></div>
+
+<!-- COGS DEPARTMENTS -->
+<div class="section">
+  <div class="section-title">COGS Labor — Allocated to Revenue Departments</div>
+  <div class="dept-sub" style="margin-bottom:12px">Total direct + project labor ($183,836) redistributed proportionally based on gross wages</div>
+
+  <!-- Managed IT Service -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🖥️ Managed IT — Service Delivery</span><div class="dept-sub">P&L allocation: $114,494 (62.3% of labor pool)</div></div>
+      <div class="dept-total">$114,494</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Brandon Johnson</td><td>Natl Dir. of Service Delivery</td><td><span class="src src-w2">W-2</span></td><td class="r">$8,464</td><td class="r">100%</td></tr>
+      <tr><td class="name">William Doyle</td><td>Service Escalation Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$9,024</td><td class="r">100%</td></tr>
+      <tr><td class="name">Gabriel Espinoza</td><td>Service Escalation Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$7,387</td><td class="r">100%</td></tr>
+      <tr><td class="name">Kerr Conkle</td><td>Service Manager</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,541</td><td class="r">100%</td></tr>
+      <tr><td class="name">Michelle Contreras</td><td>Service Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,150</td><td class="r">100%</td></tr>
+      <tr><td class="name">Nathan Lanning</td><td>Service Engineer I</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,138</td><td class="r">100%</td></tr>
+      <tr><td class="name">Henry Martinez</td><td>Service Technician</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,928</td><td class="r">100%</td></tr>
+      <tr><td class="name">Mark Mercer</td><td>Escalation Technician II</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,337</td><td class="r">100%</td></tr>
+      <tr><td class="name">Matthew Irick</td><td>Service Escalation Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,904</td><td class="r">100%</td></tr>
+      <tr><td class="name">Colton Keim</td><td>Field Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,455</td><td class="r">100%</td></tr>
+      <tr><td class="name">Michael Trude</td><td>Service Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,385</td><td class="r">100%</td></tr>
+      <tr><td class="name">Sam Dean</td><td>Service Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,252</td><td class="r">100%</td></tr>
+      <tr><td class="name">Luis Pena</td><td>Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,137</td><td class="r">100%</td></tr>
+      <tr><td class="name">Arnold Vega</td><td>Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,552</td><td class="r">100%</td></tr>
+      <tr><td class="name">Brandon Hulsey-Cedeno</td><td>Service Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,398</td><td class="r">100%</td></tr>
+      <tr><td class="name">Cristina Chavez Soto</td><td>Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,286</td><td class="r">100%</td></tr>
+      <tr><td class="name">Oscar Contreras</td><td>Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,366</td><td class="r">100%</td></tr>
+      <tr><td class="name">Tommy Wijaya</td><td>Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,027</td><td class="r">100%</td></tr>
+      <tr><td class="name">Nathaniel Dupray</td><td>Service Technician I</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,003</td><td class="r">100%</td></tr>
+      <tr><td class="name">Kevin Barr</td><td>Helpdesk Technician</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,848</td><td class="r">100%</td></tr>
+      <tr><td class="name">Cole Matuszynski</td><td>Tier 1 Service Technician</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,282</td><td class="r">100%</td></tr>
+      <tr><td class="name">Christopher Vouis</td><td>Bench Technician</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,057</td><td class="r">100%</td></tr>
+      <tr><td class="name">Michael Trude</td><td>Service Team Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$2,826</td><td class="r">100%</td></tr>
+      <tr><td class="name">Keith Newson</td><td>Engineering Team Manager</td><td><span class="src src-w2">W-2</span></td><td class="r">$2,212</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr><td class="name">Christopher Gilmore</td><td>Sr. Systems Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$2,080</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr><td class="name">Matthew Lampe</td><td>Network Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,866</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr><td class="name">James Bruce</td><td>Sr. Systems Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,767</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr><td class="name">Matt Brinovec</td><td>Network Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,524</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr><td class="name">Hoover Dimson</td><td>Service Technician I</td><td><span class="src src-cont">BruntWork</span></td><td class="r">$1,265</td><td class="r">100%</td></tr>
+      <tr><td class="name">Jenny Magcalayo</td><td>Service Technician I</td><td><span class="src src-cont">BruntWork</span></td><td class="r">$1,323</td><td class="r">100%</td></tr>
+      <tr><td class="name">Girly De La Pena</td><td>Service Technician I</td><td><span class="src src-cont">BruntWork</span></td><td class="r">$1,309</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (30 people)</td><td class="r">$132,267</td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- Managed IT AM -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🖥️ Managed IT — Account Management</span><div class="dept-sub">P&L allocation: $19,982 (10.9% of labor pool)</div></div>
+      <div class="dept-total">$19,982</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Nathan La Fleche</td><td>Dir. of Strategic Partnerships</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,144</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Joel Walker</td><td>Mgr, Inside Account Mgmt</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,828</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Ricky Maestas</td><td>EDU Account Executive</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,121</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Jay Harvey</td><td>Senior Acct. Exec</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,385</td><td class="r"><span class="pct">20%</span></td></tr>
+      <tr><td class="name">Edwin De Guzman</td><td>Sales Coordinator</td><td><span class="src src-cont">Microsourcing</span></td><td class="r">$2,074</td><td class="r">100%</td></tr>
+      <tr><td class="name">Hermella Mulugeta</td><td>Inside Account Manager</td><td><span class="src src-cont">CRDLE</span></td><td class="r">$1,600</td><td class="r">100%</td></tr>
+      <tr><td class="name">MJ Martinez</td><td>Business Ops Sales Specialist</td><td><span class="src src-cont">Gusto 1099</span></td><td class="r">$2,308</td><td class="r">100%</td></tr>
+      <tr><td class="name">Julissa Martinez Duran</td><td>Inside Account Manager</td><td><span class="src src-cont">Gusto 1099</span></td><td class="r">$2,123</td><td class="r">100%</td></tr>
+      <tr><td class="name">Carla Humber Munguia</td><td>Inside Account Manager</td><td><span class="src src-cont">Direct</span></td><td class="r">$2,500</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (9 people)</td><td class="r">$23,084</td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- Professional Services -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🔧 Projects / Professional Services</span><div class="dept-sub">P&L allocation: $24,538 (13.3% of labor pool)</div></div>
+      <div class="dept-total">$24,538</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Keith Newson</td><td>Engineering Team Manager</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,636</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr><td class="name">Christopher Gilmore</td><td>Sr. Systems Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,239</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr><td class="name">Matthew Lampe</td><td>Network Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,598</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr><td class="name">James Bruce</td><td>Sr. Systems Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,302</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr><td class="name">Matt Brinovec</td><td>Network Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,571</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (5 people)</td><td class="r">$28,347</td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- Security -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🛡️ Security (MDR/SOC)</span><div class="dept-sub">P&L allocation: $15,562 (8.5% of labor pool)</div></div>
+      <div class="dept-total">$15,562</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Angelica Jackson</td><td>Security Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,540</td><td class="r">100%</td></tr>
+      <tr><td class="name">Cory Strassell</td><td>Service Escalation Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,937</td><td class="r">100%</td></tr>
+      <tr><td class="name">Stephen Walski</td><td>Dir. of Engineering & Security</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,501</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (3 people)</td><td class="r">$17,978</td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- Cloud & Hosting -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">☁️ Cloud & Hosting</span><div class="dept-sub">P&L allocation: $1,998 (1.1% of labor pool)</div></div>
+      <div class="dept-total">$1,998</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Peter Annabel</td><td>Dir. of Cloud Operations</td><td><span class="src src-w2">W-2</span></td><td class="r">$2,308</td><td class="r"><span class="pct">25%</span></td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (1 person)</td><td class="r">$2,308</td><td></td></tr>
+    </table>
+  </div>
+
+  <!-- HW/SW Resale -->
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">📦 HW/SW Resale</span><div class="dept-sub">P&L allocation: $7,263 (4.0% of labor pool)</div></div>
+      <div class="dept-total">$7,263</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">David Craig</td><td>Procurement Manager</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,771</td><td class="r">100%</td></tr>
+      <tr><td class="name">Genelyn Terrones</td><td>Procurement Specialist</td><td><span class="src src-cont">BruntWork</span></td><td class="r">$1,540</td><td class="r">100%</td></tr>
+      <tr><td class="name">Carrlyne David</td><td>Procurement Specialist</td><td><span class="src src-cont">BruntWork</span></td><td class="r">$1,079</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (3 people)</td><td class="r">$8,390</td><td></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- R&D (separate from labor pool) -->
+<div class="section">
+  <div class="section-title">R&D — Separate COGS (not in direct/project labor pool)</div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🧪 R&D</span><div class="dept-sub">P&L total: $75,331 (GL 61900/61910/61930/61940 — reclassed from operating)</div></div>
+      <div class="dept-total">$75,331</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">James Bates</td><td>Co-CEO</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,550</td><td class="r">100%</td></tr>
+      <tr><td class="name">Peter Annabel</td><td>Dir. of Cloud Operations</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,925</td><td class="r"><span class="pct">75%</span></td></tr>
+      <tr><td class="name">Timothy Stewart</td><td>Dir. of Service Optimization</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,722</td><td class="r">100%</td></tr>
+      <tr><td class="name">Jacob Berlin</td><td>Data Engineer</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,000</td><td class="r">100%</td></tr>
+      <tr><td class="name">Haskell Macaraig</td><td>Data Engineer</td><td><span class="src src-1099">1099</span></td><td class="r">$4,000</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (5 people)</td><td class="r">$25,197</td><td></td></tr>
+    </table>
+    <div class="note">P&L total ($75,331) exceeds gross wages ($25,197) because it includes employer payroll taxes, benefits, and full employer cost — not just gross pay.</div>
+  </div>
+</div>
+
+<!-- SALES LABOR -->
+<div class="section">
+  <div class="section-title">Sales Labor — OpEx Line Item ($114,856)</div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">💼 Sales</span><div class="dept-sub">Separate P&L line — not allocated to revenue department COGS</div></div>
+      <div class="dept-total">$114,856</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">DinYero Johnson</td><td>Sales</td><td><span class="src src-w2">W-2</span></td><td class="r">$14,618</td><td class="r">100%</td></tr>
+      <tr><td class="name">Daniel Chadwell</td><td>Sales Engineer Lead</td><td><span class="src src-w2">W-2</span></td><td class="r">$7,156</td><td class="r">100%</td></tr>
+      <tr><td class="name">Daniel Sturdivant</td><td>Vice President</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,770</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Jay Harvey</td><td>Senior Acct. Exec</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,540</td><td class="r"><span class="pct">80%</span></td></tr>
+      <tr><td class="name">Nathan La Fleche</td><td>Dir. of Strategic Partnerships</td><td><span class="src src-w2">W-2</span></td><td class="r">$4,144</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Joel Walker</td><td>Mgr, Inside Account Mgmt</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,828</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Ricky Maestas</td><td>EDU Account Executive</td><td><span class="src src-w2">W-2</span></td><td class="r">$3,121</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (7 people)</td><td class="r">$44,178</td><td></td></tr>
+    </table>
+    <div class="note">P&L sales labor ($114,856) includes employer taxes, benefits, commissions, and Gusto sales payroll (GL 50620) beyond just gross wages shown here.</div>
+  </div>
+</div>
+
+<!-- G&A -->
+<div class="section">
+  <div class="section-title">G&A — Sub-Buckets (Admin Payroll + Operating Expenses)</div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">👔 G&A > Sr Leadership</span></div>
+      <div class="dept-total">$45,071</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">David Darmstandler</td><td>Co-CEO</td><td><span class="src src-w2">W-2</span></td><td class="r">$8,299</td><td class="r">100%</td></tr>
+      <tr><td class="name">Daniel Sturdivant</td><td>Vice President</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,770</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td class="name">Stephen Walski</td><td>Dir. of Engineering & Security</td><td><span class="src src-w2">W-2</span></td><td class="r">$5,501</td><td class="r"><span class="pct">50%</span></td></tr>
+      <tr><td colspan="3" style="color:#64748b">+ Consulting &amp; Office Space</td><td class="r" style="color:#64748b">$25,500</td><td></td></tr>
+      <tr class="totals-row"><td colspan="3">Total</td><td class="r">$45,071</td><td></td></tr>
+    </table>
+  </div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🏢 G&A > Central Services</span></div>
+      <div class="dept-total">$16,389</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Marshall Rownd</td><td>IT Director</td><td><span class="src src-w2">W-2</span></td><td class="r">$9,233</td><td class="r">100%</td></tr>
+      <tr><td class="name">Devin Peterson</td><td>Sr. Systems Analyst</td><td><span class="src src-w2">W-2</span></td><td class="r">$7,156</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total Gross Wages (2 people)</td><td class="r">$16,389</td><td></td></tr>
+    </table>
+  </div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">💰 G&A > Finance</span></div>
+      <div class="dept-total">$8,896</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Melinda Hennington</td><td>Admin Finance</td><td><span class="src src-w2">W-2</span></td><td class="r">$6,975</td><td class="r">100%</td></tr>
+      <tr><td class="name">Jaquelene Dizon</td><td>Payroll Analyst</td><td><span class="src src-cont">Microsourcing</span></td><td class="r">$1,922</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total (2 people)</td><td class="r">$8,896</td><td></td></tr>
+    </table>
+  </div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">📣 G&A > Marketing</span></div>
+      <div class="dept-total">$1,985</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Myca Villanueva</td><td>RevOps Specialist</td><td><span class="src src-cont">Microsourcing</span></td><td class="r">$1,985</td><td class="r">100%</td></tr>
+    </table>
+  </div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">🧑‍💼 G&A > HR</span></div>
+      <div class="dept-total">$1,600</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Nahili Bekele</td><td>HR Manager</td><td><span class="src src-cont">CRDLE</span></td><td class="r">$1,600</td><td class="r">100%</td></tr>
+    </table>
+  </div>
+
+  <div class="dept-block">
+    <div class="dept-header">
+      <div><span class="dept-name">📋 G&A > Admin</span></div>
+      <div class="dept-total">$3,520</div>
+    </div>
+    <table>
+      <tr><th>Employee</th><th>Title</th><th>Type</th><th class="r">Gross/Mo</th><th class="r">%</th></tr>
+      <tr><td class="name">Colin Bates</td><td>Part-time</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,760</td><td class="r">100%</td></tr>
+      <tr><td class="name">Hudson Darmstandler</td><td>Part-time</td><td><span class="src src-w2">W-2</span></td><td class="r">$1,760</td><td class="r">100%</td></tr>
+      <tr class="totals-row"><td colspan="3">Total (2 people)</td><td class="r">$3,520</td><td></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- GRAND TOTALS -->
+<div class="grand-total">
+  <div style="font-size:16px; font-weight:700; margin-bottom:10px; color:#f8fafc;">Grand Totals — February 2026</div>
+  <div class="row"><span class="label">COGS Labor (6 depts, proportional from $183,836)</span><span>$183,837</span></div>
+  <div class="row"><span class="label">R&D COGS (separate P&L accounts)</span><span>$75,331</span></div>
+  <div class="row"><span class="label">Sales Labor (P&L line item)</span><span>$114,856</span></div>
+  <div class="row"><span class="label">Admin Payroll (P&L line item)</span><span>$33,491</span></div>
+  <div class="row"><span class="label">G&A Sub-buckets (gross wages tracked)</span><span>$77,462</span></div>
+  <div class="row main"><span>Total W-2 Gross Pay</span><span>$307,082</span></div>
+  <div class="row main"><span>Total Contractors</span><span>$26,628</span></div>
+  <div class="row main"><span>58 Headcount</span><span>$333,710</span></div>
+</div>
+
+<div class="note" style="margin-top:16px">
+  Note: P&L line item totals (direct labor, sales labor, admin payroll, R&D) include employer taxes, benefits, and overhead beyond gross wages shown per person.
+  The COGS labor allocation uses gross wages as proportional weights to redistribute the P&L total of $183,836 across revenue departments.
+</div>
+
+</body>
+</html>

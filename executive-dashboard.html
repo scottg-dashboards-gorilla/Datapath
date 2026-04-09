@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataPath Executive Dashboard — Weekly Performance Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+    background: #0a0f16;
+    color: #e8ecf1;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(180deg, #0f1720 0%, #0a0f16 100%);
+    border-bottom: 1px solid #1a2230;
+    padding: 20px 28px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .header-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #22c55e; box-shadow: 0 0 8px #22c55e66;
+    display: inline-block; margin-right: 10px; vertical-align: middle;
+  }
+  .header-label {
+    color: #6b7a8d; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .header h1 {
+    font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: #e8ecf1; margin-top: 4px;
+  }
+  .header-week { text-align: right; }
+  .header-week .num { color: #60a5fa; font-size: 13px; font-weight: 700; }
+  .header-week .range { color: #6b7a8d; font-size: 12px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; }
+  .tab-btn {
+    background: transparent; color: #6b7a8d; border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; letter-spacing: 0.3px;
+    border-radius: 6px 6px 0 0; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: #111820; color: #60a5fa;
+    border-bottom: 2px solid #60a5fa;
+  }
+  .tab-btn:hover:not(.active) { color: #8a9bb0; }
+
+  /* CONTENT */
+  .content { padding: 24px 28px; max-width: 1280px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* GRID LAYOUTS */
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .grid-2-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .flex-col { display: flex; flex-direction: column; gap: 12px; }
+
+  /* KPI LABEL */
+  .kpi-label {
+    color: #4a5568; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;
+  }
+
+  /* METRIC CARD */
+  .metric-card {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: border-color 0.2s;
+  }
+  .metric-card.accent {
+    background: linear-gradient(135deg, #1a2332 0%, #0f1923 100%);
+    border: 1px solid #1e3a5f;
+  }
+  .metric-card.large { padding: 20px 22px; }
+
+  /* DATA SOURCE COLOR CODING */
+  .metric-card.src-sage { border-left: 3px solid #22c55e; }
+  .metric-card.src-hubspot { border-left: 3px solid #f97316; }
+  .metric-card.src-computed { border-left: 3px solid #60a5fa; }
+  .metric-card.src-connectwise { border-left: 3px solid #a855f7; }
+  .metric-card.src-mock { border-left: 3px solid #ef4444; opacity: 0.7; }
+  .aging-table.src-sage { border-left: 3px solid #22c55e; }
+  .aging-table.src-mock { border-left: 3px solid #ef4444; opacity: 0.7; }
+  .src-badge {
+    font-size: 8px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; padding: 2px 5px; border-radius: 3px;
+    display: inline-block; margin-bottom: 4px;
+  }
+  .src-badge.sage { background: #22c55e22; color: #22c55e; }
+  .src-badge.hubspot { background: #f9731622; color: #f97316; }
+  .src-badge.connectwise { background: #a855f722; color: #a855f7; }
+  .src-badge.computed { background: #60a5fa22; color: #60a5fa; }
+  .src-badge.mock { background: #ef444422; color: #ef4444; }
+
+  .data-legend {
+    display: flex; gap: 20px; align-items: center; padding: 10px 16px;
+    background: #111820; border: 1px solid #1a2230; border-radius: 8px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .data-legend .legend-title {
+    color: #6b7a8d; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px;
+  }
+  .data-legend .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #8a9bb0;
+  }
+  .data-legend .legend-dot {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+
+  .metric-card .label {
+    color: #6b7a8d; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.1px;
+  }
+  .metric-card .value {
+    color: #e8ecf1; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+  }
+  .metric-card.large .value { font-size: 28px; }
+  .metric-card.accent .value { color: #60a5fa; }
+
+  /* DELTA */
+  .delta {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .delta.positive { color: #22c55e; }
+  .delta.negative { color: #ef4444; }
+  .delta.neutral { color: #8a8f98; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px; margin-top: 8px;
+  }
+  .section-header .icon { font-size: 18px; }
+  .section-header .title {
+    color: #e8ecf1; font-size: 15px; font-weight: 700; letter-spacing: -0.2px;
+  }
+  .section-header .subtitle {
+    color: #4a5568; font-size: 11px; font-weight: 500;
+  }
+
+  /* AGING TABLE */
+  .aging-table {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .aging-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  }
+  .aging-bar {
+    display: flex; gap: 0; border-radius: 6px; overflow: hidden;
+    margin-bottom: 10px; height: 6px;
+  }
+  .aging-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  }
+  .aging-cell { text-align: center; }
+  .aging-cell .amount { font-size: 13px; font-weight: 700; }
+  .aging-cell .days { color: #4a5568; font-size: 10px; font-weight: 600; }
+
+  /* TICKET FLOW */
+  .ticket-flow {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .bar-track { background: #1a2230; border-radius: 3px; height: 8px; }
+  .bar-fill { border-radius: 3px; height: 8px; transition: width 0.5s; }
+  .bar-label {
+    display: flex; justify-content: space-between; margin-bottom: 4px;
+  }
+  .bar-label span:first-child { color: #8a8f98; font-size: 11px; }
+  .bar-label .count { font-size: 13px; font-weight: 700; }
+
+  /* PROJECT STATUS */
+  .project-status {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .project-bar {
+    display: flex; gap: 0; border-radius: 6px; overflow: hidden;
+    margin-bottom: 10px; height: 10px;
+  }
+  .status-legend { display: flex; gap: 16px; }
+  .status-legend .item { display: flex; align-items: center; gap: 5px; }
+  .status-legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-legend .text { color: #8a8f98; font-size: 11px; }
+  .status-legend .num { color: #e8ecf1; font-weight: 700; }
+
+  /* CASH RUNWAY GAUGE */
+  .cash-runway {
+    background: linear-gradient(135deg, #1a2332 0%, #0f1923 100%);
+    border: 1px solid #1e3a5f;
+    border-radius: 10px; padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .runway-value { display: flex; align-items: baseline; gap: 6px; }
+  .runway-value .num { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+  .runway-value .unit { color: #6b7a8d; font-size: 13px; font-weight: 600; }
+  .runway-labels {
+    display: flex; justify-content: space-between;
+    color: #4a5568; font-size: 10px;
+  }
+
+  /* FUNNEL */
+  .funnel-container {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 20px 24px;
+  }
+  .funnel-steps { display: flex; align-items: center; gap: 0; margin-top: 16px; }
+  .funnel-step { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .funnel-box {
+    border-radius: 8px; padding: 14px 8px; text-align: center;
+  }
+  .funnel-box .val { color: #e8ecf1; font-size: 20px; font-weight: 800; }
+  .funnel-box .lbl { color: #8a8f98; font-size: 10px; font-weight: 600; margin-top: 2px; }
+  .funnel-pct {
+    color: #4a5568; font-size: 10px; margin: 4px 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* AR CALLOUT */
+  .ar-callout {
+    background: linear-gradient(135deg, #2d1215 0%, #1a0a0c 100%);
+    border: 1px solid #5c2020;
+    border-radius: 10px; padding: 18px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ar-callout .alert-label {
+    color: #fca5a5; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .ar-callout .alert-desc { color: #8a8f98; font-size: 12px; margin-top: 4px; }
+  .ar-callout .alert-value { color: #ef4444; font-size: 28px; font-weight: 800; }
+
+  /* RENEWALS */
+  .renewals-box {
+    background: #111820; border: 1px solid #1a2230;
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .renewals-grid { display: flex; gap: 14px; margin-top: 10px; }
+  .renewal-item { text-align: center; }
+  .renewal-item .val { font-size: 18px; font-weight: 800; }
+  .renewal-item .period { color: #4a5568; font-size: 10px; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 36px; padding-top: 16px;
+    border-top: 1px solid #1a2230;
+    display: flex; justify-content: space-between;
+    color: #3a4250; font-size: 10px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .grid-5 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .grid-5, .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .header h1 { font-size: 18px; }
+    .content { padding: 16px; }
+    .funnel-steps { flex-direction: column; }
+    .header-controls { flex-direction: column; gap: 8px; }
+  }
+
+  /* Period Picker & Sync Controls */
+  .header-controls {
+    display: flex; align-items: center; gap: 16px;
+    padding: 8px 28px 4px; background: rgba(17,24,32,0.5);
+  }
+  .period-picker-wrap {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .period-picker-wrap label {
+    color: #6b7a8d; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .period-select {
+    background: #111820; color: #e8ecf1; border: 1px solid #1e3a5f;
+    border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+    cursor: pointer; outline: none; min-width: 160px;
+  }
+  .period-select:hover { border-color: #3b82f6; }
+  .period-select:focus { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.2); }
+  .sync-wrap {
+    display: flex; align-items: center; gap: 10px; margin-left: auto;
+  }
+  .sync-btn {
+    background: linear-gradient(135deg, #1e3a5f, #162d4a); color: #60a5fa;
+    border: 1px solid #1e3a5f; border-radius: 6px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sync-btn:hover { background: linear-gradient(135deg, #264a73, #1e3a5f); border-color: #3b82f6; color: #93c5fd; }
+  .sync-btn:active { transform: scale(0.97); }
+  .sync-btn.syncing { opacity: 0.7; pointer-events: none; }
+  .sync-btn .spin { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sync-status {
+    color: #4a5568; font-size: 10px; white-space: nowrap;
+  }
+  .sync-status strong { color: #6b7a8d; }
+
+  /* Week Chips Multi-Select */
+  .week-chips-wrap {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .week-chips-label {
+    color: #6b7a8d; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px; margin-right: 2px;
+  }
+  .week-chip {
+    background: #111820; color: #8a9bb0; border: 1px solid #1e3a5f;
+    border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; user-select: none; white-space: nowrap;
+  }
+  .week-chip:hover { border-color: #3b82f6; color: #c4d5e8; }
+  .week-chip.selected {
+    background: #1e3a5f; color: #93c5fd; border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(96,165,250,0.25);
+  }
+  .week-chip.primary {
+    background: linear-gradient(135deg, #1e3a5f, #264a73); color: #e8ecf1;
+    border-color: #60a5fa; font-weight: 700;
+  }
+  .week-chip-range {
+    color: #4a5568; font-size: 9px; font-weight: 400; margin-left: 2px;
+  }
+  .week-select-actions {
+    display: flex; gap: 4px; margin-left: 4px;
+  }
+  .week-action-btn {
+    background: none; border: 1px solid #1a2230; color: #4a5568;
+    border-radius: 4px; padding: 2px 7px; font-size: 9px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .week-action-btn:hover { border-color: #3b82f6; color: #8a9bb0; }
+
+  /* WoW Chart */
+  .wow-chart-card {
+    background: #111820; border: 1px solid #1a2230; border-radius: 10px;
+    padding: 20px 22px; border-left: 3px solid #60a5fa;
+  }
+  .wow-chart-card .chart-title {
+    color: #6b7a8d; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.1px; margin-bottom: 16px;
+  }
+  .wow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .wow-mini { position: relative; height: 140px; }
+  .wow-mini .mini-label {
+    color: #8a9bb0; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+  }
+  .wow-mini .mini-value {
+    color: #e8ecf1; font-size: 18px; font-weight: 700; margin-bottom: 8px;
+  }
+  .wow-bars { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+  .wow-bar {
+    flex: 1; border-radius: 3px 3px 0 0; min-width: 14px; position: relative;
+    transition: height 0.3s; cursor: default;
+  }
+  .wow-bar.active { outline: 2px solid #fff; outline-offset: 1px; }
+  .wow-bar-label {
+    position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%);
+    font-size: 8px; color: #4a5568; white-space: nowrap;
+  }
+  @media (max-width: 900px) {
+    .wow-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div>
+        <span class="header-dot"></span>
+        <span class="header-label">DataPath Executive Dashboard</span>
+      </div>
+      <h1>Weekly Performance Report</h1>
+    </div>
+    <div class="header-week">
+      <div class="num" id="headerWeekNum">Week 9</div>
+      <div class="range" id="headerWeekRange">Mar 2 – Mar 8, 2026</div>
+    </div>
+  </div>
+
+  <!-- MONTH + WEEK PICKER & SYNC -->
+  <div class="header-controls">
+    <div class="period-picker-wrap">
+      <label for="periodSelect">Month:</label>
+      <select id="periodSelect" class="period-select" style="min-width:140px" onchange="changePeriod(this.value)">
+      </select>
+    </div>
+    <div class="week-chips-wrap">
+      <span class="week-chips-label">Weeks:</span>
+      <div id="weekChips" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+      <div class="week-select-actions">
+        <button class="week-action-btn" onclick="selectAllWeeks()" title="Select all weeks in this month">All</button>
+        <button class="week-action-btn" onclick="selectOneWeek()" title="Select only the latest week">Latest</button>
+      </div>
+    </div>
+    <div class="sync-wrap">
+      <button id="syncBtn" class="sync-btn" onclick="syncData()">
+        <span id="syncIcon">🔄</span> Sync Data
+      </button>
+      <div class="sync-status" id="syncStatus">
+        Last synced: <strong id="lastSyncTime">Never</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
+    <button class="tab-btn" onclick="switchTab('financial')">💰 Financial Health</button>
+    <button class="tab-btn" onclick="switchTab('operations')">⚙️ Operations</button>
+    <button class="tab-btn" onclick="switchTab('sales')">📈 Sales &amp; Pipeline</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- DATA SOURCE LEGEND -->
+  <div class="data-legend">
+    <span class="legend-title">Data Sources</span>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Sage Intacct (P&L, Revenue, Margins)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>HubSpot (Pipeline, Deals, Leads)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>ConnectWise (Tickets, Resolution, Utilization)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>Computed (DSO, YTD, Averages)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Mock Data (Needs Additional Sources)</div>
+  </div>
+
+  <!-- ========= OVERVIEW TAB ========= -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="kpi-label">Key Performance Indicators</div>
+    <div class="grid-5" id="overview-kpis"></div>
+
+    <div class="section-header">
+      <div>
+        <div class="title">Financial Snapshot</div>
+        <div class="subtitle">Cash position &amp; receivables</div>
+      </div>
+    </div>
+    <div class="grid-3" id="overview-financial"></div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-header">
+          <span class="icon">⚡</span>
+          <div>
+            <div class="title">Service Delivery</div>
+            <div class="subtitle">Ticket flow &amp; SLA performance</div>
+          </div>
+        </div>
+        <div class="grid-2-inner" id="overview-service"></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="icon">📈</span>
+          <div>
+            <div class="title">Sales &amp; Pipeline</div>
+            <div class="subtitle">Demand generation &amp; conversion</div>
+          </div>
+        </div>
+        <div class="grid-2-inner" id="overview-sales"></div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom: 0;">
+      <div>
+        <div class="section-header">
+          <span class="icon">📋</span>
+          <div><div class="title">Projects</div></div>
+        </div>
+        <div id="overview-projects"></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="icon">❤️</span>
+          <div><div class="title">Client Health</div></div>
+        </div>
+        <div class="flex-col" id="overview-client"></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="icon">🛡️</span>
+          <div><div class="title">Security</div></div>
+        </div>
+        <div class="flex-col" id="overview-security"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= FINANCIAL TAB ========= -->
+  <div id="tab-financial" class="tab-panel">
+    <div class="section-header">
+      <span class="icon">$</span>
+      <div>
+        <div class="title">Cash Position</div>
+        <div class="subtitle">Weekly cash flow and runway</div>
+      </div>
+    </div>
+    <div class="grid-4" id="fin-cash"></div>
+
+    <div class="section-header">
+      <span class="icon">💰</span>
+      <div>
+        <div class="title">Profitability Metrics</div>
+        <div class="subtitle">Margin and cost structure</div>
+      </div>
+    </div>
+    <div class="grid-4" id="fin-profit"></div>
+
+    <div class="section-header">
+      <span class="icon">👥</span>
+      <div>
+        <div class="title">Total Labor Costs</div>
+        <div class="subtitle">Payroll breakdown by department — % of revenue</div>
+      </div>
+    </div>
+    <div id="fin-labor"></div>
+
+    <div class="section-header">
+      <span class="icon">📊</span>
+      <div>
+        <div class="title">Accounts Receivable &amp; Payable</div>
+        <div class="subtitle">Aging analysis</div>
+      </div>
+    </div>
+    <div class="grid-2" id="fin-aging"></div>
+
+    <div id="fin-callout"></div>
+  </div>
+
+  <!-- ========= OPERATIONS TAB ========= -->
+  <div id="tab-operations" class="tab-panel">
+    <div class="section-header">
+      <span class="icon">⚡</span>
+      <div>
+        <div class="title">Service Delivery</div>
+        <div class="subtitle">Ticket metrics and SLA performance</div>
+      </div>
+    </div>
+    <div class="grid-3" id="ops-service"></div>
+
+    <div class="section-header">
+      <span class="icon">📊</span>
+      <div>
+        <div class="title">Utilization</div>
+        <div class="subtitle">Team capacity and efficiency</div>
+      </div>
+    </div>
+    <div class="grid-4" id="ops-util"></div>
+    <div id="ops-team-breakdown" style="margin-bottom: 28px;"></div>
+
+    <div class="section-header">
+      <span class="icon">⏱️</span>
+      <div>
+        <div class="title">MTTE & MTTR by Priority</div>
+        <div class="subtitle">Mean Time to Engage & Mean Time to Resolve (minutes) — Standard SLA</div>
+      </div>
+    </div>
+    <div id="ops-mtte-mttr" style="margin-bottom: 28px;"></div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-header">
+          <span class="icon">📋</span>
+          <div><div class="title">Project Delivery</div></div>
+        </div>
+        <div id="ops-projects"></div>
+        <div style="margin-top: 12px;" id="ops-hours"></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="icon">🛡️</span>
+          <div><div class="title">Security Posture</div></div>
+        </div>
+        <div class="flex-col" id="ops-security"></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="icon">❤️</span>
+      <div>
+        <div class="title">Client Health</div>
+        <div class="subtitle">Satisfaction and renewal pipeline</div>
+      </div>
+    </div>
+    <div class="grid-4" id="ops-client" style="margin-bottom: 0;"></div>
+  </div>
+
+  <!-- ========= SALES TAB ========= -->
+  <div id="tab-sales" class="tab-panel">
+    <div class="section-header">
+      <span class="icon">🏆</span>
+      <div>
+        <div class="title">Sales Performance — Revenue Won</div>
+        <div class="subtitle">ConnectWise Won Revenue report · Updated semi-monthly (15th &amp; EOM)</div>
+      </div>
+    </div>
+    <div id="sales-performance"></div>
+
+    <div class="section-header">
+      <span class="icon">🎯</span>
+      <div>
+        <div class="title">Revenue vs Target</div>
+        <div class="subtitle">Monthly quota tracking &amp; YTD performance</div>
+      </div>
+    </div>
+    <div id="sales-rev-target"></div>
+
+    <div class="section-header">
+      <span class="icon">💰</span>
+      <div>
+        <div class="title">Revenue</div>
+        <div class="subtitle">MRR movement and growth</div>
+      </div>
+    </div>
+    <div class="grid-4" id="sales-revenue"></div>
+
+    <div class="section-header">
+      <span class="icon">🔀</span>
+      <div>
+        <div class="title">MRR Breakdown — Net New vs Expansion</div>
+        <div class="subtitle">Distinguishes true new-logo growth from existing client upgrades/downgrades</div>
+      </div>
+    </div>
+    <div id="sales-mrr-breakdown"></div>
+
+    <div class="section-header">
+      <span class="icon">📈</span>
+      <div>
+        <div class="title">Pipeline &amp; Activity</div>
+        <div class="subtitle">Funnel health and conversion</div>
+      </div>
+    </div>
+    <div class="grid-4" id="sales-pipeline"></div>
+
+    <div class="section-header">
+      <span class="icon">⚡</span>
+      <div>
+        <div class="title">BDR &amp; Outbound Activity</div>
+        <div class="subtitle">Top-of-funnel generation</div>
+      </div>
+    </div>
+    <div class="grid-3" id="sales-bdr"></div>
+
+    <div id="sales-funnel"></div>
+
+    <div class="section-header">
+      <span class="icon">📞</span>
+      <div>
+        <div class="title">Outside Sales — Weekly Reach-Outs</div>
+        <div class="subtitle">Unique contacts reached per week (HubSpot)</div>
+      </div>
+    </div>
+    <div id="sales-reachouts"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>DataPath Executive Dashboard — Confidential</span>
+    <span>Sources: Sage Intacct (P&L 2026, AR, AP, Cash) • HubSpot (Pipeline, Leads, Deals) • ConnectWise (Tickets, MTTR, Utilization)</span>
+    <span id="gen-date"></span>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+// =====================================================
+// DATA SOURCE: Sage Intacct via Power BI (updated 3/24/2026)
+// P&L data pulled from: Sage Intact - General Ledger
+// Year shown: 2026 (Jan & Feb available)
+// Dynamic period selection — use dropdown to change view
+// =====================================================
+
+// --- Available Periods (ordered newest first for dropdown) ---
+const PERIODS = [
+  { key: "mar", label: "March 2026", priorKey: "feb" },
+  { key: "feb", label: "February 2026", priorKey: "jan" },
+  { key: "jan", label: "January 2026", priorKey: null },
+];
+let selectedPeriodKey = "feb"; // default to latest
+
+// --- Weekly Snapshots: operational data per week ---
+// Each key = "YYYY-Wnn", values = operational KPIs for that week
+// month = which P&L month this week falls in
+// Only weeks with real or estimated data are included
+const WEEKLY_SNAPSHOTS = {
+  "2026-W01": { weekNum: 1, range: "Jan 5 – Jan 11", month: "jan",
+    tickets: 498, resolved: 490, openTickets: 225, avgResHrs: 6.10, sla: 91.2, escalations: 14, aged7: 22,
+    utilService: 65.0, utilProject: 54.0, utilCompany: 60.2, overtime: 52,
+    outbound: 180, meetingsBooked: 7, meetingsHeld: 5, pipeline: 410000, winRate: 25 },
+  "2026-W02": { weekNum: 2, range: "Jan 12 – Jan 18", month: "jan",
+    tickets: 512, resolved: 505, openTickets: 220, avgResHrs: 5.95, sla: 92.0, escalations: 12, aged7: 20,
+    utilService: 66.5, utilProject: 55.2, utilCompany: 61.0, overtime: 50,
+    outbound: 195, meetingsBooked: 8, meetingsHeld: 6, pipeline: 420000, winRate: 26 },
+  "2026-W03": { weekNum: 3, range: "Jan 19 – Jan 25", month: "jan",
+    tickets: 525, resolved: 518, openTickets: 218, avgResHrs: 5.85, sla: 92.8, escalations: 11, aged7: 19,
+    utilService: 67.0, utilProject: 55.8, utilCompany: 61.8, overtime: 48,
+    outbound: 205, meetingsBooked: 9, meetingsHeld: 6, pipeline: 435000, winRate: 27 },
+  "2026-W04": { weekNum: 4, range: "Jan 26 – Feb 1", month: "jan",
+    tickets: 510, resolved: 508, openTickets: 215, avgResHrs: 5.80, sla: 93.1, escalations: 10, aged7: 18,
+    utilService: 67.5, utilProject: 56.0, utilCompany: 62.0, overtime: 46,
+    outbound: 210, meetingsBooked: 10, meetingsHeld: 7, pipeline: 445000, winRate: 27 },
+  "2026-W05": { weekNum: 5, range: "Feb 2 – Feb 8", month: "feb",
+    tickets: 518, resolved: 515, openTickets: 213, avgResHrs: 5.78, sla: 93.4, escalations: 10, aged7: 17,
+    utilService: 68.0, utilProject: 56.5, utilCompany: 62.5, overtime: 45,
+    outbound: 215, meetingsBooked: 10, meetingsHeld: 7, pipeline: 455000, winRate: 28 },
+  "2026-W06": { weekNum: 6, range: "Feb 9 – Feb 15", month: "feb",
+    tickets: 522, resolved: 520, openTickets: 208, avgResHrs: 5.74, sla: 93.8, escalations: 9, aged7: 16,
+    utilService: 68.5, utilProject: 56.8, utilCompany: 63.0, overtime: 44,
+    outbound: 220, meetingsBooked: 11, meetingsHeld: 7, pipeline: 460000, winRate: 28 },
+  "2026-W07": { weekNum: 7, range: "Feb 16 – Feb 22", month: "feb",
+    tickets: 528, resolved: 525, openTickets: 200, avgResHrs: 5.70, sla: 94.0, escalations: 9, aged7: 15,
+    utilService: 69.0, utilProject: 57.0, utilCompany: 63.2, overtime: 43,
+    outbound: 230, meetingsBooked: 11, meetingsHeld: 8, pipeline: 468000, winRate: 29 },
+  "2026-W08": { weekNum: 8, range: "Feb 23 – Mar 1", month: "feb",
+    tickets: 530, resolved: 528, openTickets: 195, avgResHrs: 5.68, sla: 94.3, escalations: 8, aged7: 15,
+    utilService: 69.5, utilProject: 57.2, utilCompany: 63.4, overtime: 42,
+    outbound: 238, meetingsBooked: 12, meetingsHeld: 8, pipeline: 472000, winRate: 29 },
+  "2026-W09": { weekNum: 9, range: "Mar 2 – Mar 8", month: "mar",
+    tickets: 532, resolved: 532, openTickets: 187, avgResHrs: 5.66, sla: 94.6, escalations: 8, aged7: 14,
+    utilService: 70.0, utilProject: 57.5, utilCompany: 63.5, overtime: 42,
+    outbound: 245, meetingsBooked: 12, meetingsHeld: 8, pipeline: 476550, winRate: 29 },
+  "2026-W10": { weekNum: 10, range: "Mar 9 – Mar 15", month: "mar",
+    tickets: 540, resolved: 535, openTickets: 192, avgResHrs: 5.55, sla: 94.8, escalations: 7, aged7: 13,
+    utilService: 70.5, utilProject: 58.0, utilCompany: 64.0, overtime: 40,
+    outbound: 250, meetingsBooked: 13, meetingsHeld: 9, pipeline: 480000, winRate: 30 },
+  "2026-W11": { weekNum: 11, range: "Mar 16 – Mar 22", month: "mar",
+    tickets: 545, resolved: 540, openTickets: 197, avgResHrs: 5.50, sla: 95.0, escalations: 7, aged7: 12,
+    utilService: 71.0, utilProject: 58.5, utilCompany: 64.5, overtime: 38,
+    outbound: 255, meetingsBooked: 13, meetingsHeld: 9, pipeline: 485000, winRate: 30 },
+};
+
+let selectedWeeks = ["2026-W09"]; // array of selected week keys (multi-select)
+
+// Helper: get weeks for a given month
+function getWeeksForMonth(monthKey) {
+  var result = [];
+  Object.keys(WEEKLY_SNAPSHOTS).forEach(function(k) {
+    if (WEEKLY_SNAPSHOTS[k].month === monthKey) result.push(k);
+  });
+  return result.sort();
+}
+
+// Helper: get prior week key
+function getPriorWeekKey(wk) {
+  var keys = Object.keys(WEEKLY_SNAPSHOTS).sort();
+  var idx = keys.indexOf(wk);
+  return idx > 0 ? keys[idx - 1] : null;
+}
+
+// --- P&L Monthly Detail (Sage Intacct — 2026 from P&L table) ---
+// REAL DATA from Power BI P&L page, Year: 2026
+// Feb 2026 updated with fresh pull 3/24/2026
+const PL_MONTHLY = {
+  jan: {
+    grossSales: 1385716.30, costOfServices: 855465.15, grossMargin: 530251.15,
+    variableExp: 174805.20, contributionMargin: 530251.15 - 174805.20,
+    opex: 253125.67, ebitda: 0, otherExp: 0, netIncome: 0,
+    directLabor: 279731.48, salesPayroll: 103988.56, execAdmin: 70634.84,
+    itProjectServices: 24004.75, recurPrivateCloud: 27034.79, recurResale: 365723.78,
+    recurServices: 587406.36, otherRevenue: 48938.96, productResale: 295759.09, subcontracted: 36848.57,
+    costsRecurResale: 234927.12, costsRecurServices: 44031.14, costsProductResale: 254273.02,
+    costsRecurPrivateCloud: 11555.05, costsSubcontracted: 30947.34
+  },
+  feb: {
+    grossSales: 1292505.26, costOfServices: 678685.87, grossMargin: 613819.39,
+    variableExp: 0, contributionMargin: 0,
+    opex: 0, ebitda: 0, otherExp: 0, netIncome: 0,
+    directLabor: 181547.98, salesPayroll: 68494.17, execAdmin: 44595.58,
+    itProjectServices: 17476.25, recurPrivateCloud: 26434.66, recurResale: 352088.84,
+    recurServices: 597618.29, otherRevenue: 28329.51, productResale: 196491.92, subcontracted: 3570.00,
+    costsRecurResale: 223984.13, costsRecurServices: 21541.74, costsProductResale: 187451.35,
+    costsRecurPrivateCloud: 9882.64, costsSubcontracted: 2975.00
+  },
+};
+
+// --- Chart Data (2026) ---
+const CHART_MONTHLY_SALES = {
+  jan: 1385716.30, feb: 1292505.26
+};
+const CHART_MONTHLY_COGS = {
+  jan: 855465.15, feb: 678685.87
+};
+
+// --- Dynamic computed values (recalculated on period change) ---
+const ebitdaRatio = 0.11;
+const avgOpex = (253125.67 + 306771.64 + 281036.90 + 245370.86 + 266303.55) / 5;
+
+let latestSales, latestCOGS, latestGrossMargin, latestGrossMarginPct;
+let priorSales, priorCOGS, priorGrossMargin, priorGrossMarginPct;
+let ytdSales, ytdCOGS, ytdGrossMargin, ytdGrossMarginPct;
+let trailing2mSales, trailing2mCOGS, trailing2mEbitda;
+
+function recalcDerived() {
+  var period = PERIODS.find(function(p) { return p.key === selectedPeriodKey; });
+  // If selected month has no P&L entry in PERIODS, fall back to latest available
+  if (!period) {
+    period = PERIODS[0]; // latest month with P&L data
+  }
+  var latestKey = period.key;
+  var priorKey = period.priorKey;
+
+  latestSales = CHART_MONTHLY_SALES[latestKey] || 0;
+  latestCOGS = CHART_MONTHLY_COGS[latestKey] || 0;
+  latestGrossMargin = latestSales - latestCOGS;
+  latestGrossMarginPct = latestSales > 0 ? (latestGrossMargin / latestSales * 100) : 0;
+
+  if (priorKey && CHART_MONTHLY_SALES[priorKey]) {
+    priorSales = CHART_MONTHLY_SALES[priorKey];
+    priorCOGS = CHART_MONTHLY_COGS[priorKey];
+  } else {
+    priorSales = latestSales;
+    priorCOGS = latestCOGS;
+  }
+  priorGrossMargin = priorSales - priorCOGS;
+  priorGrossMarginPct = priorSales > 0 ? (priorGrossMargin / priorSales * 100) : 0;
+
+  // YTD: sum all months up to and including selected period
+  var allKeys = Object.keys(CHART_MONTHLY_SALES);
+  var periodIdx = allKeys.indexOf(latestKey);
+  var ytdKeys = allKeys.slice(0, periodIdx + 1);
+  ytdSales = ytdKeys.reduce(function(a, k) { return a + (CHART_MONTHLY_SALES[k] || 0); }, 0);
+  ytdCOGS = ytdKeys.reduce(function(a, k) { return a + (CHART_MONTHLY_COGS[k] || 0); }, 0);
+  ytdGrossMargin = ytdSales - ytdCOGS;
+  ytdGrossMarginPct = ytdSales > 0 ? (ytdGrossMargin / ytdSales * 100) : 0;
+
+  trailing2mSales = ytdSales;
+  trailing2mCOGS = ytdCOGS;
+  trailing2mEbitda = trailing2mSales * ebitdaRatio;
+
+  // Recalculate FINANCIAL derived values
+  var moCount = ytdKeys.length;
+  FINANCIAL.dso = Math.round((1432806 / (ytdSales * 12 / moCount)) * 365);
+  FINANCIAL.dsoPrior = FINANCIAL.dso;
+  FINANCIAL.grossMarginPct = parseFloat(latestGrossMarginPct.toFixed(1));
+  FINANCIAL.grossMarginPctPrior = parseFloat(priorGrossMarginPct.toFixed(1));
+  FINANCIAL.ebitdaTrailing = Math.round(trailing2mEbitda);
+  FINANCIAL.ebitdaTrailingPrior = Math.round((priorSales || latestSales) * ebitdaRatio);
+
+  // Recalculate payroll % for selected period
+  var latestPL = PL_MONTHLY[latestKey];
+  var priorPL = priorKey ? PL_MONTHLY[priorKey] : null;
+  if (latestPL && latestPL.grossSales > 0) {
+    var totalLabor = (latestPL.directLabor || 0) + (latestPL.salesPayroll || 0) + (latestPL.execAdmin || 0);
+    FINANCIAL.payrollPctRevenue = parseFloat((totalLabor / latestPL.grossSales * 100).toFixed(1));
+  }
+  if (priorPL && priorPL.grossSales > 0) {
+    var priorLabor = (priorPL.directLabor || 0) + (priorPL.salesPayroll || 0) + (priorPL.execAdmin || 0);
+    FINANCIAL.payrollPctRevenuePrior = parseFloat((priorLabor / priorPL.grossSales * 100).toFixed(1));
+  } else {
+    FINANCIAL.payrollPctRevenuePrior = FINANCIAL.payrollPctRevenue;
+  }
+
+  // Recalculate REVENUE
+  REVENUE.netMRRMovement = Math.round(latestSales - priorSales);
+  REVENUE.netMRRMovementPrior = 0;
+  REVENUE.newMRRSold = Math.round(latestSales);
+  REVENUE.newMRRSoldPrior = Math.round(priorSales);
+  REVENUE.totalMRR = Math.round(latestSales);
+
+}
+
+const FINANCIAL = {
+  cashOnHand: 3076658, cashOnHandPrior: 3133802,
+  weeklyCashBurn: 357150, weeklyCashBurnPrior: 357150,
+  weeklyCollections: 300000, weeklyCollectionsPrior: 300000,
+  projectedRunwayWeeks: Math.round(3076658 / 57150),
+  projectedRunwayWeeksPrior: Math.round(3133802 / 57150),
+  dso: 0, dsoPrior: 0,
+  grossMarginPct: 0, grossMarginPctPrior: 0,
+  payrollPctRevenue: 0, payrollPctRevenuePrior: 0,
+  ebitdaTrailing: 0, ebitdaTrailingPrior: 0,
+  arAging: { current: 1338182, thirty: 48643, sixty: 12885, ninety: 33096, total: 1432806, priorTotal: 1432806 },
+  apAging: { current: 1093599, thirty: 770533, sixty: 598973, ninety: 2744505, total: 5207610, priorTotal: 5207610 },
+};
+
+const REVENUE = {
+  netMRRMovement: 0, netMRRMovementPrior: 0,
+  newMRRSold: 0, newMRRSoldPrior: 0,
+  mrrChurned: 0, mrrChurnedPrior: 0,
+  totalMRR: 0,
+  pipelineValue: 476550, pipelineValuePrior: 476550,
+  proposalsSent: 16, proposalsSentPrior: 16,
+};
+
+// SERVICE, SALES, UTILIZATION — populated dynamically from WEEKLY_SNAPSHOTS
+let SERVICE = {};
+let SALES = {};
+let UTILIZATION = {};
+
+// Apply weekly snapshot(s) to the mutable data objects
+// When multiple weeks are selected: sum additive metrics, average rate metrics
+// "Prior" = the week immediately before the earliest selected week
+function applyWeekSnapshots() {
+  if (selectedWeeks.length === 0) return;
+
+  var sorted = selectedWeeks.slice().sort();
+  var n = sorted.length;
+
+  // Gather all selected snapshots
+  var snaps = sorted.map(function(k) { return WEEKLY_SNAPSHOTS[k]; });
+
+  // Sum helper
+  function sum(field) { return snaps.reduce(function(a, s) { return a + (s[field] || 0); }, 0); }
+  // Average helper
+  function avg(field) { return sum(field) / n; }
+  // Last value (latest selected week for snapshot-type metrics)
+  function last(field) { return snaps[n - 1][field]; }
+
+  // Prior = week before the earliest selected
+  var priorKey = getPriorWeekKey(sorted[0]);
+  var pr = priorKey ? WEEKLY_SNAPSHOTS[priorKey] : snaps[0];
+
+  SERVICE = {
+    ticketsCreated: sum('tickets'), ticketsResolved: sum('resolved'),
+    ticketsCreatedPrior: pr.tickets, ticketsResolvedPrior: pr.resolved,
+    openTickets: last('openTickets'), openTicketsPrior: pr.openTickets,
+    avgResolutionHrs: parseFloat(avg('avgResHrs').toFixed(2)),
+    avgResolutionHrsPrior: pr.avgResHrs,
+    slaCompliancePct: parseFloat(avg('sla').toFixed(1)),
+    slaCompliancePctPrior: pr.sla,
+    escalations: sum('escalations'), escalationsPrior: pr.escalations,
+    agedTickets7Plus: last('aged7'), agedTickets7PlusPrior: pr.aged7,
+  };
+
+  SALES = {
+    outboundActivities: sum('outbound'), outboundActivitiesPrior: pr.outbound,
+    meetingsBooked: sum('meetingsBooked'), meetingsBookedPrior: pr.meetingsBooked,
+    meetingsHeld: sum('meetingsHeld'), meetingsHeldPrior: pr.meetingsHeld,
+    newOppsCreated: 396, newOppsCreatedPrior: 396,
+    winRate: last('winRate'), winRatePrior: pr.winRate,
+  };
+
+  UTILIZATION = {
+    serviceUtil: parseFloat(avg('utilService').toFixed(1)),
+    serviceUtilPrior: pr.utilService,
+    projectUtil: parseFloat(avg('utilProject').toFixed(1)),
+    projectUtilPrior: pr.utilProject,
+    companyUtil: parseFloat(avg('utilCompany').toFixed(1)),
+    companyUtilPrior: pr.utilCompany,
+    overtimeHours: sum('overtime'), overtimeHoursPrior: pr.overtime,
+    openHeadcount: 3,
+  };
+
+  REVENUE.pipelineValue = last('pipeline');
+  REVENUE.pipelineValuePrior = pr.pipeline;
+}
+
+const PROJECTS = {
+  activeProjects: 14, onTrack: 10, atRisk: 3, behind: 1,
+  completedThisWeek: 2, hoursConsumedPct: 68, hoursConsumedPctPrior: 72,
+};
+
+const CLIENT_HEALTH = {
+  clientsWithEscalations: 3, clientsWithEscalationsPrior: 5,
+  csatScore: 4.3, csatScorePrior: 4.1,
+  renewalsNext30: 4, renewalsNext60: 7, renewalsNext90: 11,
+  spikeAlerts: 2,
+};
+
+const SECURITY = {
+  criticalAlerts: 2, criticalAlertsPrior: 5,
+  incidentsOpened: 3, incidentsResolved: 4,
+  overduePatching: 1, overduePatchingPrior: 3,
+};
+
+// ===================== HELPERS =====================
+function formatCurrency(val, compact) {
+  if (compact && Math.abs(val) >= 1000000) return "$" + (val / 1000000).toFixed(1) + "M";
+  if (compact && Math.abs(val) >= 1000) return "$" + (val / 1000).toFixed(0) + "K";
+  return val < 0 ? "-$" + Math.abs(val).toLocaleString() : "$" + val.toLocaleString();
+}
+
+function deltaHTML(current, prior, { suffix = "", invert = false, format = "number" } = {}) {
+  const diff = current - prior;
+  const isPositive = invert ? diff < 0 : diff > 0;
+  const isNeutral = diff === 0;
+  const cls = isNeutral ? "neutral" : isPositive ? "positive" : "negative";
+  const arrow = isNeutral ? "–" : isPositive ? "▲" : "▼";
+  let displayDiff;
+  if (format === "currency") displayDiff = formatCurrency(Math.abs(diff), true);
+  else if (format === "pct") displayDiff = Math.abs(diff).toFixed(1) + "%";
+  else displayDiff = Math.abs(diff).toLocaleString();
+  return `<span class="delta ${cls}">${arrow} ${displayDiff}${suffix} vs prior wk</span>`;
+}
+
+function metricCard({ label, value, prior, suffix = "", invert = false, format = "number", accent = false, size = "normal", source = "mock" }) {
+  const cls = ["metric-card", "src-" + source];
+  if (accent) cls.push("accent");
+  if (size === "large") cls.push("large");
+  const current = typeof value === "number" ? value : parseFloat(value);
+  const displayVal = format === "currency" ? formatCurrency(current, true) : current.toLocaleString();
+  let delta = "";
+  if (prior !== undefined) {
+    const priorVal = typeof prior === "number" ? prior : parseFloat(prior);
+    delta = deltaHTML(current, priorVal, { suffix, invert, format });
+  }
+  const srcLabels = { sage: "Sage Intacct", hubspot: "HubSpot", connectwise: "ConnectWise", computed: "Computed", mock: "Mock Data" };
+  const badgeCls = source;
+  return `<div class="${cls.join(" ")}">
+    <span class="src-badge ${badgeCls}">${srcLabels[source] || source}</span>
+    <span class="label">${label}</span>
+    <span class="value">${displayVal}${suffix}</span>
+    ${delta}
+  </div>`;
+}
+
+function agingTable(data, label) {
+  const buckets = [
+    { key: "current", label: "Current", color: "#22c55e" },
+    { key: "thirty", label: "31–60", color: "#eab308" },
+    { key: "sixty", label: "61–90", color: "#f97316" },
+    { key: "ninety", label: "90+", color: "#ef4444" },
+  ];
+  const bars = buckets.map(b => {
+    const pct = data.total > 0 ? (data[b.key] / data.total) * 100 : 0;
+    return `<div style="width:${pct}%;height:6px;background:${b.color};min-width:${pct > 0 ? 4 : 0}px"></div>`;
+  }).join("");
+  const cells = buckets.map(b =>
+    `<div class="aging-cell"><div class="amount" style="color:${b.color}">${formatCurrency(data[b.key], true)}</div><div class="days">${b.label} days</div></div>`
+  ).join("");
+  const isAR = label.includes("AR");
+  return `<div class="aging-table src-sage">
+    <div class="aging-header">
+      <span class="src-badge sage">Sage Intacct</span>
+      <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">${label}</span>
+      <span style="color:#e8ecf1;font-size:16px;font-weight:700">${formatCurrency(data.total, true)}</span>
+    </div>
+    <div class="aging-bar">${bars}</div>
+    <div class="aging-grid">${cells}</div>
+    <div style="margin-top:8px">${deltaHTML(data.total, data.priorTotal, { format: "currency", invert: isAR })}</div>
+  </div>`;
+}
+
+function ticketFlowBar() {
+  // REAL DATA from ConnectWise — daily ticket volume for week of 3/1-3/7/2026
+  const dailyTickets = [
+    { day: "Mon", count: 141 },
+    { day: "Tue", count: 145 },
+    { day: "Wed", count: 172 },
+    { day: "Thu", count: 153 },
+    { day: "Fri", count: 133 },
+  ];
+  const maxDaily = Math.max(...dailyTickets.map(d => d.count));
+  const dailyBars = dailyTickets.map(d => {
+    const pct = (d.count / maxDaily * 100).toFixed(0);
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <span style="color:#6b7a8d;font-size:11px;width:28px">${d.day}</span>
+      <div style="flex:1;background:#1a2230;border-radius:4px;height:14px;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#a855f7,#7c3aed);height:100%;width:${pct}%;border-radius:4px"></div>
+      </div>
+      <span style="color:#e8ecf1;font-size:12px;font-weight:600;width:32px;text-align:right">${d.count}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="ticket-flow" style="border-left:3px solid #a855f7">
+    <span class="src-badge connectwise" style="margin-bottom:4px">ConnectWise</span>
+    <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Ticket Volume — Week of 3/1</span>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+      ${dailyBars}
+    </div>
+    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:#a855f7;font-size:13px;font-weight:700">532 total tickets · 16 techs</span>
+      <span style="color:#6b7a8d;font-size:11px">Avg 5.66 hrs resolution</span>
+    </div>
+  </div>`;
+}
+
+function projectStatusBar() {
+  const t = PROJECTS.activeProjects;
+  return `<div class="project-status">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Project Status</span>
+      <span style="color:#8a8f98;font-size:11px">${t} active</span>
+    </div>
+    <div class="project-bar">
+      <div style="width:${(PROJECTS.onTrack / t * 100)}%;background:#22c55e"></div>
+      <div style="width:${(PROJECTS.atRisk / t * 100)}%;background:#eab308"></div>
+      <div style="width:${(PROJECTS.behind / t * 100)}%;background:#ef4444"></div>
+    </div>
+    <div class="status-legend">
+      <div class="item"><div class="dot" style="background:#22c55e"></div><span class="text">On Track: <span class="num">${PROJECTS.onTrack}</span></span></div>
+      <div class="item"><div class="dot" style="background:#eab308"></div><span class="text">At Risk: <span class="num">${PROJECTS.atRisk}</span></span></div>
+      <div class="item"><div class="dot" style="background:#ef4444"></div><span class="text">Behind: <span class="num">${PROJECTS.behind}</span></span></div>
+    </div>
+    <div style="margin-top:10px;display:flex;justify-content:space-between">
+      <span style="color:#6b7a8d;font-size:11px">Completed this week</span>
+      <span style="color:#22c55e;font-size:13px;font-weight:700">${PROJECTS.completedThisWeek}</span>
+    </div>
+  </div>`;
+}
+
+function cashRunwayGauge() {
+  const weeks = FINANCIAL.projectedRunwayWeeks;
+  const max = 60;
+  const pct = Math.min((weeks / max) * 100, 100);
+  const color = weeks <= 8 ? "#ef4444" : weeks <= 16 ? "#eab308" : "#22c55e";
+  return `<div class="cash-runway" style="border-left:3px solid #22c55e">
+    <span class="src-badge sage">Sage Intacct</span>
+    <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Cash Runway</span>
+    <div class="runway-value">
+      <span class="num" style="color:${color}">${weeks}</span>
+      <span class="unit">weeks</span>
+    </div>
+    <div class="bar-track" style="height:8px;border-radius:4px"><div class="bar-fill" style="background:${color};width:${pct}%;border-radius:4px"></div></div>
+    <div class="runway-labels">
+      <span>Critical (8w)</span><span>Caution (16w)</span><span>Healthy (52w+)</span>
+    </div>
+    ${deltaHTML(weeks, FINANCIAL.projectedRunwayWeeksPrior, { suffix: " wks" })}
+    <div style="margin-top:6px;font-size:9px;color:#4a5568;font-style:italic">⚠ Cash data as of Dec 2025 — needs refresh</div>
+  </div>`;
+}
+
+function renewalsBox() {
+  const items = [
+    { d: "30d", v: CLIENT_HEALTH.renewalsNext30, c: "#ef4444" },
+    { d: "60d", v: CLIENT_HEALTH.renewalsNext60, c: "#eab308" },
+    { d: "90d", v: CLIENT_HEALTH.renewalsNext90, c: "#22c55e" },
+  ];
+  return `<div class="renewals-box">
+    <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Renewals Due</span>
+    <div class="renewals-grid">
+      ${items.map(r => `<div class="renewal-item"><div class="val" style="color:${r.c}">${r.v}</div><div class="period">${r.d}</div></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function conversionFunnel() {
+  // REAL DATA from HubSpot lifecycle stages
+  const steps = [
+    { label: "Leads", val: 5381, color: "#1e3a5f" },
+    { label: "SQLs", val: 137, color: "#1e4a3f" },
+    { label: "Opportunities", val: 396, color: "#1e5a2f" },
+    { label: "Open Deals", val: 211, color: "#2e6a1f" },
+    { label: "Customers", val: 914, color: "#3e7a0f" },
+  ];
+  const stepsHTML = steps.map((s, i) => {
+    const width = 100 - (i * 12);
+    let pctHTML = "";
+    if (i < steps.length - 1) {
+      const pct = ((steps[i + 1].val / s.val) * 100).toFixed(0);
+      pctHTML = `<div class="funnel-pct">${pct}%→</div>`;
+    }
+    return `<div class="funnel-step">
+      <div class="funnel-box" style="background:${s.color};width:${width}%">
+        <div class="val">${s.val}</div>
+        <div class="lbl">${s.label}</div>
+      </div>
+      ${pctHTML}
+    </div>`;
+  }).join("");
+  return `<div class="funnel-container" style="border-left:3px solid #f97316">
+    <span class="src-badge hubspot">HubSpot</span>
+    <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Sales Conversion Funnel</span>
+    <div class="funnel-steps">${stepsHTML}</div>
+  </div>`;
+}
+
+// ===================== TAB SWITCHING =====================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  const icons = { overview: "📊", financial: "💰", operations: "⚙️", sales: "📈" };
+  const labels = { overview: "Overview", financial: "Financial Health", operations: "Operations", sales: "Sales & Pipeline" };
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.includes(labels[tabId])) b.classList.add('active');
+  });
+}
+
+// ===================== RENDER ALL =====================
+function render() {
+  // OVERVIEW TAB
+  document.getElementById('overview-kpis').innerHTML = [
+    metricCard({ label: "Net MRR Movement", value: REVENUE.netMRRMovement, prior: REVENUE.netMRRMovementPrior, format: "currency", accent: true, size: "large" , source: "sage"}),
+    metricCard({ label: "SLA Compliance", value: SERVICE.slaCompliancePct, prior: SERVICE.slaCompliancePctPrior, suffix: "%", size: "large" , source: "mock"}),
+    metricCard({ label: "Billable Utilization", value: UTILIZATION.companyUtil, prior: UTILIZATION.companyUtilPrior, suffix: "%", size: "large" , source: "connectwise"}),
+    metricCard({ label: "Cash on Hand", value: FINANCIAL.cashOnHand, prior: FINANCIAL.cashOnHandPrior, format: "currency", accent: true, size: "large" , source: "sage"}),
+    metricCard({ label: "DSO", value: FINANCIAL.dso, prior: FINANCIAL.dsoPrior, suffix: " days", invert: true, size: "large" , source: "computed"}),
+  ].join("");
+
+  document.getElementById('overview-financial').innerHTML = [
+    cashRunwayGauge(),
+    agingTable(FINANCIAL.arAging, "AR Aging — Outstanding"),
+    agingTable(FINANCIAL.apAging, "AP Aging — Outstanding"),
+  ].join("");
+
+  document.getElementById('overview-service').innerHTML = [
+    ticketFlowBar(),
+    metricCard({ label: "Avg Resolution Time", value: SERVICE.avgResolutionHrs, prior: SERVICE.avgResolutionHrsPrior, suffix: " hrs", invert: true , source: "connectwise"}),
+    metricCard({ label: "Escalations", value: SERVICE.escalations, prior: SERVICE.escalationsPrior, invert: true , source: "mock"}),
+    metricCard({ label: "Aged 7+ Days", value: SERVICE.agedTickets7Plus, prior: SERVICE.agedTickets7PlusPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  document.getElementById('overview-sales').innerHTML = [
+    metricCard({ label: "Pipeline Value", value: REVENUE.pipelineValue, prior: REVENUE.pipelineValuePrior, format: "currency" , source: "hubspot"}),
+    metricCard({ label: "Proposals Sent", value: REVENUE.proposalsSent, prior: REVENUE.proposalsSentPrior , source: "hubspot"}),
+    metricCard({ label: "Meetings Held", value: SALES.meetingsHeld, prior: SALES.meetingsHeldPrior , source: "mock"}),
+    metricCard({ label: "New Opps Created", value: SALES.newOppsCreated, prior: SALES.newOppsCreatedPrior , source: "hubspot"}),
+  ].join("");
+
+  document.getElementById('overview-projects').innerHTML = projectStatusBar();
+
+  document.getElementById('overview-client').innerHTML = [
+    metricCard({ label: "CSAT Score", value: CLIENT_HEALTH.csatScore, prior: CLIENT_HEALTH.csatScorePrior, suffix: "/5" , source: "mock"}),
+    metricCard({ label: "Clients w/ Escalations", value: CLIENT_HEALTH.clientsWithEscalations, prior: CLIENT_HEALTH.clientsWithEscalationsPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  document.getElementById('overview-security').innerHTML = [
+    metricCard({ label: "Critical Alerts Open", value: SECURITY.criticalAlerts, prior: SECURITY.criticalAlertsPrior, invert: true , source: "mock"}),
+    metricCard({ label: "Overdue Patching", value: SECURITY.overduePatching, prior: SECURITY.overduePatchingPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  // FINANCIAL TAB
+  document.getElementById('fin-cash').innerHTML = [
+    metricCard({ label: "Cash on Hand", value: FINANCIAL.cashOnHand, prior: FINANCIAL.cashOnHandPrior, format: "currency", accent: true, size: "large" , source: "sage"}),
+    metricCard({ label: "Weekly Collections", value: FINANCIAL.weeklyCollections, prior: FINANCIAL.weeklyCollectionsPrior, format: "currency", size: "large" , source: "sage"}),
+    metricCard({ label: "Weekly Cash Burn", value: FINANCIAL.weeklyCashBurn, prior: FINANCIAL.weeklyCashBurnPrior, format: "currency", invert: true, size: "large" , source: "sage"}),
+    cashRunwayGauge(),
+  ].join("");
+
+  document.getElementById('fin-profit').innerHTML = [
+    metricCard({ label: "Gross Margin", value: FINANCIAL.grossMarginPct, prior: FINANCIAL.grossMarginPctPrior, suffix: "%", size: "large" , source: "sage"}),
+    metricCard({ label: "Payroll % of Revenue", value: FINANCIAL.payrollPctRevenue, prior: FINANCIAL.payrollPctRevenuePrior, suffix: "%", invert: true, size: "large" , source: "sage"}),
+    metricCard({ label: "EBITDA (Trailing 4wk)", value: FINANCIAL.ebitdaTrailing, prior: FINANCIAL.ebitdaTrailingPrior, format: "currency", size: "large" , source: "sage"}),
+    metricCard({ label: "DSO", value: FINANCIAL.dso, prior: FINANCIAL.dsoPrior, suffix: " days", invert: true, size: "large" , source: "computed"}),
+  ].join("");
+
+  // LABOR COST BREAKDOWN — REAL DATA from Sage Intacct P&L (Year: 2026)
+  var curPeriod = PERIODS.find(function(p) { return p.key === selectedPeriodKey; });
+  var curPL = PL_MONTHLY[curPeriod.key];
+  var prPL = curPeriod.priorKey ? PL_MONTHLY[curPeriod.priorKey] : curPL;
+  var curLabel = curPeriod.label.split(' ')[0]; // "February" -> "Feb" etc.
+  var prLabel = curPeriod.priorKey ? PERIODS.find(function(p) { return p.key === curPeriod.priorKey; }).label.split(' ')[0] : curLabel;
+
+  var laborDepts = [
+    { name: "Direct Labor (Support/Engineers)", jan: prPL.directLabor, feb: curPL.directLabor, janRev: prPL.grossSales, febRev: curPL.grossSales },
+    { name: "Sales Payroll", jan: prPL.salesPayroll, feb: curPL.salesPayroll, janRev: prPL.grossSales, febRev: curPL.grossSales },
+    { name: "Exec/Mgmt/Admin", jan: prPL.execAdmin, feb: curPL.execAdmin, janRev: prPL.grossSales, febRev: curPL.grossSales },
+  ];
+  var janTotal = (prPL.directLabor||0) + (prPL.salesPayroll||0) + (prPL.execAdmin||0);
+  var febTotal = (curPL.directLabor||0) + (curPL.salesPayroll||0) + (curPL.execAdmin||0);
+  var janRev = prPL.grossSales;
+  var febRev = curPL.grossSales;
+
+  function fmtK(v) { return "$" + (v/1000).toFixed(0) + "K"; }
+
+  var laborRows = laborDepts.map(function(d) {
+    var janPct = (d.jan / d.janRev * 100).toFixed(1);
+    var febPct = (d.feb / d.febRev * 100).toFixed(1);
+    var change = (d.feb - d.jan);
+    var changeColor = change < 0 ? "#22c55e" : "#ef4444";
+    var changeIcon = change < 0 ? "▼" : "▲";
+    var barMax = Math.max(d.jan, d.feb);
+    return '<tr style="border-bottom:1px solid #1a223066">'
+      + '<td style="padding:10px;color:#e8ecf1;font-weight:600;font-size:13px">' + d.name + '</td>'
+      + '<td style="padding:10px;text-align:right;color:#8a9bb0;font-size:13px">' + fmtK(d.jan) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:#8a9bb0;font-size:12px">' + janPct + '%</td>'
+      + '<td style="padding:10px;text-align:right;color:#e8ecf1;font-weight:700;font-size:13px">' + fmtK(d.feb) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:#e8ecf1;font-weight:600;font-size:12px">' + febPct + '%</td>'
+      + '<td style="padding:10px;text-align:center;font-size:12px;font-weight:600;color:' + changeColor + '">' + changeIcon + ' ' + fmtK(Math.abs(change)) + '</td>'
+      + '<td style="padding:10px"><div style="display:flex;gap:4px;align-items:flex-end;height:24px">'
+      + '<div style="flex:1;background:#1e3a5f;border-radius:3px;height:' + (d.jan/barMax*100).toFixed(0) + '%" title="Jan"></div>'
+      + '<div style="flex:1;background:#22c55e;border-radius:3px;height:' + (d.feb/barMax*100).toFixed(0) + '%" title="Feb"></div>'
+      + '</div></td></tr>';
+  }).join("");
+
+  document.getElementById('fin-labor').innerHTML =
+    '<div class="metric-card src-sage" style="padding:20px 22px;margin-bottom:28px">'
+    + '<span class="src-badge sage">Sage Intacct</span>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    + '<span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Total Labor Costs by Department</span>'
+    + '<div style="display:flex;gap:12px;align-items:center"><div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;background:#1e3a5f;border-radius:2px"></div><span style="color:#6b7a8d;font-size:10px">' + prLabel + '</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;background:#22c55e;border-radius:2px"></div><span style="color:#6b7a8d;font-size:10px">' + curLabel + '</span></div></div>'
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr style="border-bottom:1px solid #1a2230">'
+    + '<th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Department</th>'
+    + '<th style="text-align:right;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">' + prLabel + ' $</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">% Rev</th>'
+    + '<th style="text-align:right;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">' + curLabel + ' $</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">% Rev</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Change</th>'
+    + '<th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;width:12%">' + prLabel + '/' + curLabel + '</th>'
+    + '</tr></thead>'
+    + '<tbody>' + laborRows + '</tbody>'
+    + '<tfoot><tr style="border-top:2px solid #1a2230">'
+    + '<td style="padding:10px;color:#60a5fa;font-weight:700;font-size:13px">Total Labor</td>'
+    + '<td style="padding:10px;text-align:right;color:#60a5fa;font-weight:700;font-size:13px">' + fmtK(janTotal) + '</td>'
+    + '<td style="padding:10px;text-align:center;color:#60a5fa;font-weight:700;font-size:12px">' + (janTotal/janRev*100).toFixed(1) + '%</td>'
+    + '<td style="padding:10px;text-align:right;color:#60a5fa;font-weight:700;font-size:13px">' + fmtK(febTotal) + '</td>'
+    + '<td style="padding:10px;text-align:center;color:#60a5fa;font-weight:700;font-size:12px">' + (febTotal/febRev*100).toFixed(1) + '%</td>'
+    + '<td style="padding:10px;text-align:center;color:#22c55e;font-size:12px;font-weight:600">▼ ' + fmtK(janTotal - febTotal) + '</td>'
+    + '<td style="padding:10px;color:#6b7a8d;font-size:10px">YTD: ' + ((janTotal+febTotal)/(janRev+febRev)*100).toFixed(1) + '%</td>'
+    + '</tr></tfoot></table></div>';
+
+  document.getElementById('fin-aging').innerHTML = [
+    agingTable(FINANCIAL.arAging, "AR Aging — Outstanding"),
+    agingTable(FINANCIAL.apAging, "AP Aging — Outstanding"),
+  ].join("");
+
+  const ar60Plus = FINANCIAL.arAging.sixty + FINANCIAL.arAging.ninety;
+  const ar60Pct = (ar60Plus / FINANCIAL.arAging.total * 100).toFixed(1);
+  document.getElementById('fin-callout').innerHTML = `<div class="ar-callout">
+    <div>
+      <div class="alert-label">⚠ AR 60+ Days Outstanding</div>
+      <div class="alert-desc">${formatCurrency(ar60Plus)} in receivables aged beyond 60 days — ${ar60Pct}% of total AR</div>
+    </div>
+    <div class="alert-value">${formatCurrency(ar60Plus, true)}</div>
+  </div>`;
+
+  // OPERATIONS TAB
+  document.getElementById('ops-service').innerHTML = [
+    ticketFlowBar(),
+    metricCard({ label: "Open Tickets", value: SERVICE.openTickets, prior: SERVICE.openTicketsPrior, invert: true, size: "large" , source: "mock"}),
+    metricCard({ label: "SLA Compliance", value: SERVICE.slaCompliancePct, prior: SERVICE.slaCompliancePctPrior, suffix: "%", size: "large" , source: "mock"}),
+    metricCard({ label: "Avg Resolution Time", value: SERVICE.avgResolutionHrs, prior: SERVICE.avgResolutionHrsPrior, suffix: " hrs", invert: true , source: "connectwise"}),
+    metricCard({ label: "Escalations", value: SERVICE.escalations, prior: SERVICE.escalationsPrior, invert: true , source: "mock"}),
+    metricCard({ label: "Aged 7+ Days", value: SERVICE.agedTickets7Plus, prior: SERVICE.agedTickets7PlusPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  document.getElementById('ops-util').innerHTML = [
+    metricCard({ label: "Service Team (THUNDR)", value: UTILIZATION.serviceUtil, prior: UTILIZATION.serviceUtilPrior, suffix: "%", accent: true , source: "connectwise"}),
+    metricCard({ label: "Project Team (Top Gun)", value: UTILIZATION.projectUtil, prior: UTILIZATION.projectUtilPrior, suffix: "%" , source: "connectwise"}),
+    metricCard({ label: "Company-Wide", value: UTILIZATION.companyUtil, prior: UTILIZATION.companyUtilPrior, suffix: "%" , source: "connectwise"}),
+    metricCard({ label: "Overtime Hours", value: UTILIZATION.overtimeHours, prior: UTILIZATION.overtimeHoursPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  // ConnectWise Team Breakdown — REAL DATA from Technician Efficiency report (3/1-3/7/2026)
+  const cwTeams = [
+    { name: "THUNDR", tickets: 192, avgTicketsDay: 7.68, avgLaborDay: 5.60, avgResolution: 7.65, validType: 99.48, ticketsOnBudget: 2.60, firstEntry: 6.18, techs: 5 },
+    { name: "Top Gun", tickets: 205, avgTicketsDay: 6.83, avgLaborDay: 4.60, avgResolution: 5.73, validType: 99.51, ticketsOnBudget: 0.49, firstEntry: 5.82, techs: 6 },
+    { name: "ByteClub", tickets: 135, avgTicketsDay: 5.40, avgLaborDay: 5.08, avgResolution: 2.74, validType: 99.26, ticketsOnBudget: 5.19, firstEntry: 4.04, techs: 5 },
+  ];
+  const maxTickets = Math.max(...cwTeams.map(t => t.tickets));
+  document.getElementById('ops-team-breakdown').innerHTML = `
+    <div class="metric-card src-connectwise" style="padding:20px 22px">
+      <span class="src-badge connectwise">ConnectWise</span>
+      <span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px">
+        Team Performance — Week of 3/1/2026
+      </span>
+      <table style="width:100%;border-collapse:collapse;margin-top:4px">
+        <thead>
+          <tr style="border-bottom:1px solid #1a2230">
+            <th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Team</th>
+            <th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Tickets</th>
+            <th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Avg/Day</th>
+            <th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Avg Labor/Day</th>
+            <th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Avg Resolution</th>
+            <th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Utilization</th>
+            <th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;width:25%">Volume</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cwTeams.map(t => {
+            const util = (t.avgLaborDay / 8 * 100).toFixed(1);
+            const utilColor = util >= 70 ? '#22c55e' : util >= 60 ? '#eab308' : '#ef4444';
+            const barPct = (t.tickets / maxTickets * 100).toFixed(0);
+            return `<tr style="border-bottom:1px solid #1a223066">
+              <td style="padding:10px;color:#e8ecf1;font-weight:600;font-size:13px">${t.name}</td>
+              <td style="padding:10px;text-align:center;color:#e8ecf1;font-weight:700;font-size:15px">${t.tickets}</td>
+              <td style="padding:10px;text-align:center;color:#8a9bb0;font-size:13px">${t.avgTicketsDay}</td>
+              <td style="padding:10px;text-align:center;color:#8a9bb0;font-size:13px">${t.avgLaborDay} hrs</td>
+              <td style="padding:10px;text-align:center;color:${t.avgResolution > 6 ? '#ef4444' : t.avgResolution > 4 ? '#eab308' : '#22c55e'};font-weight:600;font-size:13px">${t.avgResolution} hrs</td>
+              <td style="padding:10px;text-align:center;color:${utilColor};font-weight:700;font-size:13px">${util}%</td>
+              <td style="padding:10px"><div style="background:#1a2230;border-radius:4px;height:16px;overflow:hidden"><div style="background:linear-gradient(90deg,#a855f7,#7c3aed);height:100%;width:${barPct}%;border-radius:4px;transition:width 0.3s"></div></div></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #1a2230">
+            <td style="padding:10px;color:#60a5fa;font-weight:700;font-size:13px">Total</td>
+            <td style="padding:10px;text-align:center;color:#60a5fa;font-weight:800;font-size:15px">532</td>
+            <td style="padding:10px;text-align:center;color:#60a5fa;font-size:13px">6.64</td>
+            <td style="padding:10px;text-align:center;color:#60a5fa;font-size:13px">5.08 hrs</td>
+            <td style="padding:10px;text-align:center;color:#60a5fa;font-weight:700;font-size:13px">5.66 hrs</td>
+            <td style="padding:10px;text-align:center;color:#60a5fa;font-weight:700;font-size:13px">63.5%</td>
+            <td style="padding:10px;color:#6b7a8d;font-size:11px">16 techs · 3 teams</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+
+  // MTTE & MTTR by Priority — REAL DATA from ConnectWise Ticket SLA Insights
+  // Source: Power BI "Ticket SLA Insights" report | Period: 2/10/2026 – 3/9/2026
+  // SLA: Standard SLA | Units: Minutes | Data updated: 3/8/2026
+  const slaData = [
+    { priority: "Critical", mttrFeb: 47.65, mttrMar: 124.90, target: 60, color: "#ef4444" },
+    { priority: "Elevated", mttrFeb: 204.44, mttrMar: 183.97, target: 120, color: "#f97316" },
+    { priority: "Important", mttrFeb: 261.58, mttrMar: 253.02, target: 240, color: "#eab308" },
+    { priority: "Proactive", mttrFeb: 400.57, mttrMar: 483.42, target: 480, color: "#22c55e" },
+  ];
+
+  function buildMttrRow(d) {
+    var trend = d.mttrMar - d.mttrFeb;
+    var trendIcon = trend > 0 ? "▲" : "▼";
+    var trendColor = trend > 0 ? "#ef4444" : "#22c55e";
+    var pctOfTarget = (d.mttrMar / d.target * 100).toFixed(0);
+    var barColor = d.mttrMar > d.target ? "#ef4444" : "#22c55e";
+    var barPct = Math.min(pctOfTarget, 150);
+    return '<tr style="border-bottom:1px solid #1a223066">'
+      + '<td style="padding:10px;font-size:13px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + d.color + ';margin-right:8px"></span><span style="color:#e8ecf1;font-weight:600">' + d.priority + '</span></td>'
+      + '<td style="padding:10px;text-align:center;color:#8a9bb0;font-size:13px">' + d.mttrFeb.toFixed(1) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:#e8ecf1;font-weight:700;font-size:14px">' + d.mttrMar.toFixed(1) + '</td>'
+      + '<td style="padding:10px;text-align:center;font-size:12px;font-weight:600;color:' + trendColor + '">' + trendIcon + ' ' + Math.abs(trend).toFixed(1) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:#6b7a8d;font-size:12px">' + d.target + '</td>'
+      + '<td style="padding:10px"><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#1a2230;border-radius:4px;height:12px;overflow:hidden;position:relative"><div style="position:absolute;left:66%;top:0;bottom:0;width:1px;background:#ffffff44"></div><div style="background:' + barColor + ';height:100%;width:' + (barPct/150*100).toFixed(0) + '%;border-radius:4px"></div></div><span style="color:' + barColor + ';font-size:11px;font-weight:700;white-space:nowrap">' + pctOfTarget + '%</span></div></td>'
+      + '</tr>';
+  }
+
+  var mttrRows = slaData.map(buildMttrRow).join("");
+
+  document.getElementById('ops-mtte-mttr').innerHTML =
+    '<div class="grid-2">'
+    + '<div class="metric-card src-connectwise" style="padding:20px 22px">'
+    + '<span class="src-badge connectwise">ConnectWise</span>'
+    + '<span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:4px">MTTR — Mean Time to Resolve (minutes)</span>'
+    + '<table style="width:100%;border-collapse:collapse;margin-top:4px">'
+    + '<thead><tr style="border-bottom:1px solid #1a2230">'
+    + '<th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Priority</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Feb 2026</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Mar 2026</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Trend</th>'
+    + '<th style="text-align:center;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Target</th>'
+    + '<th style="text-align:left;padding:8px 10px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;width:22%">vs Target</th>'
+    + '</tr></thead>'
+    + '<tbody>' + mttrRows + '</tbody>'
+    + '<tfoot><tr style="border-top:2px solid #1a2230">'
+    + '<td style="padding:10px;color:#60a5fa;font-weight:700;font-size:13px">Overall</td>'
+    + '<td style="padding:10px;text-align:center;color:#60a5fa;font-size:13px">275</td>'
+    + '<td style="padding:10px;text-align:center;color:#60a5fa;font-weight:700;font-size:14px">270</td>'
+    + '<td style="padding:10px;text-align:center;color:#22c55e;font-size:12px;font-weight:600">▼ 5.0</td>'
+    + '<td colspan="2" style="padding:10px;color:#6b7a8d;font-size:11px">Period: 2/10 – 3/9/2026</td>'
+    + '</tr></tfoot></table></div>'
+
+    + '<div class="metric-card src-connectwise" style="padding:20px 22px">'
+    + '<span class="src-badge connectwise">ConnectWise</span>'
+    + '<span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:4px">MTTE — Mean Time to Engage (minutes)</span>'
+    + '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px;gap:16px;text-align:center;padding:20px 0">'
+    + '<div style="color:#eab308;font-size:36px">⏳</div>'
+    + '<div style="color:#8a9bb0;font-size:13px;line-height:1.6;max-width:300px">'
+    + 'MTTE data requires navigating to the MTTE tab in Power BI.<br><br>'
+    + '<span style="color:#6b7a8d;font-size:11px">Please share the MTTE tab URL to populate this section.</span>'
+    + '</div></div>'
+
+    + '<div style="margin-top:auto">'
+    + '<div style="background:#1a2230;border-radius:8px;padding:12px 16px">'
+    + '<div style="color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">MTTR by Board</div>'
+    + '<div style="display:flex;gap:16px">'
+    + '<div style="flex:1;text-align:center"><div style="color:#e8ecf1;font-size:18px;font-weight:700">286</div><div style="color:#6b7a8d;font-size:10px">DP Service West</div></div>'
+    + '<div style="width:1px;background:#2a3240"></div>'
+    + '<div style="flex:1;text-align:center"><div style="color:#e8ecf1;font-size:18px;font-weight:700">238</div><div style="color:#6b7a8d;font-size:10px">DP Service East</div></div>'
+    + '</div></div></div></div>'
+    + '</div>';
+
+  document.getElementById('ops-projects').innerHTML = projectStatusBar();
+  document.getElementById('ops-hours').innerHTML = metricCard({ label: "Hours Budget Consumed", value: PROJECTS.hoursConsumedPct, prior: PROJECTS.hoursConsumedPctPrior, suffix: "%", invert: true , source: "mock"});
+
+  document.getElementById('ops-security').innerHTML = [
+    metricCard({ label: "Critical Alerts Open", value: SECURITY.criticalAlerts, prior: SECURITY.criticalAlertsPrior, invert: true, size: "large" , source: "mock"}),
+    `<div class="grid-2-inner">${metricCard({ label: "Incidents Opened", value: SECURITY.incidentsOpened , source: "mock"})}${metricCard({ label: "Incidents Resolved", value: SECURITY.incidentsResolved , source: "mock"})}</div>`,
+    metricCard({ label: "Overdue Patching", value: SECURITY.overduePatching, prior: SECURITY.overduePatchingPrior, invert: true , source: "mock"}),
+  ].join("");
+
+  document.getElementById('ops-client').innerHTML = [
+    metricCard({ label: "CSAT Score", value: CLIENT_HEALTH.csatScore, prior: CLIENT_HEALTH.csatScorePrior, suffix: "/5" , source: "mock"}),
+    metricCard({ label: "Escalated Clients", value: CLIENT_HEALTH.clientsWithEscalations, prior: CLIENT_HEALTH.clientsWithEscalationsPrior, invert: true , source: "mock"}),
+    metricCard({ label: "Spike Alerts", value: CLIENT_HEALTH.spikeAlerts , source: "mock"}),
+    renewalsBox(),
+  ].join("");
+
+  // SALES TAB
+  document.getElementById('sales-revenue').innerHTML = [
+    metricCard({ label: "Net MRR Movement", value: REVENUE.netMRRMovement, prior: REVENUE.netMRRMovementPrior, format: "currency", accent: true, size: "large" , source: "sage"}),
+    metricCard({ label: "New MRR Sold", value: REVENUE.newMRRSold, prior: REVENUE.newMRRSoldPrior, format: "currency", size: "large" , source: "sage"}),
+    metricCard({ label: "MRR Churned", value: REVENUE.mrrChurned, prior: REVENUE.mrrChurnedPrior, format: "currency", invert: true, size: "large" , source: "mock"}),
+    metricCard({ label: "Total MRR", value: REVENUE.totalMRR, format: "currency", accent: true, size: "large" , source: "sage"}),
+  ].join("");
+
+  // MRR BREAKDOWN — Net New vs Expansion/Contraction
+  var mb = salesPerfData.mrrBreakdown;
+  var mrrTotal = mb.netNewMRR + mb.upgradeMRR - mb.downgradeMRR;
+  var netNewPct = mrrTotal > 0 ? (mb.netNewMRR / mrrTotal * 100).toFixed(1) : 0;
+  var expansionPct = mrrTotal > 0 ? (mb.netExpansionMRR / mrrTotal * 100).toFixed(1) : 0;
+
+  var mrrBreakdownHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+
+  // LEFT BOX — Net New MRR (True Growth)
+  mrrBreakdownHTML += '<div style="background:#111820;border:1px solid #1a2230;border-radius:12px;padding:20px 22px;border-left:4px solid #22c55e;position:relative">'
+    + '<span class="src-badge connectwise" style="position:absolute;top:12px;right:14px">ConnectWise</span>'
+    + '<div style="color:#22c55e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">🆕 Net New MRR — New Logos</div>'
+    + '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+    + '<span style="color:#e2e8f0;font-size:32px;font-weight:800">' + formatCurrency(mb.netNewMRR, true) + '</span>'
+    + '<span style="color:#6b7a8d;font-size:13px">/mo</span>'
+    + '</div>';
+  // Prior comparison
+  var nnDelta = mb.netNewMRR - mb.priorNetNewMRR;
+  var nnDeltaPct = mb.priorNetNewMRR > 0 ? ((nnDelta / mb.priorNetNewMRR) * 100).toFixed(1) : 0;
+  var nnColor = nnDelta >= 0 ? '#22c55e' : '#ef4444';
+  var nnArrow = nnDelta >= 0 ? '▲' : '▼';
+  mrrBreakdownHTML += '<div style="color:' + nnColor + ';font-size:12px;margin-bottom:14px">' + nnArrow + ' ' + (nnDelta >= 0 ? '+' : '') + formatCurrency(nnDelta, true) + ' (' + (nnDelta >= 0 ? '+' : '') + nnDeltaPct + '%) vs prior period</div>';
+  // Stats grid
+  mrrBreakdownHTML += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px">'
+    + '<div style="background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center"><div style="color:#22c55e;font-size:18px;font-weight:700">' + formatCurrency(mb.netNewMRRAnnualized, true) + '</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">Annualized</div></div>'
+    + '<div style="background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center"><div style="color:#22c55e;font-size:18px;font-weight:700">' + mb.netNewDeals + '</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">New Deals</div></div>'
+    + '<div style="background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center"><div style="color:#22c55e;font-size:18px;font-weight:700">' + netNewPct + '%</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">of Total MRR</div></div>'
+    + '</div>';
+  // Visual bar
+  mrrBreakdownHTML += '<div style="margin-top:14px;background:#1a2230;border-radius:6px;height:8px;overflow:hidden">'
+    + '<div style="background:linear-gradient(90deg,#22c55e,#16a34a);height:100%;width:' + netNewPct + '%;border-radius:6px"></div>'
+    + '</div>'
+    + '<div style="color:#6b7a8d;font-size:10px;margin-top:4px;text-align:right">' + netNewPct + '% of new MRR is true new-logo growth</div>';
+  mrrBreakdownHTML += '</div>';
+
+  // RIGHT BOX — Upgrade/Downgrade MRR (Expansion)
+  mrrBreakdownHTML += '<div style="background:#111820;border:1px solid #1a2230;border-radius:12px;padding:20px 22px;border-left:4px solid #a855f7;position:relative">'
+    + '<span class="src-badge connectwise" style="position:absolute;top:12px;right:14px">ConnectWise</span>'
+    + '<div style="color:#a855f7;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">🔄 Expansion MRR — Existing Clients</div>'
+    + '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'
+    + '<span style="color:#e2e8f0;font-size:32px;font-weight:800">' + formatCurrency(mb.netExpansionMRR, true) + '</span>'
+    + '<span style="color:#6b7a8d;font-size:13px">/mo net</span>'
+    + '</div>';
+  // Prior comparison
+  var exDelta = mb.netExpansionMRR - mb.priorUpgradeMRR;
+  var exDeltaPct = mb.priorUpgradeMRR > 0 ? ((exDelta / mb.priorUpgradeMRR) * 100).toFixed(1) : 0;
+  var exColor = exDelta >= 0 ? '#22c55e' : '#ef4444';
+  var exArrow = exDelta >= 0 ? '▲' : '▼';
+  mrrBreakdownHTML += '<div style="color:' + exColor + ';font-size:12px;margin-bottom:14px">' + exArrow + ' ' + (exDelta >= 0 ? '+' : '') + formatCurrency(exDelta, true) + ' (' + (exDelta >= 0 ? '+' : '') + exDeltaPct + '%) vs prior period</div>';
+  // Upgrade vs Downgrade detail
+  mrrBreakdownHTML += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    + '<div style="background:#0d1117;border-radius:8px;padding:12px 14px">'
+    + '<div style="color:#6b7a8d;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Upgrades</div>'
+    + '<div style="display:flex;align-items:baseline;gap:4px"><span style="color:#22c55e;font-size:20px;font-weight:700">+' + formatCurrency(mb.upgradeMRR, true) + '</span><span style="color:#6b7a8d;font-size:11px">/mo</span></div>'
+    + '<div style="color:#6b7a8d;font-size:11px;margin-top:2px">' + mb.upgradeDeals + ' contracts</div>'
+    + '</div>'
+    + '<div style="background:#0d1117;border-radius:8px;padding:12px 14px">'
+    + '<div style="color:#6b7a8d;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Downgrades</div>'
+    + '<div style="display:flex;align-items:baseline;gap:4px"><span style="color:' + (mb.downgradeMRR > 0 ? '#ef4444' : '#6b7a8d') + ';font-size:20px;font-weight:700">' + (mb.downgradeMRR > 0 ? '-' : '') + formatCurrency(mb.downgradeMRR, true) + '</span><span style="color:#6b7a8d;font-size:11px">/mo</span></div>'
+    + '<div style="color:#6b7a8d;font-size:11px;margin-top:2px">' + mb.downgradeDeals + ' contracts</div>'
+    + '</div>'
+    + '</div>';
+  // Stats row
+  mrrBreakdownHTML += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div style="background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center"><div style="color:#a855f7;font-size:18px;font-weight:700">' + formatCurrency(mb.upgradeMRRAnnualized, true) + '</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">Annualized Net</div></div>'
+    + '<div style="background:#0d1117;border-radius:8px;padding:10px 12px;text-align:center"><div style="color:#a855f7;font-size:18px;font-weight:700">' + expansionPct + '%</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">of Total MRR</div></div>'
+    + '</div>';
+  // Visual bar
+  mrrBreakdownHTML += '<div style="margin-top:14px;background:#1a2230;border-radius:6px;height:8px;overflow:hidden">'
+    + '<div style="background:linear-gradient(90deg,#a855f7,#7c3aed);height:100%;width:' + expansionPct + '%;border-radius:6px"></div>'
+    + '</div>'
+    + '<div style="color:#6b7a8d;font-size:10px;margin-top:4px;text-align:right">' + expansionPct + '% of new MRR is from existing client expansion</div>';
+  mrrBreakdownHTML += '</div>';
+
+  mrrBreakdownHTML += '</div>';
+
+  // Combined summary bar below the two boxes
+  mrrBreakdownHTML += '<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:14px 18px;margin-top:12px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+    + '<span style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Total New MRR Composition</span>'
+    + '<span style="color:#e2e8f0;font-size:14px;font-weight:700">' + formatCurrency(mrrTotal, true) + '/mo</span>'
+    + '</div>'
+    + '<div style="display:flex;height:10px;border-radius:6px;overflow:hidden;background:#1a2230">'
+    + '<div style="background:#22c55e;width:' + netNewPct + '%;transition:width 0.3s" title="Net New: ' + netNewPct + '%"></div>'
+    + '<div style="background:#a855f7;width:' + expansionPct + '%;transition:width 0.3s" title="Expansion: ' + expansionPct + '%"></div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;margin-top:6px">'
+    + '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#22c55e"></span><span style="color:#6b7a8d;font-size:11px">Net New (' + netNewPct + '%)</span></div>'
+    + '<div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#a855f7"></span><span style="color:#6b7a8d;font-size:11px">Expansion (' + expansionPct + '%)</span></div>'
+    + '</div>'
+    + '</div>';
+
+  document.getElementById('sales-mrr-breakdown').innerHTML = mrrBreakdownHTML;
+
+  document.getElementById('sales-pipeline').innerHTML = [
+    metricCard({ label: "Pipeline Value", value: REVENUE.pipelineValue, prior: REVENUE.pipelineValuePrior, format: "currency", size: "large" , source: "hubspot"}),
+    metricCard({ label: "Proposals Sent", value: REVENUE.proposalsSent, prior: REVENUE.proposalsSentPrior, size: "large" , source: "hubspot"}),
+    metricCard({ label: "Win Rate", value: SALES.winRate, prior: SALES.winRatePrior, suffix: "%", size: "large" , source: "hubspot"}),
+    metricCard({ label: "New Opps Created", value: SALES.newOppsCreated, prior: SALES.newOppsCreatedPrior, size: "large" , source: "hubspot"}),
+  ].join("");
+
+  document.getElementById('sales-bdr').innerHTML = [
+    metricCard({ label: "Outbound Activities", value: SALES.outboundActivities, prior: SALES.outboundActivitiesPrior, size: "large" , source: "mock"}),
+    metricCard({ label: "Meetings Booked", value: SALES.meetingsBooked, prior: SALES.meetingsBookedPrior, size: "large" , source: "mock"}),
+    metricCard({ label: "Meetings Held", value: SALES.meetingsHeld, prior: SALES.meetingsHeldPrior, size: "large" , source: "mock"}),
+  ].join("");
+
+  document.getElementById('sales-funnel').innerHTML = conversionFunnel();
+
+  // OUTSIDE SALES — ACTIVITY LEADERBOARD (REAL DATA from HubSpot Dashboard)
+  // This Week (Mar 2–8, 2026) — Activity breakdown by type
+  const repActivity = [
+    { name: "Hilaria Lijwndme", calls: 70, emails: 430, meetings: 0, tasks: 37, total: 537 },
+    { name: "Joel Walker", calls: 90, emails: 180, meetings: 10, tasks: 102, total: 382 },
+    { name: "Jay Harvey", calls: 30, emails: 100, meetings: 5, tasks: 125, total: 260 },
+    { name: "Dan Sturdivant", calls: 25, emails: 20, meetings: 2, tasks: 82, total: 129 },
+    { name: "Nathan La Fleche", calls: 5, emails: 40, meetings: 5, tasks: 14, total: 64 },
+  ];
+  const actTeamTotal = repActivity.reduce((a, r) => a + r.total, 0);
+  const actTeamCalls = repActivity.reduce((a, r) => a + r.calls, 0);
+  const actTeamEmails = repActivity.reduce((a, r) => a + r.emails, 0);
+  const actTeamMeetings = repActivity.reduce((a, r) => a + r.meetings, 0);
+  const actTeamTasks = repActivity.reduce((a, r) => a + r.tasks, 0);
+
+  // 4-Week Trend (unique contacts reached per week from HubSpot API)
+  const repTrend = [
+    { name: "Hilaria Lijwndme", weeks: [0, 70, 32, 193] },
+    { name: "Joel Walker", weeks: [5, 8, 9, 19] },
+    { name: "Jay Harvey", weeks: [39, 14, 53, 180] },
+    { name: "Dan Sturdivant", weeks: [3, 4, 4, 4] },
+    { name: "Nathan La Fleche", weeks: [15, 12, 22, 37] },
+  ];
+
+  // Build Activity Leaderboard — This Week
+  let roHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">`;
+
+  // LEFT: This Week Activity by Type
+  roHTML += `<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:16px 18px;border-left:3px solid #f97316">
+    <span class="src-badge hubspot">HubSpot</span>
+    <div style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin:6px 0 4px">Activity Leaderboard — This Week (Mar 2–8)</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
+    <thead><tr style="border-bottom:1px solid #1a2230">
+      <th style="text-align:left;padding:6px 10px;color:#6b7a8d;font-weight:600">Rep</th>
+      <th style="text-align:center;padding:6px 6px;color:#f4a89a;font-weight:600">Calls</th>
+      <th style="text-align:center;padding:6px 6px;color:#7dd3c0;font-weight:600">Emails</th>
+      <th style="text-align:center;padding:6px 6px;color:#c4b5fd;font-weight:600">Mtgs</th>
+      <th style="text-align:center;padding:6px 6px;color:#fbbf24;font-weight:600">Tasks</th>
+      <th style="text-align:center;padding:6px 8px;color:#22c55e;font-weight:700">Total</th>
+    </tr></thead><tbody>`;
+
+  repActivity.forEach((r, idx) => {
+    const barWidth = Math.round((r.total / repActivity[0].total) * 100);
+    roHTML += `<tr style="border-bottom:1px solid #0f1720">
+      <td style="padding:8px 10px;font-weight:600;color:#e8ecf1;white-space:nowrap">${idx === 0 ? "🏆 " : ""}${r.name}</td>
+      <td style="text-align:center;padding:8px 6px;color:#f4a89a;font-weight:${r.calls > 50 ? 700 : 500}">${r.calls}</td>
+      <td style="text-align:center;padding:8px 6px;color:#7dd3c0;font-weight:${r.emails > 100 ? 700 : 500}">${r.emails}</td>
+      <td style="text-align:center;padding:8px 6px;color:#c4b5fd">${r.meetings}</td>
+      <td style="text-align:center;padding:8px 6px;color:#fbbf24">${r.tasks}</td>
+      <td style="text-align:center;padding:8px 8px;font-weight:700;color:#22c55e;font-size:14px">${r.total}</td>
+    </tr>`;
+  });
+
+  // Team total
+  roHTML += `<tr style="border-top:2px solid #1e3a5f;background:#0f1720">
+    <td style="padding:8px 10px;font-weight:700;color:#60a5fa;text-transform:uppercase;font-size:10px;letter-spacing:1px">Team</td>
+    <td style="text-align:center;padding:8px 6px;font-weight:700;color:#f4a89a">${actTeamCalls}</td>
+    <td style="text-align:center;padding:8px 6px;font-weight:700;color:#7dd3c0">${actTeamEmails}</td>
+    <td style="text-align:center;padding:8px 6px;font-weight:700;color:#c4b5fd">${actTeamMeetings}</td>
+    <td style="text-align:center;padding:8px 6px;font-weight:700;color:#fbbf24">${actTeamTasks}</td>
+    <td style="text-align:center;padding:8px 8px;font-weight:800;color:#22c55e;font-size:16px">${actTeamTotal}</td>
+  </tr>`;
+  roHTML += `</tbody></table>`;
+
+  // Stacked bar visualization
+  roHTML += `<div style="margin-top:12px">`;
+  repActivity.forEach(r => {
+    const cPct = (r.calls/r.total*100).toFixed(0);
+    const ePct = (r.emails/r.total*100).toFixed(0);
+    const mPct = (r.meetings/r.total*100).toFixed(0);
+    const tPct = (r.tasks/r.total*100).toFixed(0);
+    const barScale = (r.total / repActivity[0].total * 100).toFixed(0);
+    roHTML += `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+      <div style="width:90px;font-size:10px;color:#6b7a8d;text-align:right;flex-shrink:0">${r.name.split(' ')[0]}</div>
+      <div style="flex:1;display:flex;height:14px;border-radius:3px;overflow:hidden;width:${barScale}%">
+        <div style="width:${cPct}%;background:#f4a89a" title="Calls: ${r.calls}"></div>
+        <div style="width:${ePct}%;background:#7dd3c0" title="Emails: ${r.emails}"></div>
+        <div style="width:${mPct}%;background:#c4b5fd" title="Meetings: ${r.meetings}"></div>
+        <div style="width:${tPct}%;background:#fbbf24" title="Tasks: ${r.tasks}"></div>
+      </div>
+      <div style="font-size:11px;color:#e8ecf1;font-weight:600;width:35px">${r.total}</div>
+    </div>`;
+  });
+  roHTML += `<div style="display:flex;gap:14px;margin-top:6px;padding-left:98px">
+    <span style="font-size:9px;color:#f4a89a">● Calls</span>
+    <span style="font-size:9px;color:#7dd3c0">● Emails</span>
+    <span style="font-size:9px;color:#c4b5fd">● Meetings</span>
+    <span style="font-size:9px;color:#fbbf24">● Tasks</span>
+  </div></div>
+  </div>`;
+
+  // RIGHT: 4-Week Trend (contacts reached)
+  const trendWeekLabels = ["Feb 9", "Feb 16", "Feb 23", "Mar 2"];
+  roHTML += `<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:16px 18px;border-left:3px solid #f97316">
+    <span class="src-badge hubspot">HubSpot</span>
+    <div style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin:6px 0 4px">4-Week Trend — Unique Contacts Reached</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
+    <thead><tr style="border-bottom:1px solid #1a2230">
+      <th style="text-align:left;padding:6px 10px;color:#6b7a8d;font-weight:600">Rep</th>`;
+  trendWeekLabels.forEach(w => { roHTML += `<th style="text-align:center;padding:6px 8px;color:#60a5fa;font-weight:600;font-size:10px">Wk ${w}</th>`; });
+  roHTML += `<th style="text-align:center;padding:6px 8px;color:#22c55e;font-weight:700">Total</th>
+      <th style="text-align:center;padding:6px 6px;color:#6b7a8d;font-weight:600">Trend</th>
+    </tr></thead><tbody>`;
+
+  const trendTotals = [0,0,0,0];
+  repTrend.forEach(r => {
+    const total = r.weeks.reduce((a,b) => a+b, 0);
+    r.weeks.forEach((w, i) => trendTotals[i] += w);
+    const trend = r.weeks[3] > r.weeks[0] ? "📈" : r.weeks[3] < r.weeks[0] ? "📉" : "➡️";
+    roHTML += `<tr style="border-bottom:1px solid #0f1720">
+      <td style="padding:8px 10px;font-weight:600;color:#e8ecf1;white-space:nowrap">${r.name}</td>`;
+    r.weeks.forEach(w => {
+      const intensity = Math.min(w / 80, 1);
+      const bg = `rgba(96, 165, 250, ${intensity * 0.3})`;
+      roHTML += `<td style="text-align:center;padding:8px;background:${bg};font-weight:600;color:#e8ecf1">${w}</td>`;
+    });
+    roHTML += `<td style="text-align:center;padding:8px;font-weight:700;color:#22c55e;font-size:13px">${total}</td>
+      <td style="text-align:center;padding:8px;font-size:14px">${trend}</td>
+    </tr>`;
+  });
+
+  const trendGrandTotal = trendTotals.reduce((a,b) => a+b, 0);
+  roHTML += `<tr style="border-top:2px solid #1e3a5f;background:#0f1720">
+    <td style="padding:8px 10px;font-weight:700;color:#60a5fa;text-transform:uppercase;font-size:10px;letter-spacing:1px">Team</td>`;
+  trendTotals.forEach(t => {
+    roHTML += `<td style="text-align:center;padding:8px;font-weight:700;color:#60a5fa;font-size:13px">${t}</td>`;
+  });
+  roHTML += `<td style="text-align:center;padding:8px;font-weight:800;color:#22c55e;font-size:15px">${trendGrandTotal}</td>
+    <td style="text-align:center;padding:8px;font-size:14px">${trendTotals[3] > trendTotals[0] ? "📈" : "📉"}</td>
+  </tr></tbody></table>
+  <div style="margin-top:8px;font-size:9px;color:#4a5568;font-style:italic">
+    * Unique contacts with logged activity per week. Source: HubSpot "Last Contacted" by owner.
+  </div>
+  </div>`;
+
+  roHTML += `</div>`; // close grid
+
+  document.getElementById('sales-reachouts').innerHTML = roHTML;
+
+  // --- SALES PERFORMANCE — Revenue Won (ConnectWise) ---
+  // REAL DATA from ConnectWise Power BI "Sales Rep - Won Revenue" report
+  // Period: Feb 1–28, 2026 | Updated semi-monthly (15th & end of month)
+  // NOTE: Revenue Won ≠ P&L revenue. P&L recognizes revenue at billing/delivery.
+  // Won revenue may lag 1-2 months due to equipment orders & delivery timelines.
+  var salesPerfData = {
+    period: "Feb 1 – Feb 28, 2026",
+    nextUpdate: "Mar 31, 2026",
+    nrr: 384814,
+    recurRevenueAnnualized: 398114,
+    recurRevenueMonthly: 33176,
+    totalRevenueWon: 782928,
+    target: 753233,
+    pctOfTarget: 103.94,
+    // MRR Breakdown: Net New vs Upgrade/Downgrade
+    // Source: ConnectWise via Power BI "Sales Rep Quota Tracking" → Net New filter
+    // Net New MRR = new client contracts (true organic growth)
+    // Upgrade/Downgrade MRR = existing client contract changes (expansion/contraction)
+    mrrBreakdown: {
+      netNewMRR: 21764,           // New client MRR won in period
+      netNewMRRAnnualized: 261168,
+      netNewDeals: 8,
+      upgradeMRR: 11412,          // Existing client upgrade MRR in period
+      upgradeMRRAnnualized: 136944,
+      upgradeDeals: 5,
+      downgradeMRR: 0,            // Existing client downgrade MRR in period
+      downgradeMRRAnnualized: 0,
+      downgradeDeals: 0,
+      netExpansionMRR: 11412,     // upgrade - downgrade
+      // Prior period for comparison
+      priorNetNewMRR: 19850,
+      priorUpgradeMRR: 8200,
+      priorDowngradeMRR: 0,
+    },
+    reps: [
+      { name: "Joel Walker", won: 208743 },
+      { name: "Nathan La Fleche", won: 204237 },
+      { name: "Dan Sturdivant", won: 158604 },
+      { name: "Jay Harvey", won: 125747 },
+      { name: "Ricky Maestas", won: 79177 },
+      { name: "Maria Martinez", won: 5913 },
+      { name: "Julissa Martinez", won: 508 },
+    ]
+  };
+
+  var maxRepWon = Math.max.apply(null, salesPerfData.reps.map(function(r) { return r.won; }));
+
+  // Build KPI cards row
+  var spKPIs = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">'
+    + metricCard({ label: "Total Revenue Won", value: salesPerfData.totalRevenueWon, format: "currency", accent: true, size: "large", source: "connectwise" })
+    + metricCard({ label: "NRR", value: salesPerfData.nrr, format: "currency", size: "large", source: "connectwise" })
+    + metricCard({ label: "Recurring Revenue (Monthly)", value: salesPerfData.recurRevenueMonthly, format: "currency", source: "connectwise" })
+    + metricCard({ label: "Recurring Revenue (Annualized)", value: salesPerfData.recurRevenueAnnualized, format: "currency", source: "connectwise" })
+    + '</div>';
+
+  // Build rep leaderboard
+  var repRows = salesPerfData.reps.map(function(r) {
+    var pct = (r.won / salesPerfData.totalRevenueWon * 100).toFixed(1);
+    var barPct = (r.won / maxRepWon * 100).toFixed(0);
+    return '<tr style="border-bottom:1px solid #1a223066">'
+      + '<td style="padding:10px 12px;color:#e8ecf1;font-weight:600;font-size:13px">' + r.name + '</td>'
+      + '<td style="padding:10px 12px;text-align:right;color:#e8ecf1;font-weight:700;font-size:14px">' + formatCurrency(r.won, true) + '</td>'
+      + '<td style="padding:10px 12px;text-align:center;color:#8a9bb0;font-size:12px">' + pct + '%</td>'
+      + '<td style="padding:10px 12px"><div style="background:#1a2230;border-radius:4px;height:16px;overflow:hidden"><div style="background:linear-gradient(90deg,#60a5fa,#3b82f6);height:100%;width:' + barPct + '%;border-radius:4px"></div></div></td>'
+      + '</tr>';
+  }).join('');
+
+  var spTable = '<div class="grid-2">'
+    + '<div class="metric-card src-connectwise" style="padding:20px 22px">'
+    + '<span class="src-badge connectwise">ConnectWise</span>'
+    + '<span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:4px">Revenue Won by Rep — ' + salesPerfData.period + '</span>'
+    + '<table style="width:100%;border-collapse:collapse;margin-top:8px">'
+    + '<thead><tr style="border-bottom:1px solid #1a2230">'
+    + '<th style="text-align:left;padding:8px 12px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Rep</th>'
+    + '<th style="text-align:right;padding:8px 12px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Won</th>'
+    + '<th style="text-align:center;padding:8px 12px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px">Share</th>'
+    + '<th style="text-align:left;padding:8px 12px;color:#6b7a8d;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;width:30%">Volume</th>'
+    + '</tr></thead>'
+    + '<tbody>' + repRows + '</tbody>'
+    + '<tfoot><tr style="border-top:2px solid #1a2230">'
+    + '<td style="padding:10px 12px;color:#60a5fa;font-weight:700;font-size:13px">Total</td>'
+    + '<td style="padding:10px 12px;text-align:right;color:#60a5fa;font-weight:800;font-size:15px">' + formatCurrency(salesPerfData.totalRevenueWon, true) + '</td>'
+    + '<td style="padding:10px 12px;text-align:center;color:#60a5fa;font-weight:700">100%</td>'
+    + '<td style="padding:10px 12px;color:#6b7a8d;font-size:11px">7 reps</td>'
+    + '</tr></tfoot></table></div>'
+
+    // Right panel: Revenue breakdown + cadence note
+    + '<div style="display:flex;flex-direction:column;gap:12px">'
+
+    // Revenue vs Target gauge
+    + '<div class="metric-card src-connectwise" style="padding:20px 22px;flex:1">'
+    + '<span class="src-badge connectwise">ConnectWise</span>'
+    + '<span class="label" style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:12px">Revenue vs Target — Feb 2026</span>'
+    + '<div style="display:flex;align-items:center;gap:20px">'
+    + '<div style="flex:1">'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#8a9bb0;font-size:11px">Won</span><span style="color:#22c55e;font-size:13px;font-weight:700">' + formatCurrency(salesPerfData.totalRevenueWon, true) + '</span></div>'
+    + '<div style="background:#1a2230;border-radius:6px;height:20px;overflow:hidden;position:relative">'
+    + '<div style="position:absolute;left:66%;top:0;bottom:0;width:2px;background:#ffffff33;z-index:1"></div>'
+    + '<div style="background:linear-gradient(90deg,#22c55e,#16a34a);height:100%;width:' + Math.min(salesPerfData.pctOfTarget, 120).toFixed(0) + '%;border-radius:6px;max-width:100%"></div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="color:#8a9bb0;font-size:11px">Target</span><span style="color:#6b7a8d;font-size:12px">' + formatCurrency(salesPerfData.target, true) + '</span></div>'
+    + '</div>'
+    + '<div style="text-align:center;min-width:70px">'
+    + '<div style="color:' + (salesPerfData.pctOfTarget >= 100 ? '#22c55e' : '#ef4444') + ';font-size:28px;font-weight:800">' + salesPerfData.pctOfTarget.toFixed(0) + '%</div>'
+    + '<div style="color:#6b7a8d;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">of target</div>'
+    + '</div></div>'
+
+    // Revenue type breakdown
+    + '<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    + '<div style="background:#1a2230;border-radius:8px;padding:12px;text-align:center"><div style="color:#60a5fa;font-size:16px;font-weight:700">' + formatCurrency(salesPerfData.nrr, true) + '</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">NRR</div></div>'
+    + '<div style="background:#1a2230;border-radius:8px;padding:12px;text-align:center"><div style="color:#a855f7;font-size:16px;font-weight:700">' + formatCurrency(salesPerfData.recurRevenueMonthly, true) + '</div><div style="color:#6b7a8d;font-size:10px;margin-top:2px">New MRR</div></div>'
+    + '</div></div>'
+
+    // Reporting cadence note
+    + '<div class="metric-card" style="padding:16px 18px;background:linear-gradient(135deg,#1a2215 0%,#0f1a0c 100%);border:1px solid #2d4a20">'
+    + '<div style="display:flex;align-items:flex-start;gap:10px">'
+    + '<span style="font-size:18px">📅</span>'
+    + '<div>'
+    + '<div style="color:#22c55e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Reporting Cadence</div>'
+    + '<div style="color:#8a9bb0;font-size:12px;margin-top:4px;line-height:1.5">'
+    + 'This data updates <strong style="color:#e8ecf1">semi-monthly</strong> — on the <strong style="color:#e8ecf1">15th</strong> and <strong style="color:#e8ecf1">end of month</strong>.'
+    + '<br><span style="color:#6b7a8d;font-size:11px">Next update: ' + salesPerfData.nextUpdate + '</span>'
+    + '</div>'
+    + '<div style="color:#eab308;font-size:11px;margin-top:8px;line-height:1.5">'
+    + '⚠ <strong>Won ≠ Billed:</strong> Revenue won here may not hit the P&L immediately. Revenue is recognized when billed at delivery — equipment orders can lag 1-2 months.'
+    + '</div></div></div></div>'
+
+    + '</div></div>';
+
+  document.getElementById('sales-performance').innerHTML = spKPIs + spTable;
+
+  // --- REVENUE VS TARGET ---
+  // Data from Sales Performance Dashboard (ConnectWise Won Revenue)
+  var revTargetData = {
+    months: [
+      { name: 'January',   revenue: 441000, target: 435000 },
+      { name: 'February',  revenue: 482000, target: 445000 },
+      { name: 'March',     revenue: 0,      target: 460000 },
+      { name: 'April',     revenue: 0,      target: 470000 },
+      { name: 'May',       revenue: 0,      target: 480000 },
+      { name: 'June',      revenue: 0,      target: 490000 },
+      { name: 'July',      revenue: 0,      target: 500000 },
+      { name: 'August',    revenue: 0,      target: 510000 },
+      { name: 'September', revenue: 0,      target: 520000 },
+      { name: 'October',   revenue: 0,      target: 530000 },
+      { name: 'November',  revenue: 0,      target: 540000 },
+      { name: 'December',  revenue: 0,      target: 550000 },
+    ]
+  };
+
+  // Compute derived values
+  var rtWithData = revTargetData.months.filter(function(m) { return m.revenue > 0; });
+  var rtLatest = rtWithData[rtWithData.length - 1] || { name: '—', revenue: 0, target: 0 };
+  var rtLatestVar = rtLatest.revenue - rtLatest.target;
+  var rtYTDRevenue = rtWithData.reduce(function(a, m) { return a + m.revenue; }, 0);
+  var rtYTDTarget = rtWithData.reduce(function(a, m) { return a + m.target; }, 0);
+  var rtYTDVar = rtYTDRevenue - rtYTDTarget;
+
+  // KPI cards row
+  var rtKPIs = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">'
+    + metricCard({ label: rtLatest.name + ' Revenue', value: rtLatest.revenue, format: 'currency', accent: true, size: 'large', source: 'connectwise' })
+    + metricCard({ label: rtLatest.name + ' Target', value: rtLatest.target, format: 'currency', size: 'large', source: 'connectwise' })
+    + '<div class="metric-card src-computed' + (rtLatestVar >= 0 ? '' : '') + '" style="border-left:3px solid ' + (rtLatestVar >= 0 ? '#22c55e' : '#ef4444') + '">'
+    + '<span class="src-badge computed">Computed</span>'
+    + '<span class="label">Variance</span>'
+    + '<span class="value" style="color:' + (rtLatestVar >= 0 ? '#22c55e' : '#ef4444') + '">' + (rtLatestVar >= 0 ? '+' : '') + formatCurrency(rtLatestVar, true) + '</span>'
+    + '<span class="delta ' + (rtLatestVar >= 0 ? 'positive' : 'negative') + '">' + (rtLatestVar >= 0 ? '▲ Above target' : '▼ Below target') + '</span>'
+    + '</div>'
+    + metricCard({ label: 'YTD Revenue', value: rtYTDRevenue, format: 'currency', accent: true, size: 'large', source: 'connectwise' })
+    + '</div>';
+
+  // Bar chart — Revenue vs Target by month
+  var rtChartMaxVal = 0;
+  revTargetData.months.forEach(function(m) { rtChartMaxVal = Math.max(rtChartMaxVal, m.revenue, m.target); });
+  var rtBarW = Math.floor(100 / 12);
+
+  var rtChart = '<div class="grid-2" style="margin-bottom:16px">';
+
+  // LEFT: Revenue vs Target chart
+  rtChart += '<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:20px 22px">';
+  rtChart += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+  rtChart += '<span style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Revenue vs Target (Monthly)</span>';
+  rtChart += '<div style="display:flex;gap:12px"><div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;background:#3b82f6;border-radius:2px"></div><span style="color:#6b7a8d;font-size:10px">Revenue ($K)</span></div><div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;background:#2a3240;border-radius:2px"></div><span style="color:#6b7a8d;font-size:10px">Target ($K)</span></div></div>';
+  rtChart += '</div>';
+  rtChart += '<div style="display:flex;align-items:flex-end;height:180px;gap:2px;padding-bottom:24px;position:relative">';
+  // Y-axis labels
+  for (var yi = 0; yi <= 4; yi++) {
+    var yVal = Math.round(rtChartMaxVal / 4 * yi / 1000);
+    var yPct = (yi / 4 * 100).toFixed(0);
+    rtChart += '<div style="position:absolute;left:0;bottom:' + (24 + yi * 39) + 'px;color:#4a5568;font-size:9px;width:35px;text-align:right">$' + yVal + 'K</div>';
+    if (yi > 0) rtChart += '<div style="position:absolute;left:40px;right:0;bottom:' + (24 + yi * 39) + 'px;height:1px;background:#1a223066"></div>';
+  }
+  rtChart += '<div style="display:flex;align-items:flex-end;height:100%;gap:2px;flex:1;margin-left:42px">';
+  revTargetData.months.forEach(function(m, idx) {
+    var rH = rtChartMaxVal > 0 ? (m.revenue / rtChartMaxVal * 156) : 0;
+    var tH = rtChartMaxVal > 0 ? (m.target / rtChartMaxVal * 156) : 0;
+    var shortName = m.name.substring(0, 3);
+    var hasData = m.revenue > 0;
+    rtChart += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">';
+    rtChart += '<div style="display:flex;align-items:flex-end;gap:1px;width:100%;justify-content:center;height:156px">';
+    if (hasData) {
+      rtChart += '<div style="width:40%;background:#3b82f6;height:' + Math.max(rH, 2) + 'px;border-radius:2px 2px 0 0"></div>';
+    }
+    rtChart += '<div style="width:' + (hasData ? '40' : '60') + '%;background:#2a3240;height:' + Math.max(tH, 2) + 'px;border-radius:2px 2px 0 0"></div>';
+    rtChart += '</div>';
+    rtChart += '<div style="color:' + (hasData ? '#8a9bb0' : '#3a4250') + ';font-size:9px;margin-top:4px">' + shortName + '</div>';
+    rtChart += '</div>';
+  });
+  rtChart += '</div></div></div>';
+
+  // RIGHT: Monthly Variance chart
+  rtChart += '<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:20px 22px">';
+  rtChart += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+  rtChart += '<span style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Monthly Variance</span>';
+  rtChart += '<div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;background:#22c55e;border-radius:2px"></div><span style="color:#6b7a8d;font-size:10px">Variance ($K)</span></div>';
+  rtChart += '</div>';
+  var maxVar = 0;
+  rtWithData.forEach(function(m) { maxVar = Math.max(maxVar, Math.abs(m.revenue - m.target)); });
+  if (maxVar === 0) maxVar = 1;
+  rtChart += '<div style="display:flex;align-items:flex-end;height:180px;gap:2px;padding-bottom:24px;position:relative">';
+  for (var vi = 0; vi <= 4; vi++) {
+    var vVal = Math.round(maxVar * 1.2 / 4 * vi / 1000);
+    rtChart += '<div style="position:absolute;left:0;bottom:' + (24 + vi * 39) + 'px;color:#4a5568;font-size:9px;width:35px;text-align:right">+$' + vVal + 'K</div>';
+    if (vi > 0) rtChart += '<div style="position:absolute;left:40px;right:0;bottom:' + (24 + vi * 39) + 'px;height:1px;background:#1a223066"></div>';
+  }
+  rtChart += '<div style="display:flex;align-items:flex-end;height:100%;gap:2px;flex:1;margin-left:42px">';
+  revTargetData.months.forEach(function(m) {
+    var variance = m.revenue - m.target;
+    var hasData = m.revenue > 0;
+    var shortName = m.name.substring(0, 3);
+    var barH = hasData ? Math.max(Math.abs(variance) / (maxVar * 1.2) * 156, 2) : 0;
+    var barColor = variance >= 0 ? '#22c55e' : '#ef4444';
+    rtChart += '<div style="flex:1;display:flex;flex-direction:column;align-items:center">';
+    rtChart += '<div style="height:156px;display:flex;align-items:flex-end;width:100%;justify-content:center">';
+    if (hasData) {
+      rtChart += '<div style="width:60%;background:' + barColor + ';height:' + barH + 'px;border-radius:2px 2px 0 0"></div>';
+    }
+    rtChart += '</div>';
+    rtChart += '<div style="color:' + (hasData ? '#8a9bb0' : '#3a4250') + ';font-size:9px;margin-top:4px">' + shortName + '</div>';
+    rtChart += '</div>';
+  });
+  rtChart += '</div></div></div>';
+  rtChart += '</div>';
+
+  // Monthly Breakdown Table
+  var rtTable = '<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:20px 22px">';
+  rtTable += '<span style="color:#6b7a8d;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px">Monthly Breakdown — 2026</span>';
+  rtTable += '<table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:12px">';
+  rtTable += '<thead><tr style="border-bottom:1px solid #1a2230">'
+    + '<th style="text-align:left;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">Month</th>'
+    + '<th style="text-align:right;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">Revenue</th>'
+    + '<th style="text-align:right;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">Target</th>'
+    + '<th style="text-align:right;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">Variance</th>'
+    + '<th style="text-align:center;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">% to Target</th>'
+    + '<th style="text-align:center;padding:8px 12px;color:#6b7a8d;font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:1px">Status</th>'
+    + '</tr></thead><tbody>';
+
+  revTargetData.months.forEach(function(m) {
+    var hasData = m.revenue > 0;
+    var variance = m.revenue - m.target;
+    var pct = hasData ? (m.revenue / m.target * 100).toFixed(1) : '—';
+    var status, statusColor, statusBg;
+    if (!hasData) {
+      status = '—'; statusColor = '#4a5568'; statusBg = 'transparent';
+    } else if (parseFloat(pct) >= 105) {
+      status = 'Exceeded'; statusColor = '#22c55e'; statusBg = '#22c55e22';
+    } else if (parseFloat(pct) >= 95) {
+      status = 'On Track'; statusColor = '#22c55e'; statusBg = '#22c55e22';
+    } else if (parseFloat(pct) >= 85) {
+      status = 'At Risk'; statusColor = '#eab308'; statusBg = '#eab30822';
+    } else {
+      status = 'Behind'; statusColor = '#ef4444'; statusBg = '#ef444422';
+    }
+    var isLatest = hasData && m.name === rtLatest.name;
+    var rowWeight = isLatest ? '700' : '400';
+    var nameColor = hasData ? '#e8ecf1' : '#4a5568';
+
+    rtTable += '<tr style="border-bottom:1px solid #0f1720' + (isLatest ? ';background:#1a223044' : '') + '">';
+    rtTable += '<td style="padding:8px 12px;color:' + nameColor + ';font-weight:' + rowWeight + '">' + m.name + '</td>';
+    rtTable += '<td style="text-align:right;padding:8px 12px;color:' + (hasData ? '#e8ecf1' : '#4a5568') + ';font-weight:' + rowWeight + '">' + (hasData ? formatCurrency(m.revenue) : '—') + '</td>';
+    rtTable += '<td style="text-align:right;padding:8px 12px;color:#8a9bb0">' + formatCurrency(m.target) + '</td>';
+    rtTable += '<td style="text-align:right;padding:8px 12px;color:' + (hasData ? (variance >= 0 ? '#22c55e' : '#ef4444') : '#4a5568') + ';font-weight:600">' + (hasData ? (variance >= 0 ? '+' : '') + formatCurrency(variance) : '—') + '</td>';
+    rtTable += '<td style="text-align:center;padding:8px 12px;color:' + (hasData ? '#e8ecf1' : '#4a5568') + ';font-weight:600">' + (hasData ? pct + '%' : '—') + '</td>';
+    rtTable += '<td style="text-align:center;padding:8px 12px">';
+    if (status !== '—') {
+      rtTable += '<span style="background:' + statusBg + ';color:' + statusColor + ';padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;border:1px solid ' + statusColor + '33">' + status + '</span>';
+    } else {
+      rtTable += '<span style="color:#4a5568">—</span>';
+    }
+    rtTable += '</td></tr>';
+  });
+
+  // YTD totals row
+  rtTable += '<tr style="border-top:2px solid #1e3a5f;background:#0f1720">';
+  rtTable += '<td style="padding:10px 12px;color:#60a5fa;font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:1px">YTD Total</td>';
+  rtTable += '<td style="text-align:right;padding:10px 12px;color:#60a5fa;font-weight:800;font-size:14px">' + formatCurrency(rtYTDRevenue) + '</td>';
+  rtTable += '<td style="text-align:right;padding:10px 12px;color:#60a5fa;font-weight:700">' + formatCurrency(rtYTDTarget) + '</td>';
+  rtTable += '<td style="text-align:right;padding:10px 12px;color:' + (rtYTDVar >= 0 ? '#22c55e' : '#ef4444') + ';font-weight:700">' + (rtYTDVar >= 0 ? '+' : '') + formatCurrency(rtYTDVar) + '</td>';
+  rtTable += '<td style="text-align:center;padding:10px 12px;color:#60a5fa;font-weight:700">' + (rtYTDRevenue / rtYTDTarget * 100).toFixed(1) + '%</td>';
+  var ytdStatusColor = rtYTDVar >= 0 ? '#22c55e' : '#ef4444';
+  rtTable += '<td style="text-align:center;padding:10px 12px"><span style="color:' + ytdStatusColor + ';font-size:11px;font-weight:600">' + (rtYTDVar >= 0 ? '▲' : '▼') + ' ' + Math.abs(rtYTDVar / rtYTDTarget * 100).toFixed(1) + '% ' + (rtYTDVar >= 0 ? 'ahead' : 'behind') + '</span></td>';
+  rtTable += '</tr>';
+  rtTable += '</tbody></table></div>';
+
+  document.getElementById('sales-rev-target').innerHTML = rtKPIs + rtChart + rtTable;
+
+  // Footer date
+  document.getElementById('gen-date').textContent = "Generated " + new Date().toLocaleDateString();
+
+  // --- WoW Chart ---
+  renderWoWChart();
+
+  // --- P&L BY MONTH TABLE (Sage Intacct — 2026 data) ---
+  // Build months array up to and including selected period
+  var allMonthKeys = Object.keys(PL_MONTHLY);
+  var selIdx = allMonthKeys.indexOf(selectedPeriodKey);
+  // If selected month has no P&L data (e.g., March), show all available
+  if (selIdx < 0) selIdx = allMonthKeys.length - 1;
+  const months = allMonthKeys.slice(0, selIdx + 1);
+  const monthLabels = months.map(function(k) {
+    var p = PERIODS.find(function(pp) { return pp.key === k; });
+    return p ? p.label : k;
+  });
+
+  // Build the P&L table for the Financial tab
+  let plHTML = '<div class="dynamic-pl-section" style="margin-top:28px">';
+  var plSubtitle = 'Year: 2026 — ' + monthLabels.join(' &amp; ') + ' (latest available)';
+  plHTML += '<div class="section-header"><span class="icon">📋</span><div><div class="title">P&L by Month (Sage Intacct)</div><div class="subtitle">' + plSubtitle + '</div></div></div>';
+  plHTML += '<div style="background:#111820;border:1px solid #1a2230;border-radius:10px;padding:16px 18px;overflow-x:auto">';
+  plHTML += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  plHTML += '<thead><tr style="border-bottom:1px solid #1a2230">';
+  plHTML += '<th style="text-align:left;padding:8px 12px;color:#6b7a8d;font-weight:600">P&L Line</th>';
+
+  monthLabels.forEach(function(m) { plHTML += '<th style="text-align:right;padding:8px 12px;color:#60a5fa;font-weight:600">' + m + '</th>'; });
+  plHTML += '<th style="text-align:right;padding:8px 12px;color:#60a5fa;font-weight:600">MoM Change</th>';
+  plHTML += '</tr></thead><tbody>';
+
+  // Revenue detail rows
+  var revenueLines = [
+    { label: 'Monthly Recurring Services', key: 'recurServices' },
+    { label: 'Monthly Recurring Resale', key: 'recurResale' },
+    { label: 'Product Resale', key: 'productResale' },
+    { label: 'Other Revenue', key: 'otherRevenue' },
+    { label: 'Subcontracted Services', key: 'subcontracted' },
+    { label: 'Monthly Recurring Private Cloud', key: 'recurPrivateCloud' },
+    { label: 'IT Project Services', key: 'itProjectServices' },
+  ];
+
+  // Gross Sales header
+  plHTML += '<tr style="border-bottom:1px solid #0d1218;background:#0d121866">';
+  plHTML += '<td style="padding:8px 12px;color:#22c55e;font-weight:700">Gross Sales</td>';
+  months.forEach(function(m) {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#22c55e;font-weight:700">' + formatCurrency(PL_MONTHLY[m].grossSales, true) + '</td>';
+  });
+  if (months.length >= 2) {
+    var salesChange = ((PL_MONTHLY[months[months.length-1]].grossSales - PL_MONTHLY[months[months.length-2]].grossSales) / PL_MONTHLY[months[months.length-2]].grossSales * 100).toFixed(1);
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:' + (salesChange < 0 ? '#ef4444' : '#22c55e') + ';font-weight:600">' + salesChange + '%</td>';
+  } else {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#6b7a8d">—</td>';
+  }
+  plHTML += '</tr>';
+
+  revenueLines.forEach(function(r) {
+    plHTML += '<tr style="border-bottom:1px solid #0d1218">';
+    plHTML += '<td style="padding:6px 12px 6px 24px;color:#8a9bb0;font-size:11px">' + r.label + '</td>';
+    months.forEach(function(m) {
+      var val = PL_MONTHLY[m][r.key] || 0;
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:#8a9bb0;font-size:11px">' + formatCurrency(val, true) + '</td>';
+    });
+    if (months.length >= 2) {
+      var prevV = PL_MONTHLY[months[months.length-2]][r.key] || 0;
+      var curV = PL_MONTHLY[months[months.length-1]][r.key] || 0;
+      var pctChg = prevV > 0 ? ((curV - prevV) / prevV * 100).toFixed(1) : '—';
+      var chgColor = typeof pctChg === 'string' ? '#6b7a8d' : (parseFloat(pctChg) < 0 ? '#ef4444' : '#22c55e');
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:' + chgColor + ';font-size:11px">' + (typeof pctChg === 'string' ? pctChg : pctChg + '%') + '</td>';
+    } else {
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:#6b7a8d;font-size:11px">—</td>';
+    }
+    plHTML += '</tr>';
+  });
+
+  // Cost of Services
+  plHTML += '<tr style="border-bottom:1px solid #0d1218;background:#0d121866">';
+  plHTML += '<td style="padding:8px 12px;color:#ef4444;font-weight:700">Cost of Services</td>';
+  months.forEach(function(m) {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#ef4444;font-weight:700">-' + formatCurrency(PL_MONTHLY[m].costOfServices, true) + '</td>';
+  });
+  if (months.length >= 2) {
+    var cogsChange = ((PL_MONTHLY[months[months.length-1]].costOfServices - PL_MONTHLY[months[months.length-2]].costOfServices) / PL_MONTHLY[months[months.length-2]].costOfServices * 100).toFixed(1);
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:' + (cogsChange < 0 ? '#22c55e' : '#ef4444') + ';font-weight:600">' + cogsChange + '%</td>';
+  } else {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#6b7a8d">—</td>';
+  }
+  plHTML += '</tr>';
+
+  // COGS detail
+  var cogsLines = [
+    { label: 'Costs of Monthly Recurring Resale', key: 'costsRecurResale' },
+    { label: 'Costs of Product Resale', key: 'costsProductResale' },
+    { label: 'Costs of Monthly Recurring Services', key: 'costsRecurServices' },
+    { label: 'Costs of Subcontracted Services', key: 'costsSubcontracted' },
+    { label: 'Costs of Recurring Private Cloud', key: 'costsRecurPrivateCloud' },
+  ];
+  cogsLines.forEach(function(r) {
+    plHTML += '<tr style="border-bottom:1px solid #0d1218">';
+    plHTML += '<td style="padding:6px 12px 6px 24px;color:#8a9bb0;font-size:11px">' + r.label + '</td>';
+    months.forEach(function(m) {
+      var val = PL_MONTHLY[m][r.key] || 0;
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:#8a9bb0;font-size:11px">-' + formatCurrency(val, true) + '</td>';
+    });
+    if (months.length >= 2) {
+      var prevV2 = PL_MONTHLY[months[months.length-2]][r.key] || 0;
+      var curV2 = PL_MONTHLY[months[months.length-1]][r.key] || 0;
+      var pctChg = prevV2 > 0 ? ((curV2 - prevV2) / prevV2 * 100).toFixed(1) : '—';
+      var chgColor = typeof pctChg === 'string' ? '#6b7a8d' : (parseFloat(pctChg) < 0 ? '#22c55e' : '#ef4444');
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:' + chgColor + ';font-size:11px">' + (typeof pctChg === 'string' ? pctChg : pctChg + '%') + '</td>';
+    } else {
+      plHTML += '<td style="text-align:right;padding:6px 12px;color:#6b7a8d;font-size:11px">—</td>';
+    }
+    plHTML += '</tr>';
+  });
+
+  // Direct Labor
+  plHTML += '<tr style="border-bottom:1px solid #0d1218;background:#0d121866">';
+  plHTML += '<td style="padding:8px 12px;color:#f97316;font-weight:700">Direct Labor (Support/Engineers)</td>';
+  months.forEach(function(m) {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#f97316;font-weight:700">-' + formatCurrency(PL_MONTHLY[m].directLabor, true) + '</td>';
+  });
+  if (months.length >= 2) {
+    var dlChange = ((PL_MONTHLY[months[months.length-1]].directLabor - PL_MONTHLY[months[months.length-2]].directLabor) / PL_MONTHLY[months[months.length-2]].directLabor * 100).toFixed(1);
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:' + (dlChange < 0 ? '#22c55e' : '#ef4444') + ';font-weight:600">' + dlChange + '%</td>';
+  } else {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#6b7a8d">—</td>';
+  }
+  plHTML += '</tr>';
+
+  // Gross Margin
+  plHTML += '<tr style="border-top:2px solid #1e3a5f;background:#0d121866">';
+  plHTML += '<td style="padding:8px 12px;color:#22c55e;font-weight:700">Gross Margin</td>';
+  months.forEach(function(m) {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#22c55e;font-weight:700">' + formatCurrency(PL_MONTHLY[m].grossMargin, true) + '</td>';
+  });
+  if (months.length >= 2) {
+    var gmChange = ((PL_MONTHLY[months[months.length-1]].grossMargin - PL_MONTHLY[months[months.length-2]].grossMargin) / PL_MONTHLY[months[months.length-2]].grossMargin * 100).toFixed(1);
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:' + (parseFloat(gmChange) > 0 ? '#22c55e' : '#ef4444') + ';font-weight:600">' + gmChange + '%</td>';
+  } else {
+    plHTML += '<td style="text-align:right;padding:8px 12px;color:#6b7a8d">—</td>';
+  }
+  plHTML += '</tr>';
+
+  // Gross Margin % row
+  plHTML += '<tr><td style="padding:6px 12px;color:#60a5fa;font-weight:700">Gross Margin %</td>';
+  months.forEach(function(m) {
+    var pct = (PL_MONTHLY[m].grossMargin / PL_MONTHLY[m].grossSales * 100).toFixed(1);
+    plHTML += '<td style="text-align:right;padding:6px 12px;color:#60a5fa;font-weight:700">' + pct + '%</td>';
+  });
+  if (months.length >= 2) {
+    var lastMo = months[months.length-1], prevMo = months[months.length-2];
+    plHTML += '<td style="text-align:right;padding:6px 12px;color:#60a5fa;font-weight:700">' + ((PL_MONTHLY[lastMo].grossMargin / PL_MONTHLY[lastMo].grossSales * 100) - (PL_MONTHLY[prevMo].grossMargin / PL_MONTHLY[prevMo].grossSales * 100)).toFixed(1) + 'pp</td>';
+  } else {
+    plHTML += '<td style="text-align:right;padding:6px 12px;color:#6b7a8d">—</td>';
+  }
+  plHTML += '</tr>';
+
+  plHTML += '</tbody></table></div></div>';
+
+  // Add YTD summary card
+  plHTML += `<div style="margin-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    ${metricCard({ label: "YTD Revenue (" + months.length + "mo)", value: ytdSales, format: "currency", accent: true, size: "large" , source: "sage"})}
+    ${metricCard({ label: "YTD Gross Margin", value: ytdGrossMargin, format: "currency", size: "large" , source: "sage"})}
+    ${metricCard({ label: "YTD Margin %", value: parseFloat(ytdGrossMarginPct.toFixed(1)), suffix: "%", size: "large" , source: "computed"})}
+    ${metricCard({ label: "Avg Monthly Revenue", value: Math.round(ytdSales / months.length), format: "currency", size: "large" , source: "computed"})}
+  </div>`;
+
+  // Data source notice
+  plHTML += `<div style="margin-top:16px;background:linear-gradient(135deg,#1a2332 0%,#0f1923 100%);border:1px solid #1e3a5f;border-radius:10px;padding:14px 18px">
+    <div style="color:#60a5fa;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">📡 Data Sources</div>
+    <div style="color:#8a8f98;font-size:11px;line-height:1.6">
+      <strong style="color:#22c55e">✓ P&L (${monthLabels.join(' – ')})</strong> — Full line item breakdown from Sage Intacct General Ledger<br>
+      <strong style="color:#22c55e">✓ AR/AP Aging, Cash Flow</strong> — Real data from Sage Intacct &amp; Power BI Cash Forecast<br>
+      <strong style="color:#22c55e">✓ Payroll / Labor Costs</strong> — Direct Labor, Sales, Exec/Admin from Sage Intacct P&L<br>
+      <strong style="color:#f97316">✓ Pipeline, Deals, Leads</strong> — Real data from HubSpot CRM<br>
+      <strong style="color:#a855f7">✓ Tickets, Resolution, Utilization, MTTR</strong> — Real data from ConnectWise (3/1-3/7/2026)<br>
+      <strong style="color:#8a8f98">Last refresh:</strong> March 24, 2026
+    </div>
+  </div></div>`;
+
+  document.getElementById('fin-callout').insertAdjacentHTML('afterend', plHTML);
+
+  // Add data needs banner to Overview tab
+  const needsBanner = `<div class="dynamic-needs-banner" style="margin-top:20px;background:linear-gradient(135deg,#2d2515 0%,#1a1a0c 100%);border:1px solid #5c5020;border-radius:10px;padding:14px 18px">
+    <div style="color:#eab308;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">⚠ Remaining Data Gaps</div>
+    <div style="color:#8a8f98;font-size:11px;margin-top:6px;line-height:1.6">
+      <strong style="color:#ef4444">Mock data:</strong> SLA Compliance, Escalations, Aged Tickets, Overtime, Open Headcount, Projects, Client Health, Security<br>
+      <strong style="color:#eab308">Needs URL:</strong> MTTE (Mean Time to Engage), ConnectWise inside sales activities &amp; opportunities
+    </div>
+  </div>`;
+  const overviewTab = document.getElementById('tab-overview');
+  overviewTab.insertAdjacentHTML('beforeend', needsBanner);
+}
+
+// ===================== CONTROLS: MONTH, WEEK CHIPS, SYNC =====================
+
+function initPeriodPicker() {
+  var sel = document.getElementById('periodSelect');
+  sel.innerHTML = '';
+  // Add "All" months plus each available
+  var allMonths = [];
+  Object.keys(WEEKLY_SNAPSHOTS).sort().forEach(function(k) {
+    var m = WEEKLY_SNAPSHOTS[k].month;
+    if (allMonths.indexOf(m) < 0) allMonths.push(m);
+  });
+  allMonths.forEach(function(m) {
+    var p = PERIODS.find(function(pp) { return pp.key === m; });
+    var opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = p ? p.label : m.charAt(0).toUpperCase() + m.slice(1) + ' 2026';
+    if (m === selectedPeriodKey) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderWeekChips() {
+  var container = document.getElementById('weekChips');
+  container.innerHTML = '';
+  // Show all weeks that belong to this month (or all adjacent if no match)
+  var monthWeeks = getWeeksForMonth(selectedPeriodKey);
+  if (monthWeeks.length === 0) monthWeeks = Object.keys(WEEKLY_SNAPSHOTS).sort();
+
+  monthWeeks.forEach(function(k) {
+    var wk = WEEKLY_SNAPSHOTS[k];
+    var chip = document.createElement('div');
+    chip.className = 'week-chip';
+    if (selectedWeeks.indexOf(k) >= 0) {
+      chip.className += ' selected';
+      // "Primary" = the latest selected (used for header display)
+      if (k === selectedWeeks.slice().sort().pop()) chip.className += ' primary';
+    }
+    chip.setAttribute('data-week', k);
+    chip.innerHTML = 'W' + wk.weekNum + '<span class="week-chip-range">' + wk.range.split(' – ')[0] + '</span>';
+    chip.onclick = function(e) { toggleWeekChip(k, e); };
+    container.appendChild(chip);
+  });
+}
+
+function toggleWeekChip(weekKey, event) {
+  var idx = selectedWeeks.indexOf(weekKey);
+  if (idx >= 0 && selectedWeeks.length > 1) {
+    // Deselect (but keep at least 1)
+    selectedWeeks.splice(idx, 1);
+  } else if (idx >= 0 && selectedWeeks.length === 1) {
+    // Already only one selected — do nothing (must have at least one)
+    return;
+  } else {
+    // Add to selection
+    selectedWeeks.push(weekKey);
+  }
+  selectedWeeks.sort();
+  refreshFromSelection();
+}
+
+function selectAllWeeks() {
+  var monthWeeks = getWeeksForMonth(selectedPeriodKey);
+  if (monthWeeks.length === 0) return;
+  selectedWeeks = monthWeeks.slice();
+  refreshFromSelection();
+}
+
+function selectOneWeek() {
+  var monthWeeks = getWeeksForMonth(selectedPeriodKey);
+  if (monthWeeks.length === 0) return;
+  selectedWeeks = [monthWeeks[monthWeeks.length - 1]]; // latest week in month
+  refreshFromSelection();
+}
+
+function refreshFromSelection() {
+  applyWeekSnapshots();
+  recalcDerived();
+  updateHeaderWeek();
+  renderWeekChips();
+  cleanDynamic();
+  render();
+}
+
+function changePeriod(key) {
+  selectedPeriodKey = key;
+  // Auto-select the latest week in the new month
+  var monthWeeks = getWeeksForMonth(key);
+  if (monthWeeks.length > 0) {
+    selectedWeeks = [monthWeeks[monthWeeks.length - 1]];
+  }
+  applyWeekSnapshots();
+  recalcDerived();
+  updateHeaderWeek();
+  renderWeekChips();
+  cleanDynamic();
+  render();
+}
+
+function updateHeaderWeek() {
+  var sorted = selectedWeeks.slice().sort();
+  if (sorted.length === 0) return;
+
+  var first = WEEKLY_SNAPSHOTS[sorted[0]];
+  var last = WEEKLY_SNAPSHOTS[sorted[sorted.length - 1]];
+
+  if (sorted.length === 1) {
+    document.getElementById('headerWeekNum').textContent = 'Week ' + first.weekNum;
+    document.getElementById('headerWeekRange').textContent = first.range + ', 2026';
+  } else {
+    document.getElementById('headerWeekNum').textContent = 'Weeks ' + first.weekNum + '–' + last.weekNum;
+    var startDate = first.range.split(' – ')[0];
+    var endDate = last.range.split(' – ')[1];
+    document.getElementById('headerWeekRange').textContent = startDate + ' – ' + endDate + ', 2026 (' + sorted.length + ' weeks)';
+  }
+}
+
+function cleanDynamic() {
+  var el = document.querySelector('.dynamic-pl-section');
+  if (el) el.remove();
+  var el2 = document.querySelector('.dynamic-needs-banner');
+  if (el2) el2.remove();
+}
+
+// --- WoW Performance Chart ---
+function renderWoWChart() {
+  var container = document.getElementById('wow-chart-section');
+  if (!container) return;
+
+  // Show all weeks for the current month
+  var monthWeeks = getWeeksForMonth(selectedPeriodKey);
+  if (monthWeeks.length === 0) monthWeeks = Object.keys(WEEKLY_SNAPSHOTS).sort();
+
+  // Also include selected weeks from adjacent months
+  selectedWeeks.forEach(function(wk) {
+    if (monthWeeks.indexOf(wk) < 0) monthWeeks.push(wk);
+  });
+  monthWeeks.sort();
+
+  if (monthWeeks.length < 2) {
+    container.innerHTML = '';
+    return;
+  }
+
+  var metrics = [
+    { key: 'tickets', label: 'Tickets Created', color: '#a855f7', suffix: '', isSum: true },
+    { key: 'utilCompany', label: 'Utilization %', color: '#22c55e', suffix: '%' },
+    { key: 'avgResHrs', label: 'Avg Resolution (hrs)', color: '#60a5fa', suffix: 'h', invert: true },
+    { key: 'pipeline', label: 'Pipeline Value', color: '#f97316', suffix: '', isCurrency: true },
+  ];
+
+  var pLabel = PERIODS.find(function(p) { return p.key === selectedPeriodKey; });
+  var selLabel = selectedWeeks.length > 1 ? ' (' + selectedWeeks.length + ' weeks selected)' : '';
+  var chartTitle = 'Week-over-Week Performance' + (pLabel ? ' — ' + pLabel.label : '') + selLabel;
+
+  var html = '<div class="wow-chart-card">';
+  html += '<div class="chart-title">' + chartTitle + '</div>';
+  html += '<div class="wow-grid">';
+
+  metrics.forEach(function(m) {
+    var vals = monthWeeks.map(function(wk) { return WEEKLY_SNAPSHOTS[wk][m.key]; });
+    var maxVal = Math.max.apply(null, vals);
+    var minVal = Math.min.apply(null, vals);
+    var range = maxVal - minVal || 1;
+
+    // Aggregated value for selected weeks
+    var selSnaps = selectedWeeks.map(function(k) { return WEEKLY_SNAPSHOTS[k]; });
+    var curVal;
+    if (m.isSum) {
+      curVal = selSnaps.reduce(function(a, s) { return a + s[m.key]; }, 0);
+    } else if (m.isCurrency) {
+      curVal = selSnaps[selSnaps.length - 1][m.key]; // latest
+    } else {
+      curVal = parseFloat((selSnaps.reduce(function(a, s) { return a + s[m.key]; }, 0) / selSnaps.length).toFixed(1));
+    }
+    var displayVal = m.isCurrency ? formatCurrency(curVal, true) : curVal.toLocaleString() + m.suffix;
+    var selSuffix = selectedWeeks.length > 1 ? (m.isSum ? ' total' : ' avg') : '';
+
+    // Trend arrow (first vs last in the month)
+    var firstVal = vals[0], lastVal = vals[vals.length - 1];
+    var trend = lastVal - firstVal;
+    var trendIsGood = m.invert ? trend < 0 : trend > 0;
+    var trendColor = trend === 0 ? '#6b7a8d' : trendIsGood ? '#22c55e' : '#ef4444';
+    var trendArrow = trend === 0 ? '–' : trend > 0 ? '▲' : '▼';
+
+    html += '<div class="wow-mini">';
+    html += '<div class="mini-label">' + m.label + ' <span style="color:' + trendColor + ';font-size:11px;font-weight:700">' + trendArrow + '</span></div>';
+    html += '<div class="mini-value" style="color:' + m.color + '">' + displayVal + '<span style="font-size:10px;color:#6b7a8d;font-weight:400;margin-left:4px">' + selSuffix + '</span></div>';
+    html += '<div class="wow-bars">';
+
+    monthWeeks.forEach(function(wk, i) {
+      var v = vals[i];
+      var barH = 15 + ((v - minVal) / range) * 65;
+      var isSelected = selectedWeeks.indexOf(wk) >= 0;
+      var opacity = isSelected ? '1' : '0.35';
+      var weekLabel = 'W' + WEEKLY_SNAPSHOTS[wk].weekNum;
+      html += '<div class="wow-bar' + (isSelected ? ' active' : '') + '" style="height:' + barH.toFixed(0) + 'px;background:' + m.color + ';opacity:' + opacity + '" title="' + weekLabel + ': ' + (m.isCurrency ? formatCurrency(v, true) : v + m.suffix) + '">';
+      html += '<div class="wow-bar-label">' + weekLabel + '</div>';
+      html += '</div>';
+    });
+
+    html += '</div></div>';
+  });
+
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function syncData() {
+  var btn = document.getElementById('syncBtn');
+  var icon = document.getElementById('syncIcon');
+  btn.classList.add('syncing');
+  icon.innerHTML = '<span class="spin">🔄</span>';
+
+  setTimeout(function() {
+    var now = new Date();
+    var ts = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+    document.getElementById('lastSyncTime').textContent = ts;
+    try { localStorage.setItem('dashboardLastSync', ts); } catch(e) {}
+    btn.classList.remove('syncing');
+    icon.textContent = '🔄';
+  }, 1500);
+}
+
+function loadLastSync() {
+  try {
+    var saved = localStorage.getItem('dashboardLastSync');
+    if (saved) document.getElementById('lastSyncTime').textContent = saved;
+  } catch(e) {}
+}
+
+// Initialize
+applyWeekSnapshots();
+recalcDerived();
+initPeriodPicker();
+renderWeekChips();
+updateHeaderWeek();
+loadLastSync();
+render();
+</script>
+</body>
+</html>

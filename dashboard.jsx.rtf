@@ -1,0 +1,694 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2867
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import \{ useState \} from "react";\
+\
+const WEEK_DATA = \{\
+  weekOf: "Mar 2 \'96 Mar 8, 2026",\
+  weekNumber: 10,\
+  priorWeekOf: "Feb 23 \'96 Mar 1, 2026",\
+\};\
+\
+// --- FINANCIAL DATA ---\
+const FINANCIAL = \{\
+  cashOnHand: 482000,\
+  cashOnHandPrior: 445000,\
+  weeklyCashBurn: 298000,\
+  weeklyCashBurnPrior: 312000,\
+  weeklyCollections: 335000,\
+  weeklyCollectionsPrior: 287000,\
+  projectedRunwayWeeks: 6.2,\
+  projectedRunwayWeeksPrior: 5.1,\
+  dso: 52,\
+  dsoPrior: 56,\
+  grossMarginPct: 58.2,\
+  grossMarginPctPrior: 57.1,\
+  payrollPctRevenue: 48.5,\
+  payrollPctRevenuePrior: 49.2,\
+  ebitdaTrailing: 142000,\
+  ebitdaTrailingPrior: 128000,\
+  arAging: \{\
+    current: 310000,\
+    thirty: 185000,\
+    sixty: 142000,\
+    ninety: 98000,\
+    total: 735000,\
+    priorTotal: 780000,\
+  \},\
+  apAging: \{\
+    current: 125000,\
+    thirty: 88000,\
+    sixty: 42000,\
+    ninety: 15000,\
+    total: 270000,\
+    priorTotal: 285000,\
+  \},\
+\};\
+\
+// --- REVENUE & PIPELINE ---\
+const REVENUE = \{\
+  netMRRMovement: 4200,\
+  netMRRMovementPrior: -1800,\
+  newMRRSold: 8500,\
+  newMRRSoldPrior: 5200,\
+  mrrChurned: 4300,\
+  mrrChurnedPrior: 7000,\
+  totalMRR: 1420000,\
+  pipelineValue: 385000,\
+  pipelineValuePrior: 362000,\
+  proposalsSent: 7,\
+  proposalsSentPrior: 4,\
+\};\
+\
+// --- SERVICE DELIVERY ---\
+const SERVICE = \{\
+  ticketsCreated: 312,\
+  ticketsResolved: 338,\
+  ticketsCreatedPrior: 295,\
+  ticketsResolvedPrior: 288,\
+  openTickets: 187,\
+  openTicketsPrior: 213,\
+  avgResolutionHrs: 4.2,\
+  avgResolutionHrsPrior: 5.1,\
+  slaCompliancePct: 94.6,\
+  slaCompliancePctPrior: 92.1,\
+  escalations: 8,\
+  escalationsPrior: 12,\
+  agedTickets7Plus: 14,\
+  agedTickets7PlusPrior: 19,\
+\};\
+\
+// --- SALES ACTIVITY ---\
+const SALES = \{\
+  outboundActivities: 245,\
+  outboundActivitiesPrior: 198,\
+  meetingsBooked: 12,\
+  meetingsBookedPrior: 9,\
+  meetingsHeld: 8,\
+  meetingsHeldPrior: 7,\
+  newOppsCreated: 5,\
+  newOppsCreatedPrior: 3,\
+  winRate: 38,\
+  winRatePrior: 35,\
+\};\
+\
+// --- UTILIZATION ---\
+const UTILIZATION = \{\
+  serviceUtil: 72.5,\
+  serviceUtilPrior: 69.8,\
+  projectUtil: 65.0,\
+  projectUtilPrior: 61.2,\
+  companyUtil: 58.3,\
+  companyUtilPrior: 55.0,\
+  overtimeHours: 42,\
+  overtimeHoursPrior: 58,\
+  openHeadcount: 3,\
+\};\
+\
+// --- PROJECTS ---\
+const PROJECTS = \{\
+  activeProjects: 14,\
+  onTrack: 10,\
+  atRisk: 3,\
+  behind: 1,\
+  completedThisWeek: 2,\
+  hoursConsumedPct: 68,\
+  hoursConsumedPctPrior: 72,\
+\};\
+\
+// --- CLIENT HEALTH ---\
+const CLIENT_HEALTH = \{\
+  clientsWithEscalations: 3,\
+  clientsWithEscalationsPrior: 5,\
+  csatScore: 4.3,\
+  csatScorePrior: 4.1,\
+  renewalsNext30: 4,\
+  renewalsNext60: 7,\
+  renewalsNext90: 11,\
+  spikeAlerts: 2,\
+\};\
+\
+// --- SECURITY ---\
+const SECURITY = \{\
+  criticalAlerts: 2,\
+  criticalAlertsPrior: 5,\
+  incidentsOpened: 3,\
+  incidentsResolved: 4,\
+  overduePatching: 1,\
+  overduePatchingPrior: 3,\
+\};\
+\
+// ===================== COMPONENTS =====================\
+\
+function formatCurrency(val, compact = false) \{\
+  if (compact && Math.abs(val) >= 1000000) \{\
+    return "$" + (val / 1000000).toFixed(1) + "M";\
+  \}\
+  if (compact && Math.abs(val) >= 1000) \{\
+    return "$" + (val / 1000).toFixed(0) + "K";\
+  \}\
+  return val < 0\
+    ? "-$" + Math.abs(val).toLocaleString()\
+    : "$" + val.toLocaleString();\
+\}\
+\
+function Delta(\{ current, prior, suffix = "", invert = false, format = "number" \}) \{\
+  const diff = current - prior;\
+  const isPositive = invert ? diff < 0 : diff > 0;\
+  const isNeutral = diff === 0;\
+  const color = isNeutral ? "#8a8f98" : isPositive ? "#22c55e" : "#ef4444";\
+  const arrow = isNeutral ? "\'96" : isPositive ? "\uc0\u9650 " : "\u9660 ";\
+  let displayDiff = Math.abs(diff);\
+  if (format === "currency") displayDiff = formatCurrency(Math.abs(diff), true);\
+  else if (format === "pct") displayDiff = Math.abs(diff).toFixed(1) + "%";\
+  else displayDiff = Math.abs(diff).toLocaleString();\
+\
+  return (\
+    <span style=\{\{ color, fontSize: 11, fontWeight: 600, letterSpacing: 0.3 \}\}>\
+      \{arrow\} \{displayDiff\}\{suffix\} vs prior wk\
+    </span>\
+  );\
+\}\
+\
+function MetricCard(\{ label, value, prior, suffix = "", invert = false, format = "number", accent = false, size = "normal" \}) \{\
+  const current = typeof value === "number" ? value : parseFloat(value);\
+  const priorVal = typeof prior === "number" ? prior : parseFloat(prior);\
+  return (\
+    <div style=\{\{\
+      background: accent ? "linear-gradient(135deg, #1a2332 0%, #0f1923 100%)" : "#111820",\
+      border: accent ? "1px solid #1e3a5f" : "1px solid #1a2230",\
+      borderRadius: 10,\
+      padding: size === "large" ? "20px 22px" : "16px 18px",\
+      display: "flex",\
+      flexDirection: "column",\
+      gap: 6,\
+      transition: "border-color 0.2s",\
+    \}\}>\
+      <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>\{label\}</span>\
+      <span style=\{\{ color: accent ? "#60a5fa" : "#e8ecf1", fontSize: size === "large" ? 28 : 22, fontWeight: 700, letterSpacing: -0.5 \}\}>\
+        \{format === "currency" ? formatCurrency(current, true) : current.toLocaleString()\}\{suffix\}\
+      </span>\
+      \{prior !== undefined && <Delta current=\{current\} prior=\{priorVal\} suffix=\{suffix\} invert=\{invert\} format=\{format\} />\}\
+    </div>\
+  );\
+\}\
+\
+function SectionHeader(\{ icon, title, subtitle \}) \{\
+  return (\
+    <div style=\{\{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, marginTop: 8 \}\}>\
+      <span style=\{\{ fontSize: 18 \}\}>\{icon\}</span>\
+      <div>\
+        <div style=\{\{ color: "#e8ecf1", fontSize: 15, fontWeight: 700, letterSpacing: -0.2 \}\}>\{title\}</div>\
+        \{subtitle && <div style=\{\{ color: "#4a5568", fontSize: 11, fontWeight: 500 \}\}>\{subtitle\}</div>\}\
+      </div>\
+    </div>\
+  );\
+\}\
+\
+function AgingTable(\{ data, label \}) \{\
+  const buckets = [\
+    \{ key: "current", label: "Current" \},\
+    \{ key: "thirty", label: "31\'9660" \},\
+    \{ key: "sixty", label: "61\'9690" \},\
+    \{ key: "ninety", label: "90+" \},\
+  ];\
+  return (\
+    <div style=\{\{ background: "#111820", border: "1px solid #1a2230", borderRadius: 10, padding: "16px 18px" \}\}>\
+      <div style=\{\{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 \}\}>\
+        <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>\{label\}</span>\
+        <span style=\{\{ color: "#e8ecf1", fontSize: 16, fontWeight: 700 \}\}>\{formatCurrency(data.total, true)\}</span>\
+      </div>\
+      <div style=\{\{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", marginBottom: 10 \}\}>\
+        \{buckets.map((b) => \{\
+          const pct = data.total > 0 ? (data[b.key] / data.total) * 100 : 0;\
+          const colors = \{ current: "#22c55e", thirty: "#eab308", sixty: "#f97316", ninety: "#ef4444" \};\
+          return (\
+            <div key=\{b.key\} style=\{\{\
+              width: pct + "%",\
+              height: 6,\
+              background: colors[b.key],\
+              minWidth: pct > 0 ? 4 : 0,\
+            \}\} />\
+          );\
+        \})\}\
+      </div>\
+      <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 \}\}>\
+        \{buckets.map((b) => \{\
+          const colors = \{ current: "#22c55e", thirty: "#eab308", sixty: "#f97316", ninety: "#ef4444" \};\
+          return (\
+            <div key=\{b.key\} style=\{\{ textAlign: "center" \}\}>\
+              <div style=\{\{ color: colors[b.key], fontSize: 13, fontWeight: 700 \}\}>\{formatCurrency(data[b.key], true)\}</div>\
+              <div style=\{\{ color: "#4a5568", fontSize: 10, fontWeight: 600 \}\}>\{b.label\} days</div>\
+            </div>\
+          );\
+        \})\}\
+      </div>\
+      <div style=\{\{ marginTop: 8 \}\}>\
+        <Delta current=\{data.total\} prior=\{data.priorTotal\} format="currency" invert=\{label.includes("AR")\} />\
+      </div>\
+    </div>\
+  );\
+\}\
+\
+function TicketFlowBar() \{\
+  const max = Math.max(SERVICE.ticketsCreated, SERVICE.ticketsResolved);\
+  return (\
+    <div style=\{\{ background: "#111820", border: "1px solid #1a2230", borderRadius: 10, padding: "16px 18px" \}\}>\
+      <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>Ticket Flow</span>\
+      <div style=\{\{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 \}\}>\
+        <div>\
+          <div style=\{\{ display: "flex", justifyContent: "space-between", marginBottom: 4 \}\}>\
+            <span style=\{\{ color: "#8a8f98", fontSize: 11 \}\}>Created</span>\
+            <span style=\{\{ color: "#f97316", fontSize: 13, fontWeight: 700 \}\}>\{SERVICE.ticketsCreated\}</span>\
+          </div>\
+          <div style=\{\{ background: "#1a2230", borderRadius: 3, height: 8 \}\}>\
+            <div style=\{\{ background: "#f97316", borderRadius: 3, height: 8, width: (SERVICE.ticketsCreated / max * 100) + "%", transition: "width 0.5s" \}\} />\
+          </div>\
+        </div>\
+        <div>\
+          <div style=\{\{ display: "flex", justifyContent: "space-between", marginBottom: 4 \}\}>\
+            <span style=\{\{ color: "#8a8f98", fontSize: 11 \}\}>Resolved</span>\
+            <span style=\{\{ color: "#22c55e", fontSize: 13, fontWeight: 700 \}\}>\{SERVICE.ticketsResolved\}</span>\
+          </div>\
+          <div style=\{\{ background: "#1a2230", borderRadius: 3, height: 8 \}\}>\
+            <div style=\{\{ background: "#22c55e", borderRadius: 3, height: 8, width: (SERVICE.ticketsResolved / max * 100) + "%", transition: "width 0.5s" \}\} />\
+          </div>\
+        </div>\
+      </div>\
+      <div style=\{\{ marginTop: 8, color: SERVICE.ticketsResolved >= SERVICE.ticketsCreated ? "#22c55e" : "#ef4444", fontSize: 12, fontWeight: 600 \}\}>\
+        \{SERVICE.ticketsResolved >= SERVICE.ticketsCreated ? "\uc0\u10003  Net positive \'97 clearing backlog" : "\u9888  Net negative \'97 backlog growing"\}\
+      </div>\
+    </div>\
+  );\
+\}\
+\
+function ProjectStatusBar() \{\
+  const total = PROJECTS.activeProjects;\
+  return (\
+    <div style=\{\{ background: "#111820", border: "1px solid #1a2230", borderRadius: 10, padding: "16px 18px" \}\}>\
+      <div style=\{\{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 \}\}>\
+        <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>Project Status</span>\
+        <span style=\{\{ color: "#8a8f98", fontSize: 11 \}\}>\{total\} active</span>\
+      </div>\
+      <div style=\{\{ display: "flex", gap: 0, borderRadius: 6, overflow: "hidden", marginBottom: 10, height: 10 \}\}>\
+        <div style=\{\{ width: (PROJECTS.onTrack / total * 100) + "%", background: "#22c55e" \}\} />\
+        <div style=\{\{ width: (PROJECTS.atRisk / total * 100) + "%", background: "#eab308" \}\} />\
+        <div style=\{\{ width: (PROJECTS.behind / total * 100) + "%", background: "#ef4444" \}\} />\
+      </div>\
+      <div style=\{\{ display: "flex", gap: 16 \}\}>\
+        \{[\
+          \{ label: "On Track", val: PROJECTS.onTrack, color: "#22c55e" \},\
+          \{ label: "At Risk", val: PROJECTS.atRisk, color: "#eab308" \},\
+          \{ label: "Behind", val: PROJECTS.behind, color: "#ef4444" \},\
+        ].map((s) => (\
+          <div key=\{s.label\} style=\{\{ display: "flex", alignItems: "center", gap: 5 \}\}>\
+            <div style=\{\{ width: 8, height: 8, borderRadius: "50%", background: s.color \}\} />\
+            <span style=\{\{ color: "#8a8f98", fontSize: 11 \}\}>\{s.label\}: <span style=\{\{ color: "#e8ecf1", fontWeight: 700 \}\}>\{s.val\}</span></span>\
+          </div>\
+        ))\}\
+      </div>\
+      <div style=\{\{ marginTop: 10, display: "flex", justifyContent: "space-between" \}\}>\
+        <span style=\{\{ color: "#6b7a8d", fontSize: 11 \}\}>Completed this week</span>\
+        <span style=\{\{ color: "#22c55e", fontSize: 13, fontWeight: 700 \}\}>\{PROJECTS.completedThisWeek\}</span>\
+      </div>\
+    </div>\
+  );\
+\}\
+\
+function CashRunwayGauge() \{\
+  const weeks = FINANCIAL.projectedRunwayWeeks;\
+  const max = 16;\
+  const pct = Math.min((weeks / max) * 100, 100);\
+  const color = weeks <= 4 ? "#ef4444" : weeks <= 8 ? "#eab308" : "#22c55e";\
+  return (\
+    <div style=\{\{\
+      background: "linear-gradient(135deg, #1a2332 0%, #0f1923 100%)",\
+      border: "1px solid #1e3a5f",\
+      borderRadius: 10,\
+      padding: "20px 22px",\
+      display: "flex",\
+      flexDirection: "column",\
+      gap: 8,\
+    \}\}>\
+      <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>Cash Runway</span>\
+      <div style=\{\{ display: "flex", alignItems: "baseline", gap: 6 \}\}>\
+        <span style=\{\{ color, fontSize: 32, fontWeight: 800, letterSpacing: -1 \}\}>\{weeks.toFixed(1)\}</span>\
+        <span style=\{\{ color: "#6b7a8d", fontSize: 13, fontWeight: 600 \}\}>weeks</span>\
+      </div>\
+      <div style=\{\{ background: "#1a2230", borderRadius: 4, height: 8, width: "100%" \}\}>\
+        <div style=\{\{ background: color, borderRadius: 4, height: 8, width: pct + "%", transition: "width 0.6s" \}\} />\
+      </div>\
+      <div style=\{\{ display: "flex", justifyContent: "space-between", color: "#4a5568", fontSize: 10 \}\}>\
+        <span>Critical (4w)</span>\
+        <span>Caution (8w)</span>\
+        <span>Healthy (16w)</span>\
+      </div>\
+      <Delta current=\{weeks\} prior=\{FINANCIAL.projectedRunwayWeeksPrior\} suffix=" wks" />\
+    </div>\
+  );\
+\}\
+\
+// ===================== TABS =====================\
+const TABS = [\
+  \{ id: "overview", label: "Overview", icon: "\uc0\u9673 " \},\
+  \{ id: "financial", label: "Financial Health", icon: "\uc0\u9672 " \},\
+  \{ id: "operations", label: "Operations", icon: "\uc0\u9670 " \},\
+  \{ id: "sales", label: "Sales & Pipeline", icon: "\uc0\u9671 " \},\
+];\
+\
+// ===================== MAIN DASHBOARD =====================\
+export default function ExecutiveDashboard() \{\
+  const [activeTab, setActiveTab] = useState("overview");\
+\
+  return (\
+    <div style=\{\{\
+      fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif",\
+      background: "#0a0f16",\
+      color: "#e8ecf1",\
+      minHeight: "100vh",\
+      padding: "0",\
+    \}\}>\
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />\
+\
+      \{/* HEADER */\}\
+      <div style=\{\{\
+        background: "linear-gradient(180deg, #0f1720 0%, #0a0f16 100%)",\
+        borderBottom: "1px solid #1a2230",\
+        padding: "20px 28px 0",\
+        position: "sticky",\
+        top: 0,\
+        zIndex: 10,\
+      \}\}>\
+        <div style=\{\{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 \}\}>\
+          <div>\
+            <div style=\{\{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 \}\}>\
+              <div style=\{\{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e66" \}\} />\
+              <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5 \}\}>DataPath Executive Dashboard</span>\
+            </div>\
+            <h1 style=\{\{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: "#e8ecf1" \}\}>Weekly Performance Report</h1>\
+          </div>\
+          <div style=\{\{ textAlign: "right" \}\}>\
+            <div style=\{\{ color: "#60a5fa", fontSize: 13, fontWeight: 700 \}\}>Week \{WEEK_DATA.weekNumber\}</div>\
+            <div style=\{\{ color: "#6b7a8d", fontSize: 12 \}\}>\{WEEK_DATA.weekOf\}</div>\
+          </div>\
+        </div>\
+\
+        \{/* TABS */\}\
+        <div style=\{\{ display: "flex", gap: 0 \}\}>\
+          \{TABS.map((tab) => (\
+            <button\
+              key=\{tab.id\}\
+              onClick=\{() => setActiveTab(tab.id)\}\
+              style=\{\{\
+                background: activeTab === tab.id ? "#111820" : "transparent",\
+                color: activeTab === tab.id ? "#60a5fa" : "#6b7a8d",\
+                border: "none",\
+                borderBottom: activeTab === tab.id ? "2px solid #60a5fa" : "2px solid transparent",\
+                padding: "10px 20px",\
+                fontSize: 12,\
+                fontWeight: 600,\
+                cursor: "pointer",\
+                letterSpacing: 0.3,\
+                borderRadius: "6px 6px 0 0",\
+                transition: "all 0.2s",\
+                fontFamily: "inherit",\
+              \}\}\
+            >\
+              <span style=\{\{ marginRight: 6 \}\}>\{tab.icon\}</span>\{tab.label\}\
+            </button>\
+          ))\}\
+        </div>\
+      </div>\
+\
+      \{/* CONTENT */\}\
+      <div style=\{\{ padding: "24px 28px", maxWidth: 1280, margin: "0 auto" \}\}>\
+\
+        \{/* ========= OVERVIEW TAB ========= */\}\
+        \{activeTab === "overview" && (\
+          <div>\
+            \{/* TOP 5 KPIs */\}\
+            <div style=\{\{ marginBottom: 10 \}\}>\
+              <span style=\{\{ color: "#4a5568", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.5 \}\}>Key Performance Indicators</span>\
+            </div>\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Net MRR Movement" value=\{REVENUE.netMRRMovement\} prior=\{REVENUE.netMRRMovementPrior\} format="currency" accent size="large" />\
+              <MetricCard label="SLA Compliance" value=\{SERVICE.slaCompliancePct\} prior=\{SERVICE.slaCompliancePctPrior\} suffix="%" size="large" />\
+              <MetricCard label="Billable Utilization" value=\{UTILIZATION.companyUtil\} prior=\{UTILIZATION.companyUtilPrior\} suffix="%" size="large" />\
+              <MetricCard label="Cash on Hand" value=\{FINANCIAL.cashOnHand\} prior=\{FINANCIAL.cashOnHandPrior\} format="currency" accent size="large" />\
+              <MetricCard label="DSO" value=\{FINANCIAL.dso\} prior=\{FINANCIAL.dsoPrior\} suffix=" days" invert size="large" />\
+            </div>\
+\
+            \{/* CASH + AR/AP */\}\
+            <SectionHeader icon="$" title="Financial Snapshot" subtitle="Cash position & receivables" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 \}\}>\
+              <CashRunwayGauge />\
+              <AgingTable data=\{FINANCIAL.arAging\} label="AR Aging \'97 Outstanding" />\
+              <AgingTable data=\{FINANCIAL.apAging\} label="AP Aging \'97 Outstanding" />\
+            </div>\
+\
+            \{/* SERVICE + SALES ROW */\}\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 \}\}>\
+              <div>\
+                <SectionHeader icon="\uc0\u9889 " title="Service Delivery" subtitle="Ticket flow & SLA performance" />\
+                <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 \}\}>\
+                  <TicketFlowBar />\
+                  <MetricCard label="Avg Resolution Time" value=\{SERVICE.avgResolutionHrs\} prior=\{SERVICE.avgResolutionHrsPrior\} suffix=" hrs" invert />\
+                  <MetricCard label="Escalations" value=\{SERVICE.escalations\} prior=\{SERVICE.escalationsPrior\} invert />\
+                  <MetricCard label="Aged 7+ Days" value=\{SERVICE.agedTickets7Plus\} prior=\{SERVICE.agedTickets7PlusPrior\} invert />\
+                </div>\
+              </div>\
+              <div>\
+                <SectionHeader icon="\uc0\u9671 " title="Sales & Pipeline" subtitle="Demand generation & conversion" />\
+                <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 \}\}>\
+                  <MetricCard label="Pipeline Value" value=\{REVENUE.pipelineValue\} prior=\{REVENUE.pipelineValuePrior\} format="currency" />\
+                  <MetricCard label="Proposals Sent" value=\{REVENUE.proposalsSent\} prior=\{REVENUE.proposalsSentPrior\} />\
+                  <MetricCard label="Meetings Held" value=\{SALES.meetingsHeld\} prior=\{SALES.meetingsHeldPrior\} />\
+                  <MetricCard label="New Opps Created" value=\{SALES.newOppsCreated\} prior=\{SALES.newOppsCreatedPrior\} />\
+                </div>\
+              </div>\
+            </div>\
+\
+            \{/* PROJECTS + CLIENT + SECURITY */\}\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 \}\}>\
+              <div>\
+                <SectionHeader icon="\uc0\u9632 " title="Projects" />\
+                <ProjectStatusBar />\
+              </div>\
+              <div>\
+                <SectionHeader icon="\uc0\u9829 " title="Client Health" />\
+                <div style=\{\{ display: "flex", flexDirection: "column", gap: 12 \}\}>\
+                  <MetricCard label="CSAT Score" value=\{CLIENT_HEALTH.csatScore\} prior=\{CLIENT_HEALTH.csatScorePrior\} suffix="/5" />\
+                  <MetricCard label="Clients w/ Escalations" value=\{CLIENT_HEALTH.clientsWithEscalations\} prior=\{CLIENT_HEALTH.clientsWithEscalationsPrior\} invert />\
+                </div>\
+              </div>\
+              <div>\
+                <SectionHeader icon="\uc0\u9960 " title="Security" />\
+                <div style=\{\{ display: "flex", flexDirection: "column", gap: 12 \}\}>\
+                  <MetricCard label="Critical Alerts Open" value=\{SECURITY.criticalAlerts\} prior=\{SECURITY.criticalAlertsPrior\} invert />\
+                  <MetricCard label="Overdue Patching" value=\{SECURITY.overduePatching\} prior=\{SECURITY.overduePatchingPrior\} invert />\
+                </div>\
+              </div>\
+            </div>\
+          </div>\
+        )\}\
+\
+        \{/* ========= FINANCIAL TAB ========= */\}\
+        \{activeTab === "financial" && (\
+          <div>\
+            <SectionHeader icon="$" title="Cash Position" subtitle="Weekly cash flow and runway" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Cash on Hand" value=\{FINANCIAL.cashOnHand\} prior=\{FINANCIAL.cashOnHandPrior\} format="currency" accent size="large" />\
+              <MetricCard label="Weekly Collections" value=\{FINANCIAL.weeklyCollections\} prior=\{FINANCIAL.weeklyCollectionsPrior\} format="currency" size="large" />\
+              <MetricCard label="Weekly Cash Burn" value=\{FINANCIAL.weeklyCashBurn\} prior=\{FINANCIAL.weeklyCashBurnPrior\} format="currency" invert size="large" />\
+              <CashRunwayGauge />\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9672 " title="Profitability Metrics" subtitle="Margin and cost structure" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Gross Margin" value=\{FINANCIAL.grossMarginPct\} prior=\{FINANCIAL.grossMarginPctPrior\} suffix="%" size="large" />\
+              <MetricCard label="Payroll % of Revenue" value=\{FINANCIAL.payrollPctRevenue\} prior=\{FINANCIAL.payrollPctRevenuePrior\} suffix="%" invert size="large" />\
+              <MetricCard label="EBITDA (Trailing 4wk)" value=\{FINANCIAL.ebitdaTrailing\} prior=\{FINANCIAL.ebitdaTrailingPrior\} format="currency" size="large" />\
+              <MetricCard label="DSO" value=\{FINANCIAL.dso\} prior=\{FINANCIAL.dsoPrior\} suffix=" days" invert size="large" />\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9673 " title="Accounts Receivable & Payable" subtitle="Aging analysis" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 \}\}>\
+              <AgingTable data=\{FINANCIAL.arAging\} label="AR Aging \'97 Outstanding" />\
+              <AgingTable data=\{FINANCIAL.apAging\} label="AP Aging \'97 Outstanding" />\
+            </div>\
+\
+            \{/* 60+ day callout */\}\
+            <div style=\{\{\
+              background: "linear-gradient(135deg, #2d1215 0%, #1a0a0c 100%)",\
+              border: "1px solid #5c2020",\
+              borderRadius: 10,\
+              padding: "18px 22px",\
+              display: "flex",\
+              justifyContent: "space-between",\
+              alignItems: "center",\
+            \}\}>\
+              <div>\
+                <div style=\{\{ color: "#fca5a5", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 \}\}>\uc0\u9888  AR 60+ Days Outstanding</div>\
+                <div style=\{\{ color: "#8a8f98", fontSize: 12, marginTop: 4 \}\}>\
+                  \{formatCurrency(FINANCIAL.arAging.sixty + FINANCIAL.arAging.ninety)\} in receivables aged beyond 60 days \'97 \{((FINANCIAL.arAging.sixty + FINANCIAL.arAging.ninety) / FINANCIAL.arAging.total * 100).toFixed(1)\}% of total AR\
+                </div>\
+              </div>\
+              <div style=\{\{ color: "#ef4444", fontSize: 28, fontWeight: 800 \}\}>\{formatCurrency(FINANCIAL.arAging.sixty + FINANCIAL.arAging.ninety, true)\}</div>\
+            </div>\
+          </div>\
+        )\}\
+\
+        \{/* ========= OPERATIONS TAB ========= */\}\
+        \{activeTab === "operations" && (\
+          <div>\
+            <SectionHeader icon="\uc0\u9889 " title="Service Delivery" subtitle="Ticket metrics and SLA performance" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <TicketFlowBar />\
+              <MetricCard label="Open Tickets" value=\{SERVICE.openTickets\} prior=\{SERVICE.openTicketsPrior\} invert size="large" />\
+              <MetricCard label="SLA Compliance" value=\{SERVICE.slaCompliancePct\} prior=\{SERVICE.slaCompliancePctPrior\} suffix="%" size="large" />\
+              <MetricCard label="Avg Resolution Time" value=\{SERVICE.avgResolutionHrs\} prior=\{SERVICE.avgResolutionHrsPrior\} suffix=" hrs" invert />\
+              <MetricCard label="Escalations" value=\{SERVICE.escalations\} prior=\{SERVICE.escalationsPrior\} invert />\
+              <MetricCard label="Aged 7+ Days" value=\{SERVICE.agedTickets7Plus\} prior=\{SERVICE.agedTickets7PlusPrior\} invert />\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9673 " title="Utilization" subtitle="Team capacity and efficiency" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Service Team" value=\{UTILIZATION.serviceUtil\} prior=\{UTILIZATION.serviceUtilPrior\} suffix="%" accent />\
+              <MetricCard label="Project Team" value=\{UTILIZATION.projectUtil\} prior=\{UTILIZATION.projectUtilPrior\} suffix="%" />\
+              <MetricCard label="Company-Wide" value=\{UTILIZATION.companyUtil\} prior=\{UTILIZATION.companyUtilPrior\} suffix="%" />\
+              <MetricCard label="Overtime Hours" value=\{UTILIZATION.overtimeHours\} prior=\{UTILIZATION.overtimeHoursPrior\} invert />\
+            </div>\
+\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 \}\}>\
+              <div>\
+                <SectionHeader icon="\uc0\u9632 " title="Project Delivery" />\
+                <ProjectStatusBar />\
+                <div style=\{\{ marginTop: 12 \}\}>\
+                  <MetricCard label="Hours Budget Consumed" value=\{PROJECTS.hoursConsumedPct\} prior=\{PROJECTS.hoursConsumedPctPrior\} suffix="%" invert />\
+                </div>\
+              </div>\
+              <div>\
+                <SectionHeader icon="\uc0\u9960 " title="Security Posture" />\
+                <div style=\{\{ display: "flex", flexDirection: "column", gap: 12 \}\}>\
+                  <MetricCard label="Critical Alerts Open" value=\{SECURITY.criticalAlerts\} prior=\{SECURITY.criticalAlertsPrior\} invert size="large" />\
+                  <div style=\{\{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 \}\}>\
+                    <MetricCard label="Incidents Opened" value=\{SECURITY.incidentsOpened\} />\
+                    <MetricCard label="Incidents Resolved" value=\{SECURITY.incidentsResolved\} />\
+                  </div>\
+                  <MetricCard label="Overdue Patching" value=\{SECURITY.overduePatching\} prior=\{SECURITY.overduePatchingPrior\} invert />\
+                </div>\
+              </div>\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9829 " title="Client Health" subtitle="Satisfaction and renewal pipeline" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 \}\}>\
+              <MetricCard label="CSAT Score" value=\{CLIENT_HEALTH.csatScore\} prior=\{CLIENT_HEALTH.csatScorePrior\} suffix="/5" />\
+              <MetricCard label="Escalated Clients" value=\{CLIENT_HEALTH.clientsWithEscalations\} prior=\{CLIENT_HEALTH.clientsWithEscalationsPrior\} invert />\
+              <MetricCard label="Spike Alerts" value=\{CLIENT_HEALTH.spikeAlerts\} />\
+              <div style=\{\{ background: "#111820", border: "1px solid #1a2230", borderRadius: 10, padding: "16px 18px" \}\}>\
+                <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>Renewals Due</span>\
+                <div style=\{\{ display: "flex", gap: 14, marginTop: 10 \}\}>\
+                  \{[\
+                    \{ d: "30d", v: CLIENT_HEALTH.renewalsNext30, c: "#ef4444" \},\
+                    \{ d: "60d", v: CLIENT_HEALTH.renewalsNext60, c: "#eab308" \},\
+                    \{ d: "90d", v: CLIENT_HEALTH.renewalsNext90, c: "#22c55e" \},\
+                  ].map((r) => (\
+                    <div key=\{r.d\} style=\{\{ textAlign: "center" \}\}>\
+                      <div style=\{\{ color: r.c, fontSize: 18, fontWeight: 800 \}\}>\{r.v\}</div>\
+                      <div style=\{\{ color: "#4a5568", fontSize: 10 \}\}>\{r.d\}</div>\
+                    </div>\
+                  ))\}\
+                </div>\
+              </div>\
+            </div>\
+          </div>\
+        )\}\
+\
+        \{/* ========= SALES TAB ========= */\}\
+        \{activeTab === "sales" && (\
+          <div>\
+            <SectionHeader icon="\uc0\u9672 " title="Revenue" subtitle="MRR movement and growth" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Net MRR Movement" value=\{REVENUE.netMRRMovement\} prior=\{REVENUE.netMRRMovementPrior\} format="currency" accent size="large" />\
+              <MetricCard label="New MRR Sold" value=\{REVENUE.newMRRSold\} prior=\{REVENUE.newMRRSoldPrior\} format="currency" size="large" />\
+              <MetricCard label="MRR Churned" value=\{REVENUE.mrrChurned\} prior=\{REVENUE.mrrChurnedPrior\} format="currency" invert size="large" />\
+              <MetricCard label="Total MRR" value=\{REVENUE.totalMRR\} format="currency" accent size="large" />\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9671 " title="Pipeline & Activity" subtitle="Funnel health and conversion" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Pipeline Value" value=\{REVENUE.pipelineValue\} prior=\{REVENUE.pipelineValuePrior\} format="currency" size="large" />\
+              <MetricCard label="Proposals Sent" value=\{REVENUE.proposalsSent\} prior=\{REVENUE.proposalsSentPrior\} size="large" />\
+              <MetricCard label="Win Rate" value=\{SALES.winRate\} prior=\{SALES.winRatePrior\} suffix="%" size="large" />\
+              <MetricCard label="New Opps Created" value=\{SALES.newOppsCreated\} prior=\{SALES.newOppsCreatedPrior\} size="large" />\
+            </div>\
+\
+            <SectionHeader icon="\uc0\u9889 " title="BDR & Outbound Activity" subtitle="Top-of-funnel generation" />\
+            <div style=\{\{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 28 \}\}>\
+              <MetricCard label="Outbound Activities" value=\{SALES.outboundActivities\} prior=\{SALES.outboundActivitiesPrior\} size="large" />\
+              <MetricCard label="Meetings Booked" value=\{SALES.meetingsBooked\} prior=\{SALES.meetingsBookedPrior\} size="large" />\
+              <MetricCard label="Meetings Held" value=\{SALES.meetingsHeld\} prior=\{SALES.meetingsHeldPrior\} size="large" />\
+            </div>\
+\
+            \{/* Conversion funnel visual */\}\
+            <div style=\{\{\
+              background: "#111820",\
+              border: "1px solid #1a2230",\
+              borderRadius: 10,\
+              padding: "20px 24px",\
+            \}\}>\
+              <span style=\{\{ color: "#6b7a8d", fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.1 \}\}>Weekly Conversion Funnel</span>\
+              <div style=\{\{ display: "flex", alignItems: "center", gap: 0, marginTop: 16 \}\}>\
+                \{[\
+                  \{ label: "Outbound", val: SALES.outboundActivities, color: "#1e3a5f" \},\
+                  \{ label: "Booked", val: SALES.meetingsBooked, color: "#1e4a3f" \},\
+                  \{ label: "Held", val: SALES.meetingsHeld, color: "#1e5a2f" \},\
+                  \{ label: "Opps", val: SALES.newOppsCreated, color: "#2e6a1f" \},\
+                  \{ label: "Proposals", val: REVENUE.proposalsSent, color: "#3e7a0f" \},\
+                ].map((step, i, arr) => (\
+                  <div key=\{step.label\} style=\{\{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" \}\}>\
+                    <div style=\{\{\
+                      background: step.color,\
+                      borderRadius: 8,\
+                      padding: "14px 8px",\
+                      width: `$\{100 - (i * 12)\}%`,\
+                      textAlign: "center",\
+                      position: "relative",\
+                    \}\}>\
+                      <div style=\{\{ color: "#e8ecf1", fontSize: 20, fontWeight: 800 \}\}>\{step.val\}</div>\
+                      <div style=\{\{ color: "#8a8f98", fontSize: 10, fontWeight: 600, marginTop: 2 \}\}>\{step.label\}</div>\
+                    </div>\
+                    \{i < arr.length - 1 && (\
+                      <div style=\{\{ color: "#4a5568", fontSize: 10, margin: "4px 0", fontFamily: "'JetBrains Mono', monospace" \}\}>\
+                        \{((arr[i + 1].val / step.val) * 100).toFixed(0)\}%\uc0\u8594 \
+                      </div>\
+                    )\}\
+                  </div>\
+                ))\}\
+              </div>\
+            </div>\
+          </div>\
+        )\}\
+\
+        \{/* FOOTER */\}\
+        <div style=\{\{\
+          marginTop: 36,\
+          paddingTop: 16,\
+          borderTop: "1px solid #1a2230",\
+          display: "flex",\
+          justifyContent: "space-between",\
+          color: "#3a4250",\
+          fontSize: 10,\
+        \}\}>\
+          <span>DataPath Executive Dashboard \'97 Confidential</span>\
+          <span>All data is placeholder \'97 connect your live sources to populate</span>\
+          <span>Generated \{new Date().toLocaleDateString()\}</span>\
+        </div>\
+      </div>\
+    </div>\
+  );\
+\}}

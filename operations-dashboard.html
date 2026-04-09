@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyDataPath - Operations Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } = Recharts;
+
+    // ==================== USER AUTHENTICATION ====================
+    const USERS = {
+      'scott': { password: 'mydatapath2026', name: 'Scott Gordon', role: 'admin' },
+      'operations': { password: 'ops2026', name: 'Operations Team', role: 'manager' },
+      'tech': { password: 'tech2026', name: 'Tech Lead', role: 'lead' },
+      'viewer': { password: 'viewer2026', name: 'Viewer', role: 'viewer' },
+    };
+
+    // ==================== TECHNICIAN DATA ====================
+    // Data source: Power BI Ticket KPIs Report
+    // Date range: 12/21/2025 - 1/24/2026 (Last 5 Weeks)
+    // Updated: 12/27/25
+
+    const technicianData = [
+      { name: 'Arnold Vega', ticketsClosed: 10, avgLaborMins: 4.80, ticketsOpened: 0, ticketsWorkedOn: 10, avgLaborEntries: 175, pctClosedFirstContact: 60.00, fcr: 50.00, singleTechPct: 90.00, reopenedTickets: 0, avgTimeToResolve: 53.07 },
+      { name: 'Brandon Hulsey-Cedeno', ticketsClosed: 59, avgLaborMins: 2.00, ticketsOpened: 1, ticketsWorkedOn: 1, avgLaborEntries: 1, pctClosedFirstContact: 98.31, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 2.53 },
+      { name: 'Brandon Johnson', ticketsClosed: 7, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 2, avgLaborEntries: 21, pctClosedFirstContact: 71.43, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 2.74 },
+      { name: 'Christopher Vouis', ticketsClosed: 1, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 1, avgLaborEntries: 366, pctClosedFirstContact: 100.00, fcr: 100.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 213.55 },
+      { name: 'Cole Matuszynski', ticketsClosed: 4, avgLaborMins: 2.00, ticketsOpened: 2, ticketsWorkedOn: 4, avgLaborEntries: 59, pctClosedFirstContact: 50.00, fcr: 50.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 6.46 },
+      { name: 'Colton Keim', ticketsClosed: 4, avgLaborMins: 1.75, ticketsOpened: 3, ticketsWorkedOn: 4, avgLaborEntries: 48, pctClosedFirstContact: 75.00, fcr: 75.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 0.70 },
+      { name: 'Cory Strassell', ticketsClosed: 39, avgLaborMins: 1.25, ticketsOpened: 1, ticketsWorkedOn: 4, avgLaborEntries: 5, pctClosedFirstContact: 94.87, fcr: 50.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 0.95 },
+      { name: 'Cristina Chavez Soto', ticketsClosed: 4, avgLaborMins: 5.25, ticketsOpened: 1, ticketsWorkedOn: 4, avgLaborEntries: 259, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 6.17 },
+      { name: 'David Craig', ticketsClosed: 7, avgLaborMins: 0, ticketsOpened: 1, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 210.88 },
+      { name: 'Devin Peterson', ticketsClosed: 1, avgLaborMins: 3.00, ticketsOpened: 1, ticketsWorkedOn: 1, avgLaborEntries: 49, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 4.88 },
+      { name: 'Erik Morris', ticketsClosed: 6, avgLaborMins: 0, ticketsOpened: 6, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 93.11 },
+      { name: 'Francine Byrd', ticketsClosed: 2, avgLaborMins: 0, ticketsOpened: 2, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 11.76 },
+      { name: 'Gabriel Espinoza', ticketsClosed: 6, avgLaborMins: 1.67, ticketsOpened: 1, ticketsWorkedOn: 6, avgLaborEntries: 79, pctClosedFirstContact: 50.00, fcr: 33.33, singleTechPct: 80.00, reopenedTickets: 0, avgTimeToResolve: 5.98 },
+      { name: 'Hoover Dimson', ticketsClosed: 3, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 3, avgLaborEntries: 15, pctClosedFirstContact: 100.00, fcr: 100.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 38.06 },
+      { name: 'James Bruce', ticketsClosed: 2, avgLaborMins: 2.00, ticketsOpened: 0, ticketsWorkedOn: 2, avgLaborEntries: 89, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 50.00, reopenedTickets: 0, avgTimeToResolve: 12.94 },
+      { name: 'Jenny Magcalayo', ticketsClosed: 8, avgLaborMins: 1.50, ticketsOpened: 1, ticketsWorkedOn: 8, avgLaborEntries: 42, pctClosedFirstContact: 62.50, fcr: 62.50, singleTechPct: 87.50, reopenedTickets: 0, avgTimeToResolve: 1.55 },
+      { name: 'Jose Velarde-Ruiz', ticketsClosed: 1, avgLaborMins: 0, ticketsOpened: 0, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 126.18 },
+      { name: 'Kerr Conkle', ticketsClosed: 32, avgLaborMins: 1.14, ticketsOpened: 1, ticketsWorkedOn: 7, avgLaborEntries: 6, pctClosedFirstContact: 96.88, fcr: 85.71, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 99.27 },
+      { name: 'Kevin Barr', ticketsClosed: 1, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 1, avgLaborEntries: 24, pctClosedFirstContact: 100.00, fcr: 100.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 1.43 },
+      { name: 'Luis Pena', ticketsClosed: 9, avgLaborMins: 2.00, ticketsOpened: 0, ticketsWorkedOn: 9, avgLaborEntries: 96, pctClosedFirstContact: 44.44, fcr: 44.44, singleTechPct: 66.67, reopenedTickets: 0, avgTimeToResolve: 2.38 },
+      { name: 'Matt Brinovac', ticketsClosed: 2, avgLaborMins: 3.50, ticketsOpened: 1, ticketsWorkedOn: 2, avgLaborEntries: 222, pctClosedFirstContact: 50.00, fcr: 50.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 6.25 },
+      { name: 'Matthew Lampe', ticketsClosed: 3, avgLaborMins: 10.00, ticketsOpened: 0, ticketsWorkedOn: 3, avgLaborEntries: 353, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 3.30 },
+      { name: 'Melinda Hennington', ticketsClosed: 2, avgLaborMins: 0, ticketsOpened: 0, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 0.78 },
+      { name: 'Michael Hughes', ticketsClosed: 5, avgLaborMins: 1.40, ticketsOpened: 0, ticketsWorkedOn: 5, avgLaborEntries: 64, pctClosedFirstContact: 40.00, fcr: 40.00, singleTechPct: 80.00, reopenedTickets: 0, avgTimeToResolve: 8.64 },
+      { name: 'Michelle Contreras', ticketsClosed: 17, avgLaborMins: 2.59, ticketsOpened: 1, ticketsWorkedOn: 17, avgLaborEntries: 39, pctClosedFirstContact: 29.41, fcr: 29.41, singleTechPct: 76.47, reopenedTickets: 0, avgTimeToResolve: 3.28 },
+      { name: 'Milo Lyon', ticketsClosed: 3, avgLaborMins: 0, ticketsOpened: 1, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 0.78 },
+      { name: 'Nate Lanning', ticketsClosed: 15, avgLaborMins: 2.20, ticketsOpened: 14, ticketsWorkedOn: 15, avgLaborEntries: 129, pctClosedFirstContact: 66.67, fcr: 66.67, singleTechPct: 93.33, reopenedTickets: 0, avgTimeToResolve: 1.62 },
+      { name: 'Oscar Contreras', ticketsClosed: 8, avgLaborMins: 3.38, ticketsOpened: 1, ticketsWorkedOn: 8, avgLaborEntries: 138, pctClosedFirstContact: 62.50, fcr: 62.50, singleTechPct: 87.50, reopenedTickets: 0, avgTimeToResolve: 2.39 },
+      { name: 'Rachael Wren', ticketsClosed: 1, avgLaborMins: 0, ticketsOpened: 0, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 7.78 },
+      { name: 'Roberto Saldana', ticketsClosed: 5, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 5, avgLaborEntries: 67, pctClosedFirstContact: 80.00, fcr: 80.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 27.55 },
+      { name: 'Sam Dean', ticketsClosed: 7, avgLaborMins: 2.67, ticketsOpened: 2, ticketsWorkedOn: 6, avgLaborEntries: 143, pctClosedFirstContact: 57.14, fcr: 50.00, singleTechPct: 83.33, reopenedTickets: 0, avgTimeToResolve: 6.65 },
+      { name: 'Steve Morozov', ticketsClosed: 2, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 2, avgLaborEntries: 122, pctClosedFirstContact: 100.00, fcr: 100.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 3.81 },
+      { name: 'Thomas Siegrist', ticketsClosed: 1, avgLaborMins: 0, ticketsOpened: 0, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 254.53 },
+      { name: 'Tom Gilmore', ticketsClosed: 1, avgLaborMins: 7.00, ticketsOpened: 0, ticketsWorkedOn: 1, avgLaborEntries: 514, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 11.03 },
+      { name: 'Tommy Wijaya', ticketsClosed: 11, avgLaborMins: 1.18, ticketsOpened: 0, ticketsWorkedOn: 11, avgLaborEntries: 18, pctClosedFirstContact: 90.91, fcr: 81.82, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 31.60 },
+      { name: 'Toukue Her', ticketsClosed: 4, avgLaborMins: 0, ticketsOpened: 0, ticketsWorkedOn: 0, avgLaborEntries: 0, pctClosedFirstContact: 100.00, fcr: 0.00, singleTechPct: 0.00, reopenedTickets: 0, avgTimeToResolve: 5.69 },
+      { name: 'William Doyle', ticketsClosed: 1, avgLaborMins: 1.00, ticketsOpened: 0, ticketsWorkedOn: 1, avgLaborEntries: 271, pctClosedFirstContact: 0.00, fcr: 0.00, singleTechPct: 100.00, reopenedTickets: 0, avgTimeToResolve: 5.62 },
+    ];
+
+    // KPI Summary Data
+    const kpiSummary = {
+      totalTicketsClosed: 294,
+      avgLaborMins: 2.41,
+      avgLaborEntries: 48,
+      pctClosedFirstContact: 77.89,
+      fcr: 52.45,
+      singleTechPct: 86.62,
+      reopenedTickets: 0,
+      avgTimeToFirstEntry: 1.85,
+      ticketOnBudget: 99.66,
+      avgTimeToRespond: 0.30,
+      avgTimeToPlan: 3.84,
+      avgTimeToResolve: 25.82,
+      dateRange: '12/21/2025 - 1/24/2026',
+      dataUpdated: '12/27/25',
+    };
+
+    // Color palette
+    const colors = {
+      primary: '#0d4f8b',
+      secondary: '#1a73e8',
+      accent: '#4285f4',
+      success: '#0d7a3e',
+      warning: '#f9ab00',
+      danger: '#d93025',
+      lightBg: '#f8f9fa',
+      cardBg: '#ffffff',
+      text: '#202124',
+      textLight: '#5f6368',
+      border: '#dadce0',
+    };
+
+    const formatNumber = (value, decimals = 2) => {
+      if (value === 0) return '0';
+      return value.toFixed(decimals);
+    };
+
+    // Login Component
+    const LoginPage = ({ onLogin }) => {
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const user = USERS[username.toLowerCase()];
+        if (user && user.password === password) {
+          localStorage.setItem('opsUser', JSON.stringify({ username: username.toLowerCase(), ...user }));
+          onLogin({ username: username.toLowerCase(), ...user });
+        } else {
+          setError('Invalid username or password');
+        }
+      };
+
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}>
+          <div style={{
+            background: colors.cardBg,
+            borderRadius: '12px',
+            padding: '40px',
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{
+                background: colors.primary,
+                color: 'white',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                display: 'inline-block',
+                fontSize: '14px',
+                fontWeight: '600',
+                marginBottom: '16px',
+              }}>
+                MyDataPath
+              </div>
+              <h1 style={{ color: colors.text, fontSize: '24px', fontWeight: '600', margin: '0 0 8px 0' }}>
+                Operations Dashboard
+              </h1>
+              <p style={{ color: colors.textLight, fontSize: '14px', margin: 0 }}>
+                Sign in to view ticket KPIs
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', color: colors.text, fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="Enter username"
+                />
+              </div>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', color: colors.text, fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  placeholder="Enter password"
+                />
+              </div>
+              {error && (
+                <div style={{
+                  background: '#fee2e2',
+                  color: colors.danger,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  marginBottom: '20px',
+                }}>
+                  {error}
+                </div>
+              )}
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: colors.primary,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div style={{ marginTop: '24px', padding: '16px', background: colors.lightBg, borderRadius: '8px', fontSize: '12px', color: colors.textLight }}>
+              <strong>Available Accounts:</strong><br/>
+              scott / mydatapath2026 (Admin)<br/>
+              operations / ops2026 (Manager)<br/>
+              tech / tech2026 (Tech Lead)<br/>
+              viewer / viewer2026 (Viewer)
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // KPI Card Component
+    const KpiCard = ({ title, value, subtitle, color, icon }) => (
+      <div style={{
+        background: colors.cardBg,
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        border: `1px solid ${colors.border}`,
+        borderLeft: `4px solid ${color || colors.primary}`,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <p style={{ color: colors.textLight, fontSize: '12px', fontWeight: '500', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              {title}
+            </p>
+            <p style={{ color: colors.text, fontSize: '32px', fontWeight: '700', margin: '8px 0 4px 0' }}>
+              {value}
+            </p>
+            {subtitle && (
+              <p style={{ color: colors.textLight, fontSize: '12px', margin: 0 }}>{subtitle}</p>
+            )}
+          </div>
+          {icon && (
+            <div style={{ background: colors.lightBg, borderRadius: '8px', padding: '10px' }}>
+              {icon}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    // Main Dashboard Component
+    const Dashboard = ({ user, onLogout }) => {
+      const [sortBy, setSortBy] = useState('ticketsClosed');
+      const [sortOrder, setSortOrder] = useState('desc');
+      const [viewMode, setViewMode] = useState('table'); // 'table' or 'chart'
+
+      // Sort technicians
+      const sortedTechnicians = useMemo(() => {
+        return [...technicianData].sort((a, b) => {
+          const aVal = a[sortBy];
+          const bVal = b[sortBy];
+          return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+        });
+      }, [sortBy, sortOrder]);
+
+      // Chart data - top 15 by tickets closed
+      const chartData = useMemo(() => {
+        return [...technicianData]
+          .sort((a, b) => b.ticketsClosed - a.ticketsClosed)
+          .slice(0, 15)
+          .map(t => ({
+            name: t.name.split(' ')[0], // First name only for chart
+            fullName: t.name,
+            ticketsClosed: t.ticketsClosed,
+            avgLaborMins: t.avgLaborMins,
+          }));
+      }, []);
+
+      // Labor distribution data
+      const laborDistribution = useMemo(() => {
+        const ranges = [
+          { range: '0 mins', count: 0, color: '#e8f5e9' },
+          { range: '0.1-1 min', count: 0, color: '#c8e6c9' },
+          { range: '1.1-2 mins', count: 0, color: '#a5d6a7' },
+          { range: '2.1-3 mins', count: 0, color: '#81c784' },
+          { range: '3.1-5 mins', count: 0, color: '#66bb6a' },
+          { range: '5+ mins', count: 0, color: '#43a047' },
+        ];
+        technicianData.forEach(t => {
+          if (t.avgLaborMins === 0) ranges[0].count++;
+          else if (t.avgLaborMins <= 1) ranges[1].count++;
+          else if (t.avgLaborMins <= 2) ranges[2].count++;
+          else if (t.avgLaborMins <= 3) ranges[3].count++;
+          else if (t.avgLaborMins <= 5) ranges[4].count++;
+          else ranges[5].count++;
+        });
+        return ranges;
+      }, []);
+
+      const handleSort = (field) => {
+        if (sortBy === field) {
+          setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+        } else {
+          setSortBy(field);
+          setSortOrder('desc');
+        }
+      };
+
+      const SortIcon = ({ field }) => {
+        if (sortBy !== field) return <span style={{ opacity: 0.3 }}>↕</span>;
+        return sortOrder === 'desc' ? '↓' : '↑';
+      };
+
+      // Icons
+      const TicketIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="2"><path d="M15 5v2"/><path d="M15 11v2"/><path d="M15 17v2"/><path d="M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>;
+      const ClockIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.secondary} strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+      const CheckIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.success} strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+      const UsersIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.accent} strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+
+      return (
+        <div style={{ minHeight: '100vh', background: colors.lightBg }}>
+          {/* Header */}
+          <header style={{
+            background: colors.primary,
+            color: 'white',
+            padding: '16px 32px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  fontSize: '14px'
+                }}>
+                  MyDataPath
+                </div>
+                <div>
+                  <h1 style={{ fontSize: '22px', fontWeight: '600', margin: 0 }}>Operations Dashboard - Ticket KPIs</h1>
+                  <p style={{ fontSize: '13px', opacity: 0.8, margin: '4px 0 0 0' }}>
+                    {user.name} • Data: {kpiSummary.dateRange} • Updated: {kpiSummary.dataUpdated}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 32px' }}>
+            {/* KPI Summary Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '16px',
+              marginBottom: '24px',
+            }}>
+              <KpiCard
+                title="Tickets Closed"
+                value={kpiSummary.totalTicketsClosed}
+                subtitle="Last 5 weeks"
+                color={colors.primary}
+                icon={TicketIcon}
+              />
+              <KpiCard
+                title="Avg Labor (mins)"
+                value={formatNumber(kpiSummary.avgLaborMins)}
+                subtitle="Per ticket"
+                color={colors.secondary}
+                icon={ClockIcon}
+              />
+              <KpiCard
+                title="First Contact Resolution"
+                value={`${formatNumber(kpiSummary.fcr, 1)}%`}
+                subtitle="FCR rate"
+                color={colors.success}
+                icon={CheckIcon}
+              />
+              <KpiCard
+                title="Single Tech %"
+                value={`${formatNumber(kpiSummary.singleTechPct, 1)}%`}
+                subtitle="One tech per ticket"
+                color={colors.accent}
+                icon={UsersIcon}
+              />
+            </div>
+
+            {/* Secondary KPIs */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '12px',
+              marginBottom: '24px',
+            }}>
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '16px', textAlign: 'center', border: `1px solid ${colors.border}` }}>
+                <p style={{ color: colors.textLight, fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Closed First Contact</p>
+                <p style={{ color: colors.text, fontSize: '24px', fontWeight: '600', margin: '4px 0 0 0' }}>{formatNumber(kpiSummary.pctClosedFirstContact, 1)}%</p>
+              </div>
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '16px', textAlign: 'center', border: `1px solid ${colors.border}` }}>
+                <p style={{ color: colors.textLight, fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Avg Time to Respond</p>
+                <p style={{ color: colors.text, fontSize: '24px', fontWeight: '600', margin: '4px 0 0 0' }}>{formatNumber(kpiSummary.avgTimeToRespond)} hrs</p>
+              </div>
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '16px', textAlign: 'center', border: `1px solid ${colors.border}` }}>
+                <p style={{ color: colors.textLight, fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Avg Time to Plan</p>
+                <p style={{ color: colors.text, fontSize: '24px', fontWeight: '600', margin: '4px 0 0 0' }}>{formatNumber(kpiSummary.avgTimeToPlan)} hrs</p>
+              </div>
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '16px', textAlign: 'center', border: `1px solid ${colors.border}` }}>
+                <p style={{ color: colors.textLight, fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Avg Time to Resolve (MTTR)</p>
+                <p style={{ color: colors.text, fontSize: '24px', fontWeight: '600', margin: '4px 0 0 0' }}>{formatNumber(kpiSummary.avgTimeToResolve)} hrs</p>
+              </div>
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '16px', textAlign: 'center', border: `1px solid ${colors.border}` }}>
+                <p style={{ color: colors.textLight, fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>On Budget</p>
+                <p style={{ color: colors.success, fontSize: '24px', fontWeight: '600', margin: '4px 0 0 0' }}>{formatNumber(kpiSummary.ticketOnBudget, 1)}%</p>
+              </div>
+            </div>
+
+            {/* View Toggle */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <button
+                onClick={() => setViewMode('table')}
+                style={{
+                  padding: '8px 16px',
+                  background: viewMode === 'table' ? colors.primary : 'transparent',
+                  color: viewMode === 'table' ? 'white' : colors.text,
+                  border: `1px solid ${viewMode === 'table' ? colors.primary : colors.border}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Table View
+              </button>
+              <button
+                onClick={() => setViewMode('chart')}
+                style={{
+                  padding: '8px 16px',
+                  background: viewMode === 'chart' ? colors.primary : 'transparent',
+                  color: viewMode === 'chart' ? 'white' : colors.text,
+                  border: `1px solid ${viewMode === 'chart' ? colors.primary : colors.border}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Chart View
+              </button>
+            </div>
+
+            {/* Chart View */}
+            {viewMode === 'chart' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                <div style={{ background: colors.cardBg, borderRadius: '12px', padding: '24px', border: `1px solid ${colors.border}` }}>
+                  <h3 style={{ color: colors.text, fontSize: '16px', fontWeight: '600', margin: '0 0 16px 0' }}>
+                    Top 15 Technicians - Tickets Closed vs Avg Labor
+                  </h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={chartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                      <XAxis type="number" stroke={colors.textLight} fontSize={12} />
+                      <YAxis type="category" dataKey="name" stroke={colors.textLight} fontSize={11} width={80} />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div style={{ background: 'white', padding: '12px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', border: `1px solid ${colors.border}` }}>
+                                <p style={{ fontWeight: '600', margin: '0 0 8px 0' }}>{data.fullName}</p>
+                                <p style={{ margin: '4px 0', color: colors.primary }}>Tickets Closed: {data.ticketsClosed}</p>
+                                <p style={{ margin: '4px 0', color: colors.secondary }}>Avg Labor: {formatNumber(data.avgLaborMins)} mins</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="ticketsClosed" name="Tickets Closed" fill={colors.primary} radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="avgLaborMins" name="Avg Labor (mins)" fill={colors.secondary} radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div style={{ background: colors.cardBg, borderRadius: '12px', padding: '24px', border: `1px solid ${colors.border}` }}>
+                  <h3 style={{ color: colors.text, fontSize: '16px', fontWeight: '600', margin: '0 0 16px 0' }}>
+                    Labor Time Distribution
+                  </h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={laborDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        dataKey="count"
+                        nameKey="range"
+                        label={({ range, count }) => count > 0 ? `${range}: ${count}` : ''}
+                      >
+                        {laborDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '16px' }}>
+                    {laborDistribution.map((item) => (
+                      <div key={item.range} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: item.color }} />
+                          <span style={{ fontSize: '12px', color: colors.text }}>{item.range}</span>
+                        </div>
+                        <span style={{ fontSize: '12px', color: colors.textLight, fontWeight: '500' }}>{item.count} techs</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Technician Table */}
+            <div style={{ background: colors.cardBg, borderRadius: '12px', padding: '24px', border: `1px solid ${colors.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ color: colors.text, fontSize: '18px', fontWeight: '600', margin: 0 }}>
+                  Technician Performance - Tickets Closed & Avg Labor Minutes
+                </h3>
+                <span style={{ color: colors.textLight, fontSize: '13px' }}>
+                  {technicianData.length} technicians • Click headers to sort
+                </span>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.border}` }}>
+                      <th style={{ textAlign: 'left', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer' }} onClick={() => handleSort('name')}>
+                        Technician <SortIcon field="name" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer', background: sortBy === 'ticketsClosed' ? '#e3f2fd' : 'transparent' }} onClick={() => handleSort('ticketsClosed')}>
+                        Tickets Closed <SortIcon field="ticketsClosed" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer', background: sortBy === 'avgLaborMins' ? '#e3f2fd' : 'transparent' }} onClick={() => handleSort('avgLaborMins')}>
+                        Avg Labor (mins) <SortIcon field="avgLaborMins" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer' }} onClick={() => handleSort('avgLaborEntries')}>
+                        Total Labor Entries <SortIcon field="avgLaborEntries" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer' }} onClick={() => handleSort('fcr')}>
+                        FCR % <SortIcon field="fcr" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer' }} onClick={() => handleSort('singleTechPct')}>
+                        Single Tech % <SortIcon field="singleTechPct" />
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600', cursor: 'pointer' }} onClick={() => handleSort('avgTimeToResolve')}>
+                        Avg Resolve (hrs) <SortIcon field="avgTimeToResolve" />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedTechnicians.map((tech, idx) => (
+                      <tr key={tech.name} style={{ borderBottom: `1px solid ${colors.border}`, background: idx % 2 === 0 ? 'transparent' : colors.lightBg }}>
+                        <td style={{ padding: '12px 8px', color: colors.text, fontWeight: '500' }}>
+                          {tech.name}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '600', color: tech.ticketsClosed >= 20 ? colors.success : tech.ticketsClosed >= 10 ? colors.primary : colors.text }}>
+                          {tech.ticketsClosed}
+                          {tech.ticketsClosed >= 30 && <span style={{ marginLeft: '4px' }}>🔥</span>}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: tech.avgLaborMins === 0 ? colors.textLight : tech.avgLaborMins > 5 ? colors.warning : colors.text }}>
+                          {formatNumber(tech.avgLaborMins)}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: colors.textLight }}>
+                          {tech.avgLaborEntries}
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: tech.fcr >= 80 ? colors.success : tech.fcr >= 50 ? colors.text : colors.textLight }}>
+                          {formatNumber(tech.fcr, 1)}%
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: tech.singleTechPct === 100 ? colors.success : colors.text }}>
+                          {formatNumber(tech.singleTechPct, 1)}%
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: tech.avgTimeToResolve > 50 ? colors.warning : colors.textLight }}>
+                          {formatNumber(tech.avgTimeToResolve)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: `2px solid ${colors.border}`, background: colors.lightBg }}>
+                      <td style={{ padding: '12px 8px', color: colors.text, fontWeight: '700' }}>TOTAL / AVG</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700', color: colors.primary }}>{kpiSummary.totalTicketsClosed}</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700', color: colors.secondary }}>{formatNumber(kpiSummary.avgLaborMins)}</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700', color: colors.textLight }}>{kpiSummary.avgLaborEntries}</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700' }}>{formatNumber(kpiSummary.fcr, 1)}%</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700' }}>{formatNumber(kpiSummary.singleTechPct, 1)}%</td>
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: '700' }}>{formatNumber(kpiSummary.avgTimeToResolve)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <footer style={{
+              textAlign: 'center',
+              padding: '24px 16px',
+              marginTop: '24px',
+              color: colors.textLight,
+              fontSize: '12px',
+              borderTop: `1px solid ${colors.border}`,
+            }}>
+              Data source: Power BI Ticket KPIs Report • Date range: {kpiSummary.dateRange} • Last updated: {kpiSummary.dataUpdated}
+            </footer>
+          </main>
+        </div>
+      );
+    };
+
+    // Main App Component
+    const App = () => {
+      const [user, setUser] = useState(null);
+
+      useEffect(() => {
+        const savedUser = localStorage.getItem('opsUser');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      }, []);
+
+      const handleLogout = () => {
+        localStorage.removeItem('opsUser');
+        setUser(null);
+      };
+
+      if (!user) {
+        return <LoginPage onLogin={setUser} />;
+      }
+
+      return <Dashboard user={user} onLogout={handleLogout} />;
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyDataPath Sales Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+  <link href="https://unpkg.com/lucide-static@0.294.0/font/lucide.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f8fa; }
+
+    /* Login Styles */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ff7a59 0%, #ff5c35 100%);
+    }
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-box h1 { color: #33475b; margin-bottom: 8px; font-size: 24px; }
+    .login-box p { color: #7c98b6; margin-bottom: 24px; font-size: 14px; }
+    .login-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #dfe3eb;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    .login-box input:focus { outline: none; border-color: #ff7a59; }
+    .login-box button {
+      width: 100%;
+      padding: 14px;
+      background: #ff7a59;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-box button:hover { background: #ff5c35; }
+    .login-error { color: #f2545b; font-size: 13px; margin-bottom: 12px; }
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.2);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+    const { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } = Recharts;
+
+    // ================================================================================
+    // USER CONFIGURATION - Edit this section to manage access
+    // ================================================================================
+    const USERS = {
+      'scott': { password: 'mydatapath2026', name: 'Scott Gordon', role: 'admin', repCode: null },
+      'jay': { password: 'sales2026', name: 'Jay Harvey', role: 'rep', repCode: 'jharvey' },
+      'dan': { password: 'sales2026', name: 'Dan Sturdivant', role: 'rep', repCode: 'dsturdivant' },
+      'robert': { password: 'sales2026', name: 'Robert Maestas', role: 'rep', repCode: 'rmaestas' },
+      'manager': { password: 'manager2026', name: 'Sales Manager', role: 'manager', repCode: null },
+    };
+
+    // ================================================================================
+    // HUBSPOT ACTIVITY DATA - Last synced: January 24, 2026
+    // ================================================================================
+    const activityData = {
+      daily: {
+        date: 'January 24, 2026',
+        byRep: [
+          { rep: 'Jay Harvey', ownerId: 681568620, contacts: 28, activities: 42, calls: 12, emails: 18, meetings: 3, tasks: 9 },
+          { rep: 'Nathan La Fleche', ownerId: 701151085, contacts: 7, activities: 15, calls: 4, emails: 8, meetings: 2, tasks: 1 },
+          { rep: 'Joel Walker', ownerId: 647379515, contacts: 4, activities: 8, calls: 2, emails: 4, meetings: 1, tasks: 1 },
+          { rep: 'Frankie Garibay', ownerId: 647372947, contacts: 1, activities: 3, calls: 1, emails: 1, meetings: 0, tasks: 1 },
+          { rep: 'Dan Kuphal', ownerId: 78033343, contacts: 1, activities: 2, calls: 0, emails: 2, meetings: 0, tasks: 0 },
+          { rep: 'Andy Lawhorn', ownerId: 665694070, contacts: 1, activities: 1, calls: 1, emails: 0, meetings: 0, tasks: 0 },
+        ],
+        totals: { contacts: 42, activities: 71, calls: 20, emails: 33, meetings: 6, tasks: 12 },
+        hourlyBreakdown: [
+          { hour: '8 AM', activities: 5 }, { hour: '9 AM', activities: 8 }, { hour: '10 AM', activities: 12 },
+          { hour: '11 AM', activities: 10 }, { hour: '12 PM', activities: 4 }, { hour: '1 PM', activities: 7 },
+          { hour: '2 PM', activities: 9 }, { hour: '3 PM', activities: 11 }, { hour: '4 PM', activities: 5 },
+        ],
+      },
+      weekly: {
+        dateRange: 'Jan 20 - Jan 24, 2026',
+        byRep: [
+          { rep: 'Jay Harvey', ownerId: 681568620, contacts: 98, activities: 156, calls: 45, emails: 68, meetings: 12, tasks: 31 },
+          { rep: 'Nathan La Fleche', ownerId: 701151085, contacts: 24, activities: 52, calls: 15, emails: 26, meetings: 6, tasks: 5 },
+          { rep: 'Joel Walker', ownerId: 647379515, contacts: 12, activities: 28, calls: 8, emails: 14, meetings: 4, tasks: 2 },
+          { rep: 'Frankie Garibay', ownerId: 647372947, contacts: 4, activities: 10, calls: 3, emails: 5, meetings: 1, tasks: 1 },
+          { rep: 'Dan Kuphal', ownerId: 78033343, contacts: 3, activities: 6, calls: 1, emails: 4, meetings: 0, tasks: 1 },
+          { rep: 'Steve Lawhorn', ownerId: 713841488, contacts: 2, activities: 4, calls: 1, emails: 2, meetings: 1, tasks: 0 },
+          { rep: 'Andy Lawhorn', ownerId: 665694070, contacts: 2, activities: 3, calls: 2, emails: 1, meetings: 0, tasks: 0 },
+        ],
+        totals: { contacts: 145, activities: 259, calls: 75, emails: 120, meetings: 24, tasks: 40 },
+        dailyBreakdown: [
+          { day: 'Mon 1/20', activities: 68, contacts: 42 }, { day: 'Tue 1/21', activities: 54, contacts: 35 },
+          { day: 'Wed 1/22', activities: 66, contacts: 38 }, { day: 'Thu 1/23', activities: 71, contacts: 42 },
+        ],
+      },
+      monthly: {
+        month: 'January 2026',
+        byRep: [
+          { rep: 'Jay Harvey', ownerId: 681568620, contacts: 312, activities: 524, calls: 152, emails: 228, meetings: 42, tasks: 102 },
+          { rep: 'Nathan La Fleche', ownerId: 701151085, contacts: 78, activities: 168, calls: 48, emails: 82, meetings: 18, tasks: 20 },
+          { rep: 'Joel Walker', ownerId: 647379515, contacts: 45, activities: 96, calls: 28, emails: 46, meetings: 12, tasks: 10 },
+          { rep: 'Frankie Garibay', ownerId: 647372947, contacts: 18, activities: 38, calls: 11, emails: 18, meetings: 4, tasks: 5 },
+          { rep: 'Dan Sturdivant', ownerId: 617936293, contacts: 14, activities: 28, calls: 8, emails: 14, meetings: 3, tasks: 3 },
+          { rep: 'Dan Kuphal', ownerId: 78033343, contacts: 12, activities: 24, calls: 6, emails: 14, meetings: 2, tasks: 2 },
+          { rep: 'Steve Lawhorn', ownerId: 713841488, contacts: 8, activities: 16, calls: 4, emails: 8, meetings: 2, tasks: 2 },
+          { rep: 'Andy Lawhorn', ownerId: 665694070, contacts: 6, activities: 12, calls: 4, emails: 6, meetings: 1, tasks: 1 },
+        ],
+        totals: { contacts: 493, activities: 906, calls: 261, emails: 416, meetings: 84, tasks: 145 },
+        weeklyBreakdown: [
+          { week: 'Week 1', activities: 198, contacts: 108 }, { week: 'Week 2', activities: 224, contacts: 122 },
+          { week: 'Week 3', activities: 225, contacts: 121 }, { week: 'Week 4', activities: 259, contacts: 142 },
+        ],
+      },
+    };
+
+    // ================================================================================
+    // CONNECTWISE PIPELINE DATA - Last synced: January 24, 2026
+    // ================================================================================
+    const connectWisePipeline = {
+      summary: {
+        totalOpportunities: 643,
+        totalRevenue: 10676422,
+        openRevenue: 10673922,
+        wonRevenue: 2500,
+        lostRevenue: 19482,
+        expectedRevenue: 4061209,
+        recurringRevenue: 4477863,
+      },
+      allOpportunities: [
+        { id: 22881, name: 'Fully Managed Services', company: 'Corner Escrow', status: '5. Quote/Prop', closeDate: '12/31/25', closeDateSort: '2025-12-31', revenue: 104934, recurring: 104934, probability: 50, expected: 52467, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 646, rating: 'Hot' },
+        { id: 23401, name: 'Hybrid MSA', company: 'Inland Star Distribution', status: '5. Quote/Prop', closeDate: '3/31/26', closeDateSort: '2026-03-31', revenue: 93316, recurring: 93316, probability: 50, expected: 46658, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 225, rating: 'Hot' },
+        { id: 23402, name: 'Revised MSA', company: 'Del Puerto Health Care', status: '2. Project Prop', closeDate: '6/30/26', closeDateSort: '2026-06-30', revenue: 85706, recurring: 85706, probability: 25, expected: 21427, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 227, rating: 'Hot' },
+        { id: 23433, name: 'Fully Managed Services', company: 'California Freight', status: '1. Open', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 180384, recurring: 180384, probability: 25, expected: 45096, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 232, rating: 'Hot' },
+        { id: 23435, name: 'New MSA', company: 'Bright Homes', status: '5. Quote/Prop', closeDate: '1/28/26', closeDateSort: '2026-01-28', revenue: 176040, recurring: 176040, probability: 20, expected: 35208, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 415, rating: 'Hot' },
+        { id: 23403, name: 'Worthington Christian School E-rate 2026', company: 'Worthington Christian School', status: '1. Open', closeDate: '7/1/26', closeDateSort: '2026-07-01', revenue: 80000, recurring: 0, probability: 25, expected: 20000, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 148, rating: 'Hot' },
+        { id: 23404, name: 'Revised MSA', company: 'Anonymous LLC', status: '2. Project Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 79835, recurring: 79835, probability: 50, expected: 39918, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 245, rating: 'Hot' },
+        { id: 23405, name: 'Core Security Services', company: 'California Freight', status: '5. Quote/Prop', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 77064, recurring: 77064, probability: 50, expected: 38532, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 232, rating: 'Hot' },
+        { id: 23406, name: 'Revised MSA', company: 'Caloy Company LLC', status: '1. Open', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 73159, recurring: 73159, probability: 25, expected: 18290, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 312, rating: 'Hot' },
+        { id: 23407, name: 'Revised MSA', company: 'Western Steel Buildings', status: 'On Hold', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 72292, recurring: 72292, probability: 25, expected: 18073, rep: 'Jay Harvey', repCode: 'jharvey', age: 177, rating: 'Hot' },
+        { id: 23408, name: 'AI Powered Email Security', company: 'Inland Star Distribution', status: '5. Quote/Prop', closeDate: '4/30/26', closeDateSort: '2026-04-30', revenue: 71653, recurring: 71653, probability: 50, expected: 35826, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 218, rating: 'Hot' },
+        { id: 23409, name: 'MFA', company: 'Inland Star Distribution', status: '5. Quote/Prop', closeDate: '4/30/26', closeDateSort: '2026-04-30', revenue: 71653, recurring: 71653, probability: 50, expected: 35826, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 218, rating: 'Hot' },
+        { id: 23410, name: 'Dark Web Monitoring', company: 'Inland Star Distribution', status: '5. Quote/Prop', closeDate: '4/30/26', closeDateSort: '2026-04-30', revenue: 71653, recurring: 71653, probability: 50, expected: 35826, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 218, rating: 'Hot' },
+        { id: 23411, name: 'MDR for Microsoft 365', company: 'Inland Star Distribution', status: '5. Quote/Prop', closeDate: '4/30/26', closeDateSort: '2026-04-30', revenue: 71653, recurring: 71653, probability: 50, expected: 35826, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 218, rating: 'Hot' },
+        { id: 23412, name: 'MS 365 Backups', company: 'Peak Real Estate Management', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 71653, recurring: 71653, probability: 50, expected: 35826, rep: 'Jay Harvey', repCode: 'jharvey', age: 214, rating: 'Hot' },
+        { id: 23413, name: 'MSA Refresh', company: 'Agee Construction', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 70767, recurring: 70767, probability: 50, expected: 35384, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 310, rating: 'Hot' },
+        { id: 23414, name: 'Revised MSA', company: 'Cranbrook Group Inc', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 70106, recurring: 70106, probability: 50, expected: 35053, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 227, rating: 'Hot' },
+        { id: 23415, name: '24x7 Firewall Monitoring', company: 'Peak Real Estate Management', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 69600, recurring: 69600, probability: 50, expected: 34800, rep: 'Jay Harvey', repCode: 'jharvey', age: 214, rating: 'Hot' },
+        { id: 23416, name: '24x7 Firewall Monitoring', company: 'Groundswell', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 69600, recurring: 69600, probability: 50, expected: 34800, rep: 'Jay Harvey', repCode: 'jharvey', age: 217, rating: 'Hot' },
+        { id: 23417, name: 'GALA | New Building Cabling', company: 'Global Ambassadors Language Academy', status: 'On Hold', closeDate: '4/30/26', closeDateSort: '2026-04-30', revenue: 69196, recurring: 0, probability: 50, expected: 34598, rep: 'Robert Maestas', repCode: 'rmaestas', age: 330, rating: 'Hot' },
+        { id: 23418, name: 'Phase 2: Wi-Fi project', company: 'Duarte Nursery', status: '5. Quote/Prop', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 68134, recurring: 68134, probability: 50, expected: 34067, rep: 'Jay Harvey', repCode: 'jharvey', age: 487, rating: 'Hot' },
+        { id: 23419, name: 'NCLUSD - MFA', company: 'Newman-Crows Landing USD', status: '5. Quote/Prop', closeDate: '1/31/26', closeDateSort: '2026-01-31', revenue: 67467, recurring: 67467, probability: 50, expected: 33734, rep: 'Robert Maestas', repCode: 'rmaestas', age: 239, rating: 'Hot' },
+        { id: 23420, name: 'Quote #035528 2025/2026 MIBS', company: 'LAKOTA LOCAL SCHOOL DISTRICT', status: '5. Quote/Prop', closeDate: '6/30/26', closeDateSort: '2026-06-30', revenue: 66960, recurring: 66960, probability: 50, expected: 33480, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 58, rating: 'Medium' },
+        { id: 23380, name: 'Fully Managed Services', company: 'Sierra Rail Road', status: '5. Quote/Prop', closeDate: '12/31/25', closeDateSort: '2025-12-31', revenue: 66576, recurring: 66576, probability: 50, expected: 33288, rep: 'Dan Sturdivant', repCode: 'dsturdivant', age: 578, rating: 'Hot' },
+        { id: 23421, name: 'Revised MSA', company: 'Applegate Teeples Drilling', status: 'On Hold', closeDate: '12/31/26', closeDateSort: '2026-12-31', revenue: 62914, recurring: 62914, probability: 25, expected: 15729, rep: 'Jay Harvey', repCode: 'jharvey', age: 107, rating: 'Hot' },
+        { id: 23426, name: 'Cloud Migration', company: 'City of Selma', status: '5. Quote/Prop', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 29600, recurring: 29600, probability: 50, expected: 14800, rep: 'Jay Harvey', repCode: 'jharvey', age: 150, rating: 'Hot' },
+        { id: 23434, name: 'New Site Setup - Cabling', company: 'California Rural Legal Assistance', status: '4. Quote/Prop', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 29076, recurring: 29076, probability: 50, expected: 14538, rep: 'Robert Maestas', repCode: 'rmaestas', age: 312, rating: 'Hot' },
+        { id: 23436, name: 'Network Infrastructure Project', company: 'City Day Community School', status: '5. Quote/Prop', closeDate: '1/26/26', closeDateSort: '2026-01-26', revenue: 10996, recurring: 10996, probability: 50, expected: 5498, rep: 'Robert Maestas', repCode: 'rmaestas', age: 185, rating: 'Hot' },
+        { id: 23428, name: 'Camera Switches - OMNIA Contract', company: 'City of Turlock', status: '5. Quote/Prop', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 5777, recurring: 5777, probability: 50, expected: 2889, rep: 'Robert Maestas', repCode: 'rmaestas', age: 147, rating: 'Hot' },
+        { id: 23425, name: 'Barracuda Cloud Archiver Renewal', company: 'City of Selma', status: '6. Ready for Order', closeDate: '1/30/26', closeDateSort: '2026-01-30', revenue: 6474, recurring: 6474, probability: 100, expected: 6474, rep: 'Jay Harvey', repCode: 'jharvey', age: 39, rating: 'Hot' },
+      ],
+    };
+
+    // Color palette
+    const colors = {
+      primary: '#ff7a59', secondary: '#00a4bd', accent: '#7c98b6', success: '#00bda5',
+      warning: '#f5c26b', danger: '#f2545b', lightBg: '#f5f8fa', cardBg: '#ffffff',
+      text: '#33475b', textLight: '#7c98b6', border: '#dfe3eb',
+    };
+    const cwColors = { primary: '#0078d4', secondary: '#106ebe', open: '#00bda5', onHold: '#f5c26b', proposal: '#6a78d1' };
+    const repColors = ['#ff7a59', '#00a4bd', '#00bda5', '#7c98b6', '#f5c26b', '#6a78d1', '#516f90', '#99acc2'];
+
+    const formatNumber = (num) => num.toLocaleString();
+
+    // Login Component
+    const LoginPage = ({ onLogin }) => {
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const user = USERS[username.toLowerCase()];
+        if (user && user.password === password) {
+          onLogin({ username: username.toLowerCase(), ...user });
+        } else {
+          setError('Invalid username or password');
+        }
+      };
+
+      return (
+        <div className="login-container">
+          <div className="login-box">
+            <h1>Sales Dashboard</h1>
+            <p>Sign in to access MyDataPath analytics</p>
+            {error && <p className="login-error">{error}</p>}
+            <form onSubmit={handleSubmit}>
+              <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+              <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button type="submit">Sign In</button>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // Metric Card
+    const MetricCard = ({ title, value, subtitle, color }) => (
+      <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: `1px solid ${colors.border}`, borderLeft: `4px solid ${color || colors.primary}` }}>
+        <p style={{ color: colors.textLight, fontSize: '12px', fontWeight: '600', margin: 0, textTransform: 'uppercase' }}>{title}</p>
+        <p style={{ color: colors.text, fontSize: '28px', fontWeight: '700', margin: '8px 0 4px 0' }}>{value}</p>
+        {subtitle && <p style={{ color: colors.textLight, fontSize: '12px', margin: 0 }}>{subtitle}</p>}
+      </div>
+    );
+
+    // Main Dashboard
+    const Dashboard = ({ user, onLogout }) => {
+      const [activeView, setActiveView] = useState('daily');
+      const [activeRanking, setActiveRanking] = useState('value');
+      const lastSync = 'January 24, 2026 at 10:15 AM PST';
+
+      const currentData = useMemo(() => activityData[activeView], [activeView]);
+
+      // Filter opportunities based on user role
+      const filteredOpportunities = useMemo(() => {
+        let opps = [...connectWisePipeline.allOpportunities];
+        if (user.role === 'rep' && user.repCode) {
+          opps = opps.filter(o => o.repCode === user.repCode);
+        }
+        // Sort based on ranking
+        switch (activeRanking) {
+          case 'value': return opps.sort((a, b) => b.revenue - a.revenue);
+          case 'likelihood': return opps.sort((a, b) => b.probability - a.probability || b.expected - a.expected);
+          case 'date': return opps.sort((a, b) => new Date(a.closeDateSort) - new Date(b.closeDateSort));
+          case 'rep': return opps.sort((a, b) => a.rep.localeCompare(b.rep) || b.revenue - a.revenue);
+          default: return opps;
+        }
+      }, [activeRanking, user]);
+
+      const topOpportunities = filteredOpportunities.slice(0, 20);
+
+      return (
+        <div style={{ minHeight: '100vh', background: colors.lightBg }}>
+          {/* Header */}
+          <header style={{ background: `linear-gradient(135deg, ${colors.primary} 0%, #ff5c35 100%)`, color: 'white', padding: '20px 32px' }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Sales Activity Dashboard</h1>
+                <p style={{ fontSize: '14px', opacity: 0.9, margin: '4px 0 0 0' }}>
+                  HubSpot + ConnectWise • {currentData.date || currentData.dateRange || currentData.month}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {/* View Toggle */}
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.2)', borderRadius: '6px', padding: '3px' }}>
+                  {['daily', 'weekly', 'monthly'].map((view) => (
+                    <button key={view} onClick={() => setActiveView(view)} style={{
+                      padding: '8px 16px', border: 'none', background: activeView === view ? 'white' : 'transparent',
+                      color: activeView === view ? colors.primary : 'white', borderRadius: '4px', cursor: 'pointer',
+                      fontSize: '13px', fontWeight: '600', textTransform: 'capitalize',
+                    }}>{view}</button>
+                  ))}
+                </div>
+                <div className="user-badge">👤 {user.name} ({user.role})</div>
+                <button className="logout-btn" onClick={onLogout}>Logout</button>
+              </div>
+            </div>
+          </header>
+
+          <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 32px' }}>
+            {/* HubSpot KPIs */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <MetricCard title="Total Activities" value={formatNumber(currentData.totals.activities)} subtitle={activeView === 'daily' ? 'Today' : activeView === 'weekly' ? 'This week' : 'This month'} color={colors.primary} />
+              <MetricCard title="Contacts Engaged" value={formatNumber(currentData.totals.contacts)} subtitle="Unique contacts" color={colors.secondary} />
+              <MetricCard title="Calls Made" value={formatNumber(currentData.totals.calls)} color={colors.success} />
+              <MetricCard title="Emails Sent" value={formatNumber(currentData.totals.emails)} color={colors.warning} />
+              <MetricCard title="Meetings" value={formatNumber(currentData.totals.meetings)} color="#6a78d1" />
+              <MetricCard title="Tasks" value={formatNumber(currentData.totals.tasks)} color={colors.textLight} />
+            </div>
+
+            {/* Activity Chart */}
+            <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: `1px solid ${colors.border}` }}>
+              <h3 style={{ color: colors.text, fontSize: '16px', fontWeight: '600', margin: '0 0 16px 0' }}>Activity by Sales Rep</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={currentData.byRep} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                  <XAxis type="number" stroke={colors.textLight} fontSize={11} />
+                  <YAxis type="category" dataKey="rep" stroke={colors.textLight} fontSize={11} width={120} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="calls" name="Calls" stackId="a" fill={colors.secondary} />
+                  <Bar dataKey="emails" name="Emails" stackId="a" fill={colors.primary} />
+                  <Bar dataKey="meetings" name="Meetings" stackId="a" fill={colors.success} />
+                  <Bar dataKey="tasks" name="Tasks" stackId="a" fill={colors.warning} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* ConnectWise Section */}
+            <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: `3px solid ${cwColors.primary}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <h2 style={{ margin: 0, color: colors.text, fontSize: '20px', fontWeight: '700' }}>
+                    ConnectWise Pipeline {user.role === 'rep' ? `- ${user.name}'s Opportunities` : ''}
+                  </h2>
+                  <p style={{ margin: '4px 0 0 0', color: colors.textLight, fontSize: '13px' }}>
+                    {filteredOpportunities.length} opportunities • ${formatNumber(filteredOpportunities.reduce((s, o) => s + o.revenue, 0))} total pipeline
+                  </p>
+                </div>
+                {/* Ranking Toggle */}
+                <div style={{ display: 'flex', background: cwColors.primary + '10', borderRadius: '6px', padding: '3px' }}>
+                  {[
+                    { key: 'value', label: '💰 Value' },
+                    { key: 'likelihood', label: '📊 Likelihood' },
+                    { key: 'date', label: '📅 Date' },
+                    { key: 'rep', label: '👤 Rep' },
+                  ].map((r) => (
+                    <button key={r.key} onClick={() => setActiveRanking(r.key)} style={{
+                      padding: '8px 14px', border: 'none', background: activeRanking === r.key ? 'white' : 'transparent',
+                      color: activeRanking === r.key ? cwColors.primary : colors.textLight, borderRadius: '4px',
+                      cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                    }}>{r.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ConnectWise KPIs */}
+              {user.role !== 'rep' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                  <MetricCard title="Total Pipeline" value={'$' + formatNumber(connectWisePipeline.summary.totalRevenue)} color={cwColors.primary} />
+                  <MetricCard title="Open Revenue" value={'$' + formatNumber(connectWisePipeline.summary.openRevenue)} color={cwColors.open} />
+                  <MetricCard title="Expected Revenue" value={'$' + formatNumber(connectWisePipeline.summary.expectedRevenue)} color={cwColors.proposal} />
+                  <MetricCard title="Recurring Revenue" value={'$' + formatNumber(connectWisePipeline.summary.recurringRevenue)} color={colors.secondary} />
+                </div>
+              )}
+
+              {/* Opportunities Table */}
+              <div style={{ background: colors.cardBg, borderRadius: '8px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', border: `1px solid ${colors.border}`, overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '900px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.border}`, background: colors.lightBg }}>
+                      <th style={{ textAlign: 'center', padding: '12px 8px', color: colors.textLight, fontWeight: '600', width: '50px' }}>#</th>
+                      <th style={{ textAlign: 'left', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Opportunity</th>
+                      <th style={{ textAlign: 'left', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Company</th>
+                      <th style={{ textAlign: 'left', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Status</th>
+                      <th style={{ textAlign: 'center', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Close Date</th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Revenue</th>
+                      <th style={{ textAlign: 'right', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Expected</th>
+                      <th style={{ textAlign: 'center', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Prob</th>
+                      <th style={{ textAlign: 'left', padding: '12px 8px', color: colors.textLight, fontWeight: '600' }}>Rep</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topOpportunities.map((opp, index) => (
+                      <tr key={opp.id} style={{ borderBottom: `1px solid ${colors.border}`, background: index < 3 ? '#fffbe6' : 'transparent' }}>
+                        <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: index < 3 ? '700' : '400', color: index < 3 ? cwColors.primary : colors.textLight }}>
+                          {index < 3 ? ['🥇', '🥈', '🥉'][index] : index + 1}
+                        </td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <div style={{ fontWeight: '500', color: colors.text }}>{opp.name}</div>
+                          <div style={{ fontSize: '10px', color: colors.textLight }}>#{opp.id}</div>
+                        </td>
+                        <td style={{ padding: '12px 8px', color: colors.text, fontSize: '12px' }}>{opp.company.length > 25 ? opp.company.substring(0, 25) + '...' : opp.company}</td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <span style={{
+                            background: opp.status.includes('Quote') || opp.status.includes('Prop') ? cwColors.proposal + '20' : opp.status.includes('Hold') ? cwColors.onHold + '20' : cwColors.open + '20',
+                            color: opp.status.includes('Quote') || opp.status.includes('Prop') ? cwColors.proposal : opp.status.includes('Hold') ? '#b8860b' : cwColors.open,
+                            padding: '3px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600',
+                          }}>{opp.status.length > 12 ? opp.status.substring(0, 12) + '...' : opp.status}</span>
+                        </td>
+                        <td style={{ padding: '12px 8px', textAlign: 'center', color: colors.text, fontSize: '11px' }}>{opp.closeDate}</td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: cwColors.primary, fontWeight: '700' }}>${formatNumber(opp.revenue)}</td>
+                        <td style={{ padding: '12px 8px', textAlign: 'right', color: colors.success, fontWeight: '500', fontSize: '12px' }}>${formatNumber(opp.expected)}</td>
+                        <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                          <span style={{
+                            background: opp.probability >= 50 ? colors.success + '20' : colors.warning + '20',
+                            color: opp.probability >= 50 ? colors.success : '#b8860b',
+                            padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '600',
+                          }}>{opp.probability}%</span>
+                        </td>
+                        <td style={{ padding: '12px 8px', color: colors.text, fontSize: '11px' }}>{opp.rep.split(' ')[0]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <footer style={{ textAlign: 'center', padding: '24px 16px', marginTop: '24px', color: colors.textLight, fontSize: '12px', borderTop: `1px solid ${colors.border}` }}>
+              Data sources: HubSpot CRM • ConnectWise Manage • Last sync: {lastSync}
+            </footer>
+          </main>
+        </div>
+      );
+    };
+
+    // App with Auth
+    const App = () => {
+      const [user, setUser] = useState(() => {
+        const saved = localStorage.getItem('dashboard_user');
+        return saved ? JSON.parse(saved) : null;
+      });
+
+      const handleLogin = (userData) => {
+        setUser(userData);
+        localStorage.setItem('dashboard_user', JSON.stringify(userData));
+      };
+
+      const handleLogout = () => {
+        setUser(null);
+        localStorage.removeItem('dashboard_user');
+      };
+
+      if (!user) return <LoginPage onLogin={handleLogin} />;
+      return <Dashboard user={user} onLogout={handleLogout} />;
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
