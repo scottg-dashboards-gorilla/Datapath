@@ -2394,8 +2394,8 @@ function renderAdminCommentary(el){
     + '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Note (shown as amber callout to dept head)</div>'
     + '<textarea id="commentary-input" rows="4" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical">' + escHtml(current) + '</textarea>'
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">'
-    + (current ? '<button onclick="clearCommentary(\'' + key + '\')" style="color:#dc2626;background:none;border:none;font-size:12px;cursor:pointer">Clear note</button>' : '<div></div>')
-    + '<button onclick="saveCommentary(\'' + key + '\')" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Note</button>'
+    + (current ? '<button data-key="' + escHtml(key) + '" onclick="clearCommentary(this.dataset.key)" style="color:#dc2626;background:none;border:none;font-size:12px;cursor:pointer">Clear note</button>' : '<div></div>')
+    + '<button data-key="' + escHtml(key) + '" onclick="saveCommentary(this.dataset.key)" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Note</button>'
     + '</div></div>';
 }
 
