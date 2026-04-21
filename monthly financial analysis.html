@@ -2269,7 +2269,107 @@ function shortDeptName(name){
 }
 
 function renderAdmin(main){
-  main.innerHTML = '<div style="padding:40px;color:#64748b">Admin panel loading...</div>';
+  const subTab = state.adminSubTab || 'users';
+  const tabBar = ['users','commentary','audit'].map(t =>
+    '<button onclick="state.adminSubTab=\'' + t + '\';renderAdmin(document.getElementById(\'main\'))" style="' + (subTab===t?'color:#1e40af;border-bottom:2px solid #1e40af':'color:#64748b;border-bottom:2px solid transparent') + ';background:none;border-top:none;border-left:none;border-right:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">'
+    + {users:'Users',commentary:'Commentary',audit:'Audit Log'}[t] + '</button>'
+  ).join('');
+
+  main.innerHTML = '<div style="padding:24px 28px">'
+    + '<div style="font-size:20px;font-weight:700;color:#111;margin-bottom:16px">Admin</div>'
+    + '<div style="border-bottom:1px solid #e0e0e0;margin-bottom:24px;display:flex">' + tabBar + '</div>'
+    + '<div id="admin-content"></div></div>';
+
+  const content = document.getElementById('admin-content');
+  if(subTab === 'users')           renderAdminUsers(content);
+  else if(subTab === 'commentary') renderAdminCommentary(content);
+  else if(subTab === 'audit')      renderAdminAudit(content);
+}
+
+function renderAdminUsers(el){
+  const deptHeads = USERS.filter(u => u.role === 'dept_head');
+  if(!state.adminSelUser && deptHeads[0]) state.adminSelUser = deptHeads[0].id;
+  const selId   = state.adminSelUser;
+  const selUser = USERS.find(u => u.id === selId);
+
+  const sidebar = deptHeads.map(u =>
+    '<div onclick="state.adminSelUser=\'' + u.id + '\';renderAdmin(document.getElementById(\'main\'))" style="padding:10px 14px;border-left:3px solid ' + (u.id===selId?'#1e40af':'transparent') + ';background:' + (u.id===selId?'#eff6ff':'transparent') + ';cursor:pointer">'
+    + '<div style="font-weight:' + (u.id===selId?'700':'600') + ';color:' + (u.id===selId?'#1e40af':'#374151') + ';font-size:13px">' + escHtml(u.name) + '</div>'
+    + '<div style="font-size:11px;color:#94a3b8">' + escHtml(u.username) + ' &middot; ' + escHtml(userDepts(u).map(d=>shortDeptName(d.name)).join(', ')) + '</div></div>'
+  ).join('');
+
+  el.innerHTML = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;min-height:400px">'
+    + '<div style="border-right:1px solid #e0e0e0">'
+    + '<div style="padding:10px 14px;font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f1f5f9">Users (' + deptHeads.length + ')</div>'
+    + sidebar
+    + '<div style="padding:10px 14px;border-top:1px solid #f1f5f9;margin-top:8px"><button onclick="addNewUser()" style="color:#2563eb;background:none;border:none;font-size:12px;font-weight:600;cursor:pointer">+ Add User</button></div>'
+    + '</div>'
+    + '<div style="padding:20px">' + (selUser ? renderAdminUserPanel(selUser) : '<div style="color:#94a3b8;padding:20px">Select a user</div>') + '</div>'
+    + '</div>';
+}
+
+function renderAdminUserPanel(user){
+  const allViews = [{id:'overview',label:'Overview'},{id:'pl',label:'P&L'},{id:'gross_profit',label:'Gross Profit'},{id:'labor',label:'Labor'},{id:'sales',label:'Sales'},{id:'marketing',label:'Marketing'}];
+
+  const deptPills = DEPTS.map(d =>
+    '<button onclick="toggleUserDept(\'' + user.id + '\',\'' + d.id + '\')" style="' + (user.departments.includes(d.id)?'background:#dbeafe;color:#1e40af':'background:#f1f5f9;color:#94a3b8') + ';border:none;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;margin:2px">'
+    + (user.departments.includes(d.id)?'&#10003; ':'') + escHtml(shortDeptName(d.name)) + '</button>'
+  ).join('');
+
+  const viewPills = allViews.map(v =>
+    '<button onclick="toggleUserView(\'' + user.id + '\',\'' + v.id + '\')" style="' + (user.views.includes(v.id)?'background:#dbeafe;color:#1e40af':'background:#f1f5f9;color:#94a3b8') + ';border:none;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;margin:2px">'
+    + (user.views.includes(v.id)?'&#10003; ':'') + escHtml(v.label) + '</button>'
+  ).join('');
+
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    + '<div style="font-size:16px;font-weight:700;color:#111">' + escHtml(user.name) + '</div>'
+    + '<button onclick="removeUser(\'' + user.id + '\')" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Remove</button>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Username</div>'
+    + '<input id="edit-username-' + user.id + '" value="' + escHtml(user.username) + '" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div>'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">New Password <span style="font-weight:400">(blank = keep)</span></div>'
+    + '<input id="edit-password-' + user.id + '" type="password" placeholder="Enter new password..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div>'
+    + '</div>'
+    + '<div style="margin-bottom:14px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px">Departments</div><div>' + deptPills + '</div></div>'
+    + '<div style="margin-bottom:20px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px">Views</div><div>' + viewPills + '</div></div>'
+    + '<div style="display:flex;justify-content:flex-end"><button onclick="saveUser(\'' + user.id + '\')" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Changes</button></div>';
+}
+
+function toggleUserDept(userId, deptId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const idx = user.departments.indexOf(deptId);
+  if(idx>=0) user.departments.splice(idx,1); else user.departments.push(deptId);
+  renderAdmin(document.getElementById('main'));
+}
+function toggleUserView(userId, viewId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const idx = user.views.indexOf(viewId);
+  if(idx>=0) user.views.splice(idx,1); else user.views.push(viewId);
+  renderAdmin(document.getElementById('main'));
+}
+async function saveUser(userId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const newUser = (document.getElementById('edit-username-'+userId)?.value||'').trim().toLowerCase();
+  const newPass = document.getElementById('edit-password-'+userId)?.value||'';
+  if(newUser) user.username = newUser;
+  if(newPass){ user.salt = generateSalt(); user.passwordHash = await sha256WithSalt(user.salt, newPass); }
+  auditLog(state.currentUser?.id||'admin', 'user_saved', userId);
+  await saveToFile();
+  renderAdmin(document.getElementById('main'));
+}
+function removeUser(userId){
+  if(!confirm('Remove user ' + userId + '? This cannot be undone.')) return;
+  const idx = USERS.findIndex(u=>u.id===userId);
+  if(idx>=0) USERS.splice(idx,1);
+  state.adminSelUser = USERS.find(u=>u.role==='dept_head')?.id||null;
+  saveToFile().then(()=>renderAdmin(document.getElementById('main')));
+}
+function addNewUser(){
+  const id = 'user_'+Date.now();
+  USERS.push({id, name:'New User', username:'newuser', passwordHash:'', salt:'', role:'dept_head', departments:[], views:['overview']});
+  state.adminSelUser = id;
+  renderAdmin(document.getElementById('main'));
 }
 const DH_VIEWS = [
   {id:'overview',     label:'Overview'},
