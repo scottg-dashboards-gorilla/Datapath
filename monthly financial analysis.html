@@ -2253,9 +2253,75 @@ function shortDeptName(name){
 function renderAdmin(main){
   main.innerHTML = '<div style="padding:40px;color:#64748b">Admin panel loading...</div>';
 }
+const DH_VIEWS = [
+  {id:'overview',     label:'Overview'},
+  {id:'pl',           label:'P&L'},
+  {id:'gross_profit', label:'Gross Profit'},
+  {id:'labor',        label:'Labor'},
+  {id:'sales',        label:'Sales'},
+  {id:'marketing',    label:'Marketing'},
+  {id:'intelligence', label:'Intelligence'},
+];
+
 function renderDeptHead(){
   destroyCharts();
-  document.getElementById('dh-main').innerHTML = '<div style="padding:40px;color:#64748b">Dept head view loading...</div>';
+  const user  = state.currentUser;
+  if(!user || user.role !== 'dept_head') return;
+  const depts = userDepts(user);
+  const midx  = (state.selMonth === -1 || state.selMonth == null) ? DATA.length-1 : state.selMonth;
+  const month = DATA[midx];
+  const isPre = !!month.preliminary;
+
+  // ── Header ───────────────────────────────────────────────────
+  const roleLabel = depts.map(d=>shortDeptName(d.name)).join(' + ');
+  document.getElementById('dh-header').innerHTML =
+    '<div style="background:#1e40af;padding:12px 20px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<span style="color:#fff;font-weight:800;font-size:16px;letter-spacing:-0.3px">DATAPATH</span>'
+    + '<span style="background:rgba(255,255,255,0.18);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px">' + escHtml(roleLabel) + '</span>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px">'
+    + '<span style="color:rgba(255,255,255,0.8);font-size:12px">' + escHtml(user.name) + '</span>'
+    + '<button onclick="window.print()" class="dh-no-print" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">&#x2B07; Report</button>'
+    + '<button onclick="doLogout()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">Sign out</button>'
+    + '</div></div>';
+
+  // ── Dept pills + month selector ───────────────────────────────
+  const pills = depts.length > 1
+    ? '<button onclick="dhSetDept(\'all\')" style="' + (state.dhDept==='all'?'background:#1e40af;color:#fff':'background:#f1f5f9;color:#374151') + ';border:none;padding:5px 14px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">All Depts</button>'
+      + depts.map(d=>'<button onclick="dhSetDept(\'' + d.id + '\')" style="' + (state.dhDept===d.id?'background:#1e40af;color:#fff':'background:#f1f5f9;color:#374151') + ';border:none;padding:5px 14px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">' + escHtml(shortDeptName(d.name)) + '</button>').join('')
+    : '';
+  const monthOpts = DATA.map((m,i) =>
+    '<option value="' + i + '"' + (i===midx?' selected':'') + '>' + escHtml(m.month) + (m.preliminary?' *':'') + '</option>'
+  ).reverse().join('');
+  const dataThrough = 'Data through ' + escHtml(month.month) + (isPre ? ' &middot; PRELIMINARY' : ' &middot; Final');
+
+  document.getElementById('dh-pills').innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #e0e0e0;flex-wrap:wrap">'
+    + pills
+    + '<div style="margin-left:auto;display:flex;align-items:center;gap:10px">'
+    + '<span style="font-size:11px;color:#94a3b8">' + dataThrough + '</span>'
+    + '<select onchange="dhSetMonth(this.value)" style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:12px;color:#374151;background:#fff">' + monthOpts + '</select>'
+    + '</div></div>';
+
+  // ── View tabs ─────────────────────────────────────────────────
+  const allowedViews = DH_VIEWS.filter(v => user.views.includes(v.id) || v.id === 'intelligence');
+  if(!allowedViews.find(v=>v.id===state.dhView)) state.dhView = allowedViews[0].id;
+  const tabs = allowedViews.map(v =>
+    '<button onclick="dhNavigate(\'' + v.id + '\')" style="' + (state.dhView===v.id?'color:#1e40af;border-bottom:2px solid #1e40af':'color:#64748b;border-bottom:2px solid transparent') + ';background:none;border-top:none;border-left:none;border-right:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">' + escHtml(v.label) + '</button>'
+  ).join('');
+
+  // ── Render main area ─────────────────────────────────────────
+  document.getElementById('dh-main').innerHTML = '<div id="dh-view-tabs" style="border-bottom:1px solid #e0e0e0;margin-bottom:20px;display:flex">' + tabs + '</div><div id="dh-view"></div>';
+  auditLog(user.id, 'view', state.dhView);
+  renderDHView(document.getElementById('dh-view'), user, month);
+}
+
+function dhSetDept(key){ state.dhDept = key; renderDeptHead(); }
+function dhSetMonth(idx){ state.selMonth = parseInt(idx,10); renderDeptHead(); }
+function dhNavigate(viewId){ state.dhView = viewId; renderDeptHead(); }
+
+function renderDHView(el, user, month){
+  el.innerHTML = '<div style="color:#64748b;padding:20px">Loading...</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
