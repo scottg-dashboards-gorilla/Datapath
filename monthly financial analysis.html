@@ -2467,7 +2467,7 @@ function renderDHViewByTab(el, user, month, viewId){
 
   } else if(viewId === 'sales'){
     el.innerHTML = preBadge + '<div id="dh-sales-inner"></div>';
-    setTimeout(()=>{ const tmp=document.createElement('div'); renderSalesWon(tmp); document.getElementById('dh-sales-inner').appendChild(tmp); },0);
+    setTimeout(()=>{ const inner=document.getElementById('dh-sales-inner'); if(!inner) return; const tmp=document.createElement('div'); renderSalesWon(tmp); inner.appendChild(tmp); },0);
 
   } else if(viewId === 'marketing'){
     const mktSpend = month.opex ? (month.opex.marketing||0) : 0;
