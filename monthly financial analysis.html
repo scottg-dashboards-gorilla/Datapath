@@ -278,56 +278,158 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.08);text-align:center">
     <div style="font-weight:800;font-size:20px;color:#1e40af;letter-spacing:-0.3px;margin-bottom:4px">DATAPATH</div>
     <div style="font-size:11px;color:#2563eb;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:24px">Financial Command Center</div>
-    <div style="font-size:14px;color:#6b7280;margin-bottom:16px">Enter password to continue</div>
-    <input id="pw-input" type="password" placeholder="Password" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')checkPw()">
-    <button onclick="checkPw()" style="width:100%;padding:12px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Sign In</button>
-    <div id="pw-error" style="color:#dc2626;font-size:13px;margin-top:10px;display:none">Incorrect password</div>
+    <input id="login-username" type="text" placeholder="Username" autocomplete="username" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:10px;box-sizing:border-box" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+    <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;box-sizing:border-box" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button onclick="checkLogin()" style="width:100%;padding:12px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Sign In</button>
+    <div id="login-error" style="color:#dc2626;font-size:13px;margin-top:10px;min-height:18px"></div>
   </div>
 </div>
 <script>
-// Password stored as SHA-256 hash — not in plain text
-async function hashPw(pw){const e=new TextEncoder().encode(pw);const h=await crypto.subtle.digest('SHA-256',e);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-const PW_HASH='b6b3a5c7b8d2dd7df447fcad8ad4b402b0d9a2f61651ceb130b56ce800028358';
-const AUTH_TIMEOUT=60*60*1000; // 1 hour in ms
-function refreshAuth(){localStorage.setItem('dp_auth_ts',Date.now().toString());}
-function isAuthValid(){
-  const ts=localStorage.getItem('dp_auth_ts');
-  if(!ts) return false;
-  return (Date.now()-parseInt(ts,10))<AUTH_TIMEOUT;
+const AUTH_TIMEOUT = 60 * 60 * 1000; // 1 hour
+const LOCKOUT_MAX  = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
+
+// ─── Session helpers ─────────────────────────────────────────────
+function _sessionStore(role){ return role === 'admin' ? localStorage : sessionStorage; }
+
+function saveSession(user){
+  const tok = {userId:user.id, role:user.role, loginTime:Date.now(), lastActive:Date.now()};
+  _sessionStore(user.role).setItem('dp_session', JSON.stringify(tok));
 }
+function loadSession(){
+  let tok = null;
+  try { tok = JSON.parse(localStorage.getItem('dp_session')); } catch(e){}
+  if(!tok) try { tok = JSON.parse(sessionStorage.getItem('dp_session')); } catch(e){}
+  return tok;
+}
+function clearSession(){
+  localStorage.removeItem('dp_session');
+  sessionStorage.removeItem('dp_session');
+}
+function refreshSession(){
+  const tok = loadSession();
+  if(!tok) return;
+  tok.lastActive = Date.now();
+  _sessionStore(tok.role).setItem('dp_session', JSON.stringify(tok));
+}
+function isSessionValid(){
+  const tok = loadSession();
+  if(!tok) return false;
+  return (Date.now() - tok.lastActive) < AUTH_TIMEOUT;
+}
+
+// ─── Lockout helpers ─────────────────────────────────────────────
+function _lockoutKey(username){ return 'dp_lockout_' + username; }
+function getLockout(username){
+  try { return JSON.parse(sessionStorage.getItem(_lockoutKey(username)) || 'null'); } catch(e){ return null; }
+}
+function setLockout(username, data){
+  sessionStorage.setItem(_lockoutKey(username), JSON.stringify(data));
+}
+function checkLockout(username){
+  const lk = getLockout(username);
+  if(!lk) return null;
+  if(lk.attempts >= LOCKOUT_MAX && (Date.now() - lk.ts) < LOCKOUT_MS){
+    return Math.ceil((LOCKOUT_MS - (Date.now() - lk.ts)) / 60000); // minutes remaining
+  }
+  if((Date.now() - lk.ts) >= LOCKOUT_MS){ sessionStorage.removeItem(_lockoutKey(username)); return null; }
+  return null;
+}
+function recordFailedAttempt(username){
+  const lk = getLockout(username) || {attempts:0, ts:Date.now()};
+  lk.attempts++;
+  lk.ts = Date.now();
+  setLockout(username, lk);
+}
+function clearLockout(username){ sessionStorage.removeItem(_lockoutKey(username)); }
+
+// ─── App show/hide ───────────────────────────────────────────────
 function showApp(){
+  const user = state.currentUser;
   document.getElementById('login-gate').style.display='none';
-  document.getElementById('main-app').style.display='flex';
-  refreshAuth();
-}
-function lockApp(){
-  localStorage.removeItem('dp_auth_ts');
-  document.getElementById('main-app').style.display='none';
-  document.getElementById('login-gate').style.display='flex';
-  document.getElementById('pw-input').value='';
-  document.getElementById('pw-error').style.display='none';
-}
-async function checkPw(){
-  const v=document.getElementById('pw-input').value;
-  const h=await hashPw(v);
-  if(h===PW_HASH){
-    showApp();
+  if(user && user.role === 'dept_head'){
+    document.getElementById('dh-app').style.display='flex';
+    document.getElementById('main-app').style.display='none';
   } else {
-    document.getElementById('pw-error').style.display='block';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
+    document.getElementById('main-app').style.display='flex';
+    document.getElementById('dh-app').style.display='none';
   }
 }
-// Reset inactivity timer on user interaction
-['click','keydown','mousemove','scroll','touchstart'].forEach(evt=>{
-  document.addEventListener(evt,()=>{if(isAuthValid())refreshAuth();});
-});
-// Check for expiry every 60 seconds
-setInterval(()=>{if(localStorage.getItem('dp_auth_ts')&&!isAuthValid())lockApp();},60000);
-// Auto-login if authenticated within the timeout window
-if(isAuthValid()){
-  document.addEventListener('DOMContentLoaded',()=>showApp());
+function lockApp(){
+  clearSession();
+  if(typeof state !== 'undefined') state.currentUser = null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('dh-app').style.display='none';
+  document.getElementById('login-gate').style.display='flex';
+  document.getElementById('login-username').value='';
+  document.getElementById('login-password').value='';
+  document.getElementById('login-error').textContent='';
 }
+
+// ─── Login ───────────────────────────────────────────────────────
+async function checkLogin(){
+  const username = (document.getElementById('login-username').value||'').trim().toLowerCase();
+  const password = document.getElementById('login-password').value||'';
+  const errEl    = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  const remaining = checkLockout(username);
+  if(remaining !== null){
+    errEl.textContent = 'Too many attempts. Try again in ' + remaining + ' min.';
+    auditLog(username, 'login_blocked', 'locked out');
+    return;
+  }
+
+  const user = USERS.find(u => u.username === username);
+  if(!user){
+    errEl.textContent = 'Invalid username or password.';
+    recordFailedAttempt(username);
+    auditLog(username, 'login_fail', 'username not found');
+    return;
+  }
+
+  if(!user.passwordHash || !user.salt){
+    errEl.textContent = 'Account not configured. Contact an admin.';
+    return;
+  }
+
+  const hash = await sha256WithSalt(user.salt, password);
+  if(hash !== user.passwordHash){
+    recordFailedAttempt(username);
+    const lk   = getLockout(username);
+    const left = LOCKOUT_MAX - (lk ? lk.attempts : 1);
+    errEl.textContent = left > 0
+      ? 'Incorrect password. ' + left + ' attempt' + (left===1?'':'s') + ' remaining.'
+      : 'Account locked for 15 minutes.';
+    auditLog(username, 'login_fail', 'wrong password');
+    return;
+  }
+
+  clearLockout(username);
+  saveSession(user);
+  state.currentUser = user;
+  auditLog(username, 'login_success', user.role);
+  showApp();
+  render();
+}
+
+// ─── Inactivity & auto-restore ───────────────────────────────────
+['click','keydown','mousemove','scroll','touchstart'].forEach(evt=>{
+  document.addEventListener(evt, ()=>{ if(isSessionValid()) refreshSession(); });
+});
+setInterval(()=>{
+  const tok = loadSession();
+  if(tok && !isSessionValid()){ auditLog(tok.userId,'session_expired','inactivity'); lockApp(); }
+}, 60000);
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const tok = loadSession();
+  if(tok && isSessionValid()){
+    const user = USERS.find(u => u.id === tok.userId);
+    if(user){ state.currentUser = user; showApp(); render(); }
+    else lockApp();
+  }
+});
 </script>
 <script>
 // @@USERS_START@@
@@ -377,6 +479,7 @@ const _auditMem = [];
 function auditLog(userId, action, detail=''){
   const entry = {ts: new Date().toISOString(), userId, action, detail};
   _auditMem.push(entry);
+  if(_auditMem.length > 500) _auditMem.splice(0, _auditMem.length - 500);
   try {
     const stored = JSON.parse(localStorage.getItem('dp_audit_log')||'[]');
     stored.push(entry);
@@ -385,6 +488,11 @@ function auditLog(userId, action, detail=''){
   } catch(e){}
 }
 </script>
+<div id="dh-app" style="display:none;flex-direction:column;height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa">
+  <div id="dh-header"></div>
+  <div id="dh-pills" style="background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 20px;display:flex;gap:8px;align-items:center;overflow-x:auto"></div>
+  <div id="dh-main" style="flex:1;overflow:auto;padding:24px 28px"></div>
+</div>
 <div class="app" id="main-app" style="display:none">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -412,6 +520,16 @@ const state = {
   selDept: null,
   selMonth: -1, // -1 means "latest"; set after DATA is built
   sidebarCollapsed: false,
+  currentUser: null,      // populated on login
+  dhDept: 'all',          // dept head active dept filter: 'all' | dept_key
+  dhView: 'overview',     // dept head active view tab
+  dhChatMessages: null,   // dept head advisor chat history
+  dhSystemPrompt: '',     // dept head scoped system prompt
+  adminSubTab: 'users',   // admin panel sub-tab: 'users' | 'commentary' | 'audit'
+  adminSelUser: null,     // id of user selected in admin panel
+  adminComMonth: null,    // commentary editor selected month
+  adminComDept: null,     // commentary editor selected dept
+  adminAuditFilter: '',   // audit log user filter
   chatMessages: [{role:'assistant', content: `Welcome to the Datapath MSP Advisor.\n\nI analyze your P&L data against industry benchmarks from Service Leadership, ConnectWise Peer Groups, and Kaseya.\n\nTry asking:\n• "How do we improve our EBITDA margin?"\n• "What's our business worth?"\n• "How does our security division compare?"\n• "Where should we focus to maximize exit value?"\n• "Analyze our labor costs"\n• "Compare us to top-performing MSPs"`}],
   charts: {},
 };
