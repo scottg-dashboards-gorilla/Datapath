@@ -2197,22 +2197,23 @@ function render() {
 // ═══════════════════════════════════════════════════════════════
 
 function scopedRev(m, depts){
-  return depts.reduce((s,d) => s + (m.rev && m.rev[d] ? m.rev[d] : 0), 0);
+  return depts.reduce((s,d) => s + (m.d && m.d[d] ? m.d[d].rev : 0), 0);
 }
 
 function scopedVendorCOGS(m, depts){
-  return depts.reduce((s,d) => s + (m.cogs && m.cogs[d] ? m.cogs[d] : 0), 0);
+  return depts.reduce((s,d) => s + (m.d && m.d[d] ? (m.d[d].cogsBeforeAlloc || m.d[d].cogs || 0) : 0), 0);
 }
 
 function scopedLabor(m, depts){
-  if(m.labor && m.labor.byDept){
-    return depts.reduce((s,d) => s + (m.labor.byDept[d] || 0), 0);
+  // Jan26+: per-dept labor tracked in m.d[d].lab
+  if(m.d && depts.every(d => m.d[d] && m.d[d].lab != null)){
+    return depts.reduce((s,d) => s + (m.d[d].lab || 0), 0);
   }
   // Legacy pre-2026: distribute direct+project labor by dept revenue share
-  const totalRev = DEPTS.reduce((s,dep) => s + (m.rev && m.rev[dep.id] ? m.rev[dep.id] : 0), 0);
+  const totalRev = m.totRev || 0;
   if(!totalRev) return 0;
-  const share    = totalRev ? scopedRev(m, depts) / totalRev : 0;
-  const totalLab = m.labor ? (m.labor.direct||0) + (m.labor.project||0) : 0;
+  const share    = scopedRev(m, depts) / totalRev;
+  const totalLab = (m.directLabor||0) + (m.projectLabor||0);
   return Math.round(totalLab * share);
 }
 
