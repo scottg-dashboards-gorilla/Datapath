@@ -329,6 +329,62 @@ if(isAuthValid()){
   document.addEventListener('DOMContentLoaded',()=>showApp());
 }
 </script>
+<script>
+// @@USERS_START@@
+const USERS = [
+  {id:'scott',   name:'Scott Gordon',         username:'scott',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
+  {id:'david',   name:'David Darmstandler',   username:'david',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
+  {id:'james',   name:'James Bates',          username:'james',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
+  {id:'swalski', name:'Stephen Walski',       username:'swalski', passwordHash:'', salt:'', role:'dept_head', departments:['professional_services','security'],         views:['overview','pl','gross_profit','labor']},
+  {id:'brandon', name:'Brandon H.',           username:'brandon', passwordHash:'', salt:'', role:'dept_head', departments:['managed_services'],                         views:['overview','pl','gross_profit','labor']},
+  {id:'timc',    name:'Tim C.',               username:'timc',    passwordHash:'', salt:'', role:'dept_head', departments:['r_and_d','ai_consulting'],                  views:['overview','pl','gross_profit','labor']},
+  {id:'nathan',  name:'Nathan R.',            username:'nathan',  passwordHash:'', salt:'', role:'dept_head', departments:['managed_services','professional_services'],  views:['overview','pl','gross_profit','labor','sales']},
+  {id:'dan',     name:'Dan S.',               username:'dan',     passwordHash:'', salt:'', role:'dept_head', departments:['managed_services'],                         views:['overview','pl','gross_profit','labor','sales','marketing']},
+];
+// @@USERS_END@@
+
+// @@COMMENTARY_START@@
+const COMMENTARY = {
+  // key format: 'Mon YY:dept_key'  e.g. 'Mar 26:professional_services'
+};
+// @@COMMENTARY_END@@
+
+// ─── HTML escape (always use for user-supplied strings in innerHTML) ──
+function escHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ─── Crypto utilities ────────────────────────────────────────────
+function generateSalt(len=16){
+  const arr=new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function sha256WithSalt(salt, pw){
+  const enc = new TextEncoder().encode(salt + pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ─── Audit log ───────────────────────────────────────────────────
+const _auditMem = [];
+function auditLog(userId, action, detail=''){
+  const entry = {ts: new Date().toISOString(), userId, action, detail};
+  _auditMem.push(entry);
+  try {
+    const stored = JSON.parse(localStorage.getItem('dp_audit_log')||'[]');
+    stored.push(entry);
+    if(stored.length > 500) stored.splice(0, stored.length-500);
+    localStorage.setItem('dp_audit_log', JSON.stringify(stored));
+  } catch(e){}
+}
+</script>
 <div class="app" id="main-app" style="display:none">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
