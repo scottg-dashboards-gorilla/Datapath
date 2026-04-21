@@ -2127,22 +2127,33 @@ function monthSelector() {
 // NAV
 // ═══════════════════════════════════════════════════════════════
 const NAV = [
-  {id:'dashboard', label:'Dashboard', icon:'📊'},
-  {id:'departments', label:'Departments', icon:'🏢'},
-  {id:'grossprofit', label:'Gross Profit', icon:'💰'},
-  {id:'pnl', label:'P&L Detail', icon:'📄'},
-  {id:'labor', label:'Labor Allocation', icon:'👥'},
-  {id:'saleswon', label:'Sales Won', icon:'🏆'},
-  {id:'advisor', label:'Intelligence', icon:'🧠'},
-  {id:'data', label:'Import Data', icon:'📤'},
+  {id:'dashboard',   label:'Dashboard',        icon:'📊', adminOnly:false},
+  {id:'departments', label:'Departments',       icon:'🏢', adminOnly:false},
+  {id:'grossprofit', label:'Gross Profit',      icon:'💰', adminOnly:false},
+  {id:'pnl',         label:'P&L Detail',        icon:'📄', adminOnly:false},
+  {id:'labor',       label:'Labor Allocation',  icon:'👥', adminOnly:false},
+  {id:'saleswon',    label:'Sales Won',         icon:'🏆', adminOnly:false},
+  {id:'advisor',     label:'Intelligence',      icon:'🧠', adminOnly:false},
+  {id:'data',        label:'Import Data',       icon:'📤', adminOnly:false},
+  {id:'admin',       label:'Admin',             icon:'⚙️',  adminOnly:true},
 ];
 
 function renderNav() {
-  const nav = document.getElementById('nav');
-  nav.innerHTML = NAV.map(n => `<button class="nav-btn ${state.view===n.id||(n.id==='departments'&&state.selDept)?'active':''}" onclick="navigate('${n.id}')">
+  const nav     = document.getElementById('nav');
+  const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+  const visible = NAV.filter(n => !n.adminOnly || isAdmin);
+  nav.innerHTML = visible.map(n => `<button class="nav-btn ${state.view===n.id||(n.id==='departments'&&state.selDept)?'active':''}" onclick="navigate('${n.id}')">
     <span>${n.icon}</span><span class="nav-label">${n.label}</span></button>`).join('');
-  const footer = document.getElementById('sidebar-footer');
-  footer.innerHTML = `Data: ${latest().month}<br>Annualized: ${fmt(latest().totRev*12)}`;
+  const footer   = document.getElementById('sidebar-footer');
+  const userName = state.currentUser ? escHtml(state.currentUser.name.split(' ')[0]) : '';
+  footer.innerHTML = (isAdmin ? 'Data: ' + latest().month + '<br>Annualized: ' + fmt(latest().totRev*12) + '<br>' : '')
+    + '<button onclick="doLogout()" style="margin-top:8px;width:100%;padding:5px;background:none;border:1px solid #e0e0e0;border-radius:6px;color:#6b7280;font-size:11px;cursor:pointer">Sign out (' + userName + ')</button>';
+}
+
+function doLogout(){
+  const tok = loadSession();
+  if(tok) auditLog(tok.userId, 'logout', '');
+  lockApp();
 }
 
 function toggleSidebar() {
@@ -2152,6 +2163,7 @@ function toggleSidebar() {
 
 function navigate(view) {
   if (view === 'data') { showUploadModal(); return; }
+  auditLog(state.currentUser?.id||'unknown', 'navigate', view);
   state.view = view;
   if (view !== 'departments') state.selDept = null;
   render();
@@ -2161,18 +2173,30 @@ function navigate(view) {
 // RENDER ROUTER
 // ═══════════════════════════════════════════════════════════════
 function render() {
+  const user = state.currentUser;
+  if(!user){ lockApp(); return; }
+  if(user.role === 'dept_head'){ renderDeptHead(); return; }
+
   destroyCharts();
   renderNav();
   const main = document.getElementById('main');
   main.scrollTop = 0;
-  if (state.view === 'dashboard') renderDashboard(main);
+  if      (state.view === 'dashboard')                    renderDashboard(main);
   else if (state.view === 'departments' && state.selDept) renderDrilldown(main);
-  else if (state.view === 'departments') renderDeptList(main);
-  else if (state.view === 'grossprofit') renderGrossProfit(main);
-  else if (state.view === 'pnl') renderPnL(main);
-  else if (state.view === 'labor') renderLaborAllocation(main);
-  else if (state.view === 'saleswon') renderSalesWon(main);
-  else if (state.view === 'advisor') renderAdvisor(main);
+  else if (state.view === 'departments')                  renderDeptList(main);
+  else if (state.view === 'grossprofit')                  renderGrossProfit(main);
+  else if (state.view === 'pnl')                          renderPnL(main);
+  else if (state.view === 'labor')                        renderLaborAllocation(main);
+  else if (state.view === 'saleswon')                     renderSalesWon(main);
+  else if (state.view === 'advisor')                      renderAdvisor(main);
+  else if (state.view === 'admin')                        renderAdmin(main);
+}
+
+function renderAdmin(main){
+  main.innerHTML = '<div style="padding:40px;color:#64748b">Admin panel loading...</div>';
+}
+function renderDeptHead(){
+  document.getElementById('dh-main').innerHTML = '<div style="padding:40px;color:#64748b">Dept head view loading...</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
