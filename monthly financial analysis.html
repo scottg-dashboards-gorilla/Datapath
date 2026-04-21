@@ -2359,7 +2359,8 @@ async function saveUser(userId){
   renderAdmin(document.getElementById('main'));
 }
 function removeUser(userId){
-  if(!confirm('Remove user ' + userId + '? This cannot be undone.')) return;
+  const userToRemove = USERS.find(u=>u.id===userId);
+  if(!confirm('Remove ' + (userToRemove?.name||userId) + '? This cannot be undone.')) return;
   const idx = USERS.findIndex(u=>u.id===userId);
   if(idx>=0) USERS.splice(idx,1);
   state.adminSelUser = USERS.find(u=>u.role==='dept_head')?.id||null;
