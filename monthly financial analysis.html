@@ -2446,6 +2446,70 @@ function renderAdminAudit(el){
     + '</table></div></div>';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ADMIN SAVE FLOW
+// ═══════════════════════════════════════════════════════════════
+
+function serializeUsersBlock(){
+  return '// @@USERS_START@@\nconst USERS = ' + JSON.stringify(USERS, null, 2) + ';\n// @@USERS_END@@';
+}
+
+function serializeCommentaryBlock(){
+  return '// @@COMMENTARY_START@@\nconst COMMENTARY = ' + JSON.stringify(COMMENTARY, null, 2) + ';\n// @@COMMENTARY_END@@';
+}
+
+async function buildUpdatedHTML(){
+  let html = document.documentElement.outerHTML;
+  html = html.replace(/\/\/ @@USERS_START@@[\s\S]*?\/\/ @@USERS_END@@/, serializeUsersBlock());
+  html = html.replace(/\/\/ @@COMMENTARY_START@@[\s\S]*?\/\/ @@COMMENTARY_END@@/, serializeCommentaryBlock());
+  return html;
+}
+
+async function saveToFile(){
+  const html = await buildUpdatedHTML();
+  const blob = new Blob([html], {type:'text/html'});
+
+  if('showSaveFilePicker' in window){
+    try {
+      const fh = await window.showSaveFilePicker({
+        suggestedName: 'monthly financial analysis.html',
+        types:[{description:'HTML file', accept:{'text/html':['.html']}}]
+      });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+      showSaveToast('Saved to file.');
+      return;
+    } catch(e){
+      if(e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback: trigger download
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href    = url;
+  a.download = 'monthly financial analysis.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showSaveToast('Downloaded. Replace the file in your project folder and let the auto-push sync it to GitHub.');
+}
+
+function showSaveToast(msg){
+  let t = document.getElementById('save-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'save-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e40af;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 4000);
+}
+
 const DH_VIEWS = [
   {id:'overview',     label:'Overview'},
   {id:'pl',           label:'P&L'},
