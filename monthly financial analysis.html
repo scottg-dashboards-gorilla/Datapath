@@ -2181,6 +2181,7 @@ function toggleSidebar() {
 
 function navigate(view) {
   if (view === 'data') { showUploadModal(); return; }
+  if (view === 'admin' && state.currentUser?.role !== 'admin') return;
   auditLog(state.currentUser?.id||'unknown', 'navigate', view);
   state.view = view;
   if (view !== 'departments') state.selDept = null;
@@ -2269,6 +2270,7 @@ function shortDeptName(name){
 }
 
 function renderAdmin(main){
+  if(!state.currentUser || state.currentUser.role !== 'admin') return;
   const subTab = state.adminSubTab || 'users';
   const tabBar = ['users','commentary','audit'].map(t =>
     '<button onclick="state.adminSubTab=\'' + t + '\';renderAdmin(document.getElementById(\'main\'))" style="' + (subTab===t?'color:#1e40af;border-bottom:2px solid #1e40af':'color:#64748b;border-bottom:2px solid transparent') + ';background:none;border-top:none;border-left:none;border-right:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">'
