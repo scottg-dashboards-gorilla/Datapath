@@ -2192,6 +2192,63 @@ function render() {
   else if (state.view === 'admin')                        renderAdmin(main);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DATA SCOPING — dept head views
+// ═══════════════════════════════════════════════════════════════
+
+function scopedRev(m, depts){
+  return depts.reduce((s,d) => s + (m.rev && m.rev[d] ? m.rev[d] : 0), 0);
+}
+
+function scopedVendorCOGS(m, depts){
+  return depts.reduce((s,d) => s + (m.cogs && m.cogs[d] ? m.cogs[d] : 0), 0);
+}
+
+function scopedLabor(m, depts){
+  if(m.labor && m.labor.byDept){
+    return depts.reduce((s,d) => s + (m.labor.byDept[d] || 0), 0);
+  }
+  // Legacy pre-2026: distribute direct+project labor by dept revenue share
+  const totalRev = DEPTS.reduce((s,dep) => s + (m.rev && m.rev[dep.id] ? m.rev[dep.id] : 0), 0);
+  if(!totalRev) return 0;
+  const share    = totalRev ? scopedRev(m, depts) / totalRev : 0;
+  const totalLab = m.labor ? (m.labor.direct||0) + (m.labor.project||0) : 0;
+  return Math.round(totalLab * share);
+}
+
+function scopedCOGS(m, depts){ return scopedVendorCOGS(m, depts) + scopedLabor(m, depts); }
+function scopedGP(m, depts){ return scopedRev(m, depts) - scopedCOGS(m, depts); }
+function scopedGPpct(m, depts){ const r = scopedRev(m, depts); return r ? (scopedGP(m, depts) / r * 100) : 0; }
+
+// Returns last `count` months of a metric as array of numbers
+function sparklineData(depts, metric, count=6){
+  return DATA.slice(-count).map(m => {
+    if(metric === 'rev')   return scopedRev(m, depts);
+    if(metric === 'gp')    return scopedGP(m, depts);
+    if(metric === 'labor') return scopedLabor(m, depts);
+    return 0;
+  });
+}
+
+// Renders a tiny inline SVG sparkline
+function renderSparkline(data, color='#3b82f6', w=80, h=24){
+  if(!data || data.length < 2) return '';
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const pts  = data.map((v,i) => {
+    const x = (i / (data.length-1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  return '<svg width="' + w + '" height="' + h + '" style="display:block;overflow:visible"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+function userDepts(user){ return DEPTS.filter(d => user.departments.includes(d.id)); }
+function activeDepts(user){ return state.dhDept === 'all' ? user.departments : [state.dhDept].filter(d => user.departments.includes(d)); }
+
+function shortDeptName(name){
+  return name.replace('Projects / Prof. Services','Prof. Services').replace('Security (MDR/SOC)','Security');
+}
+
 function renderAdmin(main){
   main.innerHTML = '<div style="padding:40px;color:#64748b">Admin panel loading...</div>';
 }
