@@ -2268,7 +2268,7 @@ function renderDeptHead(){
   const user  = state.currentUser;
   if(!user || user.role !== 'dept_head') return;
   const depts = userDepts(user);
-  const midx  = (state.selMonth === -1 || state.selMonth == null) ? DATA.length-1 : state.selMonth;
+  const midx  = getSelIdx();
   const month = DATA[midx];
   const isPre = !!month.preliminary;
 
