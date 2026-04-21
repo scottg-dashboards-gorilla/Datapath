@@ -329,16 +329,15 @@ function setLockout(username, data){
 function checkLockout(username){
   const lk = getLockout(username);
   if(!lk) return null;
-  if(lk.attempts >= LOCKOUT_MAX && (Date.now() - lk.ts) < LOCKOUT_MS){
-    return Math.ceil((LOCKOUT_MS - (Date.now() - lk.ts)) / 60000); // minutes remaining
-  }
-  if((Date.now() - lk.ts) >= LOCKOUT_MS){ sessionStorage.removeItem(_lockoutKey(username)); return null; }
+  const age = Date.now() - lk.ts;
+  if(age >= LOCKOUT_MS){ sessionStorage.removeItem(_lockoutKey(username)); return null; }
+  if(lk.attempts >= LOCKOUT_MAX) return Math.ceil((LOCKOUT_MS - age) / 60000);
   return null;
 }
 function recordFailedAttempt(username){
-  const lk = getLockout(username) || {attempts:0, ts:Date.now()};
+  const existing = getLockout(username);
+  const lk = existing || {attempts:0, ts:Date.now()};
   lk.attempts++;
-  lk.ts = Date.now();
   setLockout(username, lk);
 }
 function clearLockout(username){ sessionStorage.removeItem(_lockoutKey(username)); }
