@@ -2372,6 +2372,80 @@ function addNewUser(){
   state.adminSelUser = id;
   renderAdmin(document.getElementById('main'));
 }
+
+function renderAdminCommentary(el){
+  const months   = DATA.map(m=>m.month).reverse();
+  const selMonth = state.adminComMonth || months[0];
+  const selDept  = state.adminComDept  || DEPTS[0].id;
+  const key      = selMonth + ':' + selDept;
+  const current  = COMMENTARY[key] || '';
+
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:24px;max-width:700px">'
+    + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:16px">Add / Edit Notes for Dept Heads</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Month</div>'
+    + '<select onchange="state.adminComMonth=this.value;renderAdmin(document.getElementById(\'main\'))" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'
+    + months.map(m=>'<option value="' + escHtml(m) + '"' + (m===selMonth?' selected':'') + '>' + escHtml(m) + '</option>').join('')
+    + '</select></div>'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Department</div>'
+    + '<select onchange="state.adminComDept=this.value;renderAdmin(document.getElementById(\'main\'))" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'
+    + DEPTS.map(d=>'<option value="' + d.id + '"' + (d.id===selDept?' selected':'') + '>' + escHtml(shortDeptName(d.name)) + '</option>').join('')
+    + '</select></div></div>'
+    + '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Note (shown as amber callout to dept head)</div>'
+    + '<textarea id="commentary-input" rows="4" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical">' + escHtml(current) + '</textarea>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">'
+    + (current ? '<button onclick="clearCommentary(\'' + key + '\')" style="color:#dc2626;background:none;border:none;font-size:12px;cursor:pointer">Clear note</button>' : '<div></div>')
+    + '<button onclick="saveCommentary(\'' + key + '\')" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Note</button>'
+    + '</div></div>';
+}
+
+async function saveCommentary(key){
+  const text = (document.getElementById('commentary-input')?.value||'').trim();
+  if(text) COMMENTARY[key] = text; else delete COMMENTARY[key];
+  auditLog(state.currentUser?.id||'admin', 'commentary_saved', key);
+  await saveToFile();
+  renderAdmin(document.getElementById('main'));
+}
+function clearCommentary(key){
+  delete COMMENTARY[key];
+  saveToFile().then(()=>renderAdmin(document.getElementById('main')));
+}
+
+function renderAdminAudit(el){
+  let entries = [];
+  try { entries = JSON.parse(localStorage.getItem('dp_audit_log')||'[]'); } catch(e){}
+  entries = entries.slice().reverse();
+  const filterUser = state.adminAuditFilter || '';
+  const filtered   = filterUser ? entries.filter(e=>e.userId===filterUser) : entries;
+  const users      = [...new Set(entries.map(e=>e.userId))].sort();
+  const rows = filtered.slice(0,100).map(e =>
+    '<tr style="border-bottom:1px solid #f1f5f9">'
+    + '<td style="padding:7px 12px;font-size:11px;color:#94a3b8;white-space:nowrap">' + new Date(e.ts).toLocaleString() + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#374151;font-weight:600">' + escHtml(e.userId) + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#374151">' + escHtml(e.action) + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#64748b">' + escHtml(e.detail) + '</td>'
+    + '</tr>'
+  ).join('');
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">'
+    + '<div style="padding:14px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px">'
+    + '<span style="font-size:13px;font-weight:600;color:#374151">Audit Log</span>'
+    + '<span style="font-size:12px;color:#94a3b8">' + filtered.length + ' events' + (filterUser?' for '+escHtml(filterUser):'') + '</span>'
+    + '<select onchange="state.adminAuditFilter=this.value;renderAdmin(document.getElementById(\'main\'))" style="margin-left:auto;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px">'
+    + '<option value="">All users</option>'
+    + users.map(u=>'<option value="' + escHtml(u) + '"' + (u===filterUser?' selected':'') + '>' + escHtml(u) + '</option>').join('')
+    + '</select></div>'
+    + '<div style="overflow-x:auto;max-height:500px;overflow-y:auto">'
+    + '<table style="width:100%;border-collapse:collapse">'
+    + '<thead style="background:#f8fafc;position:sticky;top:0"><tr>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;white-space:nowrap">Timestamp</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">User</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Action</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Detail</th>'
+    + '</tr></thead>'
+    + '<tbody>' + (rows||'<tr><td colspan="4" style="padding:20px;text-align:center;color:#94a3b8">No events yet</td></tr>') + '</tbody>'
+    + '</table></div></div>';
+}
+
 const DH_VIEWS = [
   {id:'overview',     label:'Overview'},
   {id:'pl',           label:'P&L'},
