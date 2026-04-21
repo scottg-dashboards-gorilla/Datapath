@@ -2321,7 +2321,94 @@ function dhSetMonth(idx){ state.selMonth = parseInt(idx,10); renderDeptHead(); }
 function dhNavigate(viewId){ state.dhView = viewId; renderDeptHead(); }
 
 function renderDHView(el, user, month){
-  el.innerHTML = '<div style="color:#64748b;padding:20px">Loading...</div>';
+  if(state.dhView && state.dhView !== 'overview'){
+    renderDHViewByTab(el, user, month, state.dhView);
+    return;
+  }
+  const depts = activeDepts(user);
+  const isPre = !!month.preliminary;
+  const midx  = getSelIdx();
+  const prev  = midx > 0 ? DATA[midx-1] : null;
+
+  const rev  = scopedRev(month, depts);
+  const gp   = scopedGP(month, depts);
+  const gpPct= scopedGPpct(month, depts);
+  const lab  = scopedLabor(month, depts);
+
+  function momDelta(curr, fn){
+    if(!prev) return '';
+    const pc = fn(prev);
+    if(!pc) return '';
+    const d     = ((curr - pc)/pc*100).toFixed(1);
+    const color = curr >= pc ? '#16a34a' : '#dc2626';
+    return '<div style="font-size:11px;color:' + color + '">' + (curr>=pc?'&#x2191;':'&#x2193;') + ' ' + Math.abs(d) + '% MoM</div>';
+  }
+
+  function budgetRow(val, budgetKey){
+    if(!month.budget) return '';
+    const b = depts.reduce((s,d)=>{ const bd=month.budget[d]; return s+(bd&&bd[budgetKey]?bd[budgetKey]:0); },0);
+    if(!b) return '';
+    const diff = val - b;
+    const color = diff >= 0 ? '#16a34a' : '#dc2626';
+    return '<div style="font-size:11px;color:' + color + '">vs budget: ' + (diff>=0?'+':'') + fmt(diff) + '</div>';
+  }
+
+  // Commentary lookup
+  const noteText = (() => {
+    for(const d of depts){ const key=month.month+':'+d; if(COMMENTARY[key]) return COMMENTARY[key]; }
+    return null;
+  })();
+
+  const preBadge = isPre
+    ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><strong>PRELIMINARY</strong> — Numbers not yet finalized by Citrin Cooperman.</div>'
+    : '';
+  const commentaryHtml = noteText
+    ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px 16px;margin-bottom:20px">'
+      + '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">NOTE FROM LEADERSHIP</div>'
+      + '<div style="font-size:13px;color:#78350f">' + escHtml(noteText) + '</div></div>'
+    : '';
+
+  function kpiCard(label, valHtml, border, extra, spark){
+    return '<div style="background:#fff;border:1px solid #e0e0e0;border-left:4px solid ' + border + ';border-radius:8px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">'
+      + '<div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">' + label + '</div>'
+      + '<div style="font-size:22px;font-weight:700;color:#111;margin-bottom:4px">' + valHtml + '</div>'
+      + extra
+      + '<div style="margin-top:8px">' + spark + '</div></div>';
+  }
+
+  const gpValHtml = fmt(gp) + ' <span style="font-size:13px;color:#64748b">(' + gpPct.toFixed(1) + '%)</span>';
+  const cards = '<div class="dh-kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">'
+    + kpiCard('Revenue',     fmt(rev),    '#3b82f6', momDelta(rev,  m=>scopedRev(m,depts))   + budgetRow(rev,'revenue'),  renderSparkline(sparklineData(depts,'rev',6),'#3b82f6'))
+    + kpiCard('Gross Profit',gpValHtml,   '#16a34a', momDelta(gp,   m=>scopedGP(m,depts))    + budgetRow(gp,'gp'),        renderSparkline(sparklineData(depts,'gp',6),'#16a34a'))
+    + kpiCard('Labor',       fmt(lab),    '#f59e0b', momDelta(lab,  m=>scopedLabor(m,depts)),                              renderSparkline(sparklineData(depts,'labor',6),'#f59e0b'))
+    + '</div>';
+
+  // Per-dept breakdown table (multi-dept + 'all' selected)
+  let tableHtml = '';
+  if(user.departments.length > 1 && state.dhDept === 'all'){
+    const rows = userDepts(user).map(d => {
+      const dr  = scopedRev(month,[d.id]);
+      const dgp = scopedGP(month,[d.id]);
+      const dpct= dr ? (dgp/dr*100).toFixed(1) : null;
+      const color= dpct !== null && parseFloat(dpct) >= (BM[d.id]?.tgt||50) ? '#16a34a' : '#f59e0b';
+      return '<tr>'
+        + '<td style="padding:8px 12px;font-weight:600;color:#374151">' + escHtml(shortDeptName(d.name)) + '</td>'
+        + '<td style="padding:8px 12px;color:#374151">' + fmt(dr) + '</td>'
+        + '<td style="padding:8px 12px;color:#374151">' + fmt(dgp) + '</td>'
+        + '<td style="padding:8px 12px;color:' + color + ';font-weight:600">' + (dpct !== null ? dpct+'%' : '&#x2014;') + '</td>'
+        + '</tr>';
+    }).join('');
+    tableHtml = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:#f8fafc;border-bottom:1px solid #e0e0e0">'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Department</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Revenue</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Gross Profit</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">GP%</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  el.innerHTML = preBadge + commentaryHtml + cards + tableHtml;
 }
 
 // ═══════════════════════════════════════════════════════════════
