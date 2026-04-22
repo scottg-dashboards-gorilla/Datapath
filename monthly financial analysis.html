@@ -615,7 +615,7 @@ const WORKING_DAYS = {
   'FY 2023':252,'FY 2024':253,
   'Jan 25':21,'Feb 25':19,'Mar 25':21,'Apr 25':22,'May 25':21,'Jun 25':20,
   'Jul 25':22,'Aug 25':21,'Sep 25':21,'Oct 25':22,'Nov 25':18,'Dec 25':22,
-  'Jan 26':20,'Feb 26':19
+  'Jan 26':20,'Feb 26':19,'Mar 26':21
 };
 
 // Products Ordered Not Invoiced — Customer-level detail from uploaded spreadsheet
@@ -1631,8 +1631,8 @@ DEC25.detail = {
 // ═══════════════════════════════════════════════════════════════
 // Revenue: MS(593456) + Sec(150488) + Cloud(65607) + HW/SW(422620) + PS(24460) = 1,256,631
 // COGS before labor: 497,138 | Labor: Direct(134465)+Project(49371)=183,836
-// GP after labor: 575,657 | Sales Labor: 114,856 | OpEx: 363,333
-// Operating Net Income: 97,468 | Other: -34,560 | Tax: 104 | Net Income: 62,804
+// GP after labor: 575,657 | Sales Labor: 114,379 | OpEx: 316,132
+// Operating Net Income: 145,146 | Other: -34,560 | Tax: 104 | Net Income: 110,482
 const FEB26 = makeMonth('Feb 26',
   // Revenue by department
   {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620,
@@ -1654,9 +1654,9 @@ const FEB26 = makeMonth('Feb 26',
   }, direct:134465, project:49371,
   hc:{managed_services:25, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:5}},
   // Sales labor (Sales team: DinYero, Danny, Dan 50%, Jay 80%, Nathan 50%, Joel 50%, Ricky 50%)
-  114856,
+  114379,
   // OpEx breakdown (admin payroll includes G&A sub-buckets, Central Services)
-  {payroll:33491, facilities:37777, operating:141480, marketing:8685, ga:63602, taxIns:2967},
+  {payroll:33491, facilities:35877, operating:96179, marketing:8685, ga:63602, taxIns:2967},
   -34560, 104
 );
 FEB26.detail = {
@@ -1671,13 +1671,68 @@ FEB26.detail = {
     recurResale:27933, haas:11807, chromebook:79, m365:99693,
     securityResale:67835, voiceResale:5267, managedSecurity:5142,
     subcontractor:2975, productSales:215474, freight:7746},
-  opex: {adminPayroll:33491, facilities:37777, softwareMaint:14333, profServices:71792,
-    badDebt:47924, auto:7431, marketing:8685, officeSupplies:10975, education:10000,
+  opex: {adminPayroll:33491, facilities:35877, softwareMaint:14333, profServices:74415,
+    badDebt:0, auto:7431, marketing:8685, officeSupplies:10975, education:10000,
     financeCharges:2018, travel:40609, insurance:2967, taxes:0,
-    officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
+    officeLease:21807, repairs:3701, utilities:10369, rAndD:75331, charitable:-1221}
 };
 
-const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+const MAR26 = makeMonth('Mar 26',
+  // Revenue by department
+  // Source: Citrin Intacct P&L Detail by Account (March 2026)
+  // Sales: 598,666 MRS − 4,729 security + security(4,729+151,908) + cloud(26,443+39,792)
+  // HW/SW: MRR(363,963)−security(151,908)−cloudSaaS(39,792) + product(366,297) + commissions(11,648)
+  {managed_services:593937, security:156637, cloud_hosting:66235, hw_sw_resale:550208,
+   professional_services:58594, subcontracted:14828, ai_consulting:0, r_and_d:0},
+  // COGS by department (before labor)
+  // managed: 50000(24,897)+backup(5,118)+spam(374)+domain(955)+voice(3,774)=35,118
+  // security: 52100(70,419)+62500 managedSecurity(5,519)=75,938
+  // cloud: 50090(1,315)+50095(10,991)=12,306
+  // hw_sw: 50150 recurResale(15,225)+haas(12,127)+m365(105,468)+voiceResale(5,430)+50300(311,125)+freight(6,985)=456,360
+  // Note: 50661 Capitalized Payroll (−28,341) is a Q1 catch-up; already netted into direct labor 151,433
+  {managed_services:35118, security:75938, cloud_hosting:12306, hw_sw_resale:456360,
+   professional_services:8, subcontracted:13392, ai_consulting:0, r_and_d:42942},
+  // Labor — per-department allocation based on Feb 2026 roster proportions scaled to March total
+  // Total direct+project labor: $208,734 (direct:151,433 + project:57,301)
+  // Scale factor vs Feb: 208,734/183,836 = 1.1355
+  // Note: Direct labor includes capitalized payroll credit (−28,341) for Vision/AI software (50661)
+  {byDept: {
+    managed_services: 152693,   // Service: 73.1%
+    professional_services: 27858,// 5 engineers @ 75%
+    security: 17668,             // Angelica, Cory, Walski 50%
+    cloud_hosting: 2269,         // Peter Annabel 25%
+    hw_sw_resale: 8246,          // David Craig + 2 BruntWork
+    ai_consulting: 0, subcontracted: 0, r_and_d: 0
+  }, direct:151433, project:57301,
+  hc:{managed_services:25, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:5}},
+  // Sales labor (same team as Feb: DinYero, Danny, Dan 50%, Jay 80%, Nathan 50%, Joel 50%, Ricky 50%)
+  141264,
+  // OpEx breakdown
+  {payroll:57493, facilities:36511, operating:134308, marketing:118, ga:41730, taxIns:6825},
+  // Other income/expense (below EBITDA line: −34,184 stockholder + −4,526 interest + −10,500 other/amort + 258 charitable + −18,900 year-end taxes + 3,961 other income)
+  -64407,
+  // Income tax
+  0
+);
+MAR26.detail = {
+  rev: {managedIT:570649, managedSecurity:4729, managedVoice:8256, managedBackup:10686,
+    usacErate:4346, publicCloud:1144, privateCloud:25299, cloudSaas:39792,
+    haas:33043, chromebook:562, m365:129650, securityResale:151908,
+    toolResale:5166, voiceResale:2951, spamFilter:891,
+    projectService:58594, subcontracted:14828,
+    productSales:357620, freight:8677, commissions:11648},
+  cogs: {managedIT:24897, backup:5118, spamFilter:374, domain:955, voice:3774,
+    publicCloud:1315, privateCloud:10991,
+    recurResale:15225, haas:12127, chromebook:0, m365:105468,
+    securityResale:70419, voiceResale:5430, managedSecurity:5519,
+    projectServiceCosts:8, subcontractor:13392, productSales:311125, freight:6985},
+  opex: {adminPayroll:57493, officeLease:21807, repairs:0, utilities:14704,
+    softwareMaint:49784, profServices:75806, badDebt:0, auto:8718,
+    marketing:118, officeSupplies:17821, education:45,
+    financeCharges:1931, travel:21933, insurance:6825, taxes:0, rAndD:42942}
+};
+
+const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26, MAR26];
 
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
@@ -2034,6 +2089,16 @@ const ANOMALIES = {
     {type:'expense', category:'Education/Training', description:'$10K AmEx charge on 2/4 for business conferences & training', impact: -10000, dept:'general'},
     {type:'adjustment', category:'Operating Expenses', description:'Pia Trade Co recurring charge write-off — reversed charges that should not have continued billing', impact: 0, dept:'general'},
     {type:'credit', category:'Insurance Refund', description:'Insurance refund of $3,565 on 2/11 netted against monthly expenses', impact: 3565, dept:'general'},
+  ],
+  'Mar 26': [
+    {type:'adjustment', category:'R&D Department (Month 3)', description:'R&D COGS normalized to $42,942 — Feb was elevated ($75,331) due to YTD retroactive adjustments. March reflects true monthly run rate: $33,121 wages + $2,954 benefits + $2,338 taxes + $529 pension + $4,000 contractor (Haskell).', impact: 0, dept:'r_and_d'},
+    {type:'credit', category:'Capitalized Payroll (Q1 Catch-Up)', description:'Account 50661 recorded -$28,341 capitalization of Direct Labor wages for Vision and AI software development (Peter Annabel, Haskell Macaraig). Q1 catch-up posted 3/31/2026 per Citrin note. Reduces direct labor COGS, improves EBITDA.', impact: 28341, dept:'general'},
+    {type:'adjustment', category:'CloudSaaS: HHHC Overbilling Reversal', description:'Account 41300 contains ~$59,891 reversal of prior HHHC overbilling (CA side). Net March CloudSaaS = $39,792 vs ~$99,683 gross. One-time revenue reduction; underlying run rate remains ~$39K/mo net of correction.', impact: -59891, dept:'cloud_hosting'},
+    {type:'expense', category:'Operating Expenses Spike', description:'Software & maintenance jumped to $49,784 vs $14,333 Feb: Connectwise catch-up (~$12K each OH and CA) + Pia Trade bill reversals from Feb re-recorded in March. Not indicative of new run-rate.', impact: -35451, dept:'general'},
+    {type:'expense', category:'Year-End Tax Payments (Below Line)', description:'$18,900 in year-end state/other taxes paid in March ($14,400 OH + $4,500 CA) — recorded below operating income line in account 61750. Reduces net income but not EBITDA.', impact: -18900, dept:'general'},
+    {type:'expense', category:'Stockholder/Partnership Expenses', description:'$34,184 co-CEO compensation and related charges recorded below EBITDA line in account 62600. Standard monthly item per partnership structure.', impact: -34184, dept:'general'},
+    {type:'expense', category:'Amortization of Capitalized Software', description:'$7,083 amortization of internally capitalized software (Vision/AI features, account 60100) recorded in Other Expense below the line. Increases as software development is completed and placed in service.', impact: -7083, dept:'general'},
+    {type:'credit', category:'Travel Down Significantly', description:'Business travel of $21,933 vs $40,609 in Feb — return to more normal levels as Feb had elevated airfare charges. Marketing also dropped to $118 from $8,685 (no event recurrence).', impact: 18676, dept:'general'},
   ],
 };
 
