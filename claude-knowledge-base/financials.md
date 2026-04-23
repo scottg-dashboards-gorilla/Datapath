@@ -84,6 +84,77 @@ Still TBD: DeHart HVAC, David Bates fees, Inforcer tool costs, R&D costs
 - ADDED: Facilities Modesto ($188.4K), Facilities Ohio ($20K), Website Dev ($10.9K), Marketing GTM ($42K)
 - CHANGED: R&D Tax Credit $27.8K→$70.9K; 11:11 Systems $22K→$55.6K; Year-End Legal $231K re-added
 
+## Capitalized Payroll / Internal-Use Software (IUS)
+Source: "DP IUS 3.31.26 (2).xlsx" from Citrin Cooperman (Peter Annabel quarterly review)
+GL Account: 50661 (Payroll Expenses - Capitalized), reduces Direct Labor
+Amortization GL: 19003, 3-year useful life
+
+### People Capitalized
+- **Peter Annabel** (Dir of Cloud Services) — $9,233/mo gross, LOE 30-95% depending on project
+- **Haskell Macarcig** (1099 contractor) — $4,000/mo flat, 100% LOE, coded to GL 61900 (R&D)
+- **Tim Culcasi** (QA) — $18,444/mo gross, only 5% allocation ($922 total Q1 2026)
+- **Roger Gentry** (former contractor) — $40K total, 20% LOE haircut (work was rebuilt after he left Jun 2025)
+
+### Capitalized Projects
+| Project | Period | Extended Cost | Status |
+|---------|--------|-------------|--------|
+| Vision Dashboard (core build) | Jun-Nov 2025 | $67,463 | Live 11/1/25, amortizing |
+| Feature 1: Addt'l Data Sources | Nov-Dec 2025 | $2,318 | Live 12/31/25, amortizing |
+| Feature 2: Trend Lines | Nov-Dec 2025 | $2,318 | Still dev/beta, ON HOLD |
+| Feature 3: LLM Layer/UI/UX | Nov 2025-Feb 2026 | $43,697 | Live 3/2/26, amortizing from Mar |
+| Enhancement (logging ingestion) | Feb 2026 | $1,385 | Live 2/18/26 |
+| Vision Testing Tool (LLM regression) | Mar 2026 start | $1,806 | Still in dev |
+
+### Totals
+- Through 12/31/2025: $90,648
+- Q1 2026 (posted in March): $28,341
+- Grand total: $118,989
+- Monthly amortization as of March 2026: $3,191/mo (ramping as features go live)
+- Quarterly catch-up: Citrin meets with Peter Annabel once/quarter; all Q1 posted in March
+- **Recommendation accepted**: normalize monthly with quarterly true-up going forward
+
+### Key Notes
+- Haskell was previously coded to GL 61100 (Marketing) through Jan 2026; reclassed to GL 61900 (R&D) starting Feb 2026
+- Roger Gentry's $40K was haircut to $8K (20% LOE) because his work was rebuilt by Peter after Roger left
+- Tim Culcasi QA time is minimal (5%) — mostly testing, not core development
+- Feature 2 (Trend Lines) is on hold — "very little dev since December, still in Beta testing"
+- This is separate from R&D COGS ($42-75K/mo): capitalized payroll pulls costs OFF the P&L, R&D COGS is a reclassification WITHIN the P&L
+- No overlap confirmed between people: Peter/Haskell are in IUS capitalization; Tim Stewart/Jacob/James are in R&D COGS
+
+## March 2026 Preliminary P&L — Citrin Q&A Status
+
+### Answered (5 of 15 anomalies)
+1. **MS COGS Tech Stack -34%**: SVH/Trumark overbilling correction ($6,240). True run rate ~$30-31K. Resolved.
+2. **Capitalized Payroll -$28,341**: Vision dashboard project, quarterly catch-up. See IUS section above. Action: normalize monthly.
+3. **OpEx jumped +$43K**: Pia Trade Co AI desk licenses ($29K) posted 2025, reversed Feb 2026. Resolved.
+4. **Other Taxes $18,900**: Franchise tax payments (CA $14.4K + OH $4.5K). Action: normalize monthly ~$6,300.
+5. **Project Services +181%**: Actual invoiced work, not catch-up. Good news.
+
+### Answered Post-Initial (from Citrin emails April 16)
+7. **Officer's Comp negative in Feb (-$10,769)** — Citrin reclassed James's YTD payroll from Officer's Comp into the new R&D bucket, plus moved several other people's Jan payroll retroactively. Same journal entry that caused the Feb R&D $75,331 catch-up. Resolved.
+8. **Professional Services $76K/mo** — Citrin provided full vendor breakdown (3-mo avg). Recurring: Citrin $28K, CLevel $25.5K, Call & Jensen $5.6K, Sensiba $3.8K, CyberGuard $2.4K, Avalara $1.9K, Lucas/Horsfall $1.9K = ~$69K recurring. One-time/ad-hoc: Silvermine AI $3.75K, Rank Investigations $900, Katherine Boyd $738, LegalZoom $499, NexNow $458, Dean Dorton $400, Osborne $353, INC Installs $314, InCorp $129 = ~$7.5K. Total $76,509.
+9. **Insurance $450→$10,335** — Feb was low due to $3.5K refund. March has $7,020 Travelers charge (April recurring from Sage posted early). True run rate ~$7-7.5K/mo. Will monitor, no normalization needed.
+11. **OH Interest Expense tripled** — Posting error: interest/principal not reconciled to BS. Now fixed. One of two FFB loans paid off in Jan. Corrected Q1: Jan $16.8K, Feb $15.8K, Mar $15.6K (declining trend). Resolved.
+
+### Answered by Kasey (Payroll Support Q1 2026, April 2026)
+6. **Direct Labor Wages +$30K in CA** — RESOLVED. January had 3 payroll runs vs 2 in Feb/Mar. Jan DL gross was $209,406; normalized to 2 payrolls = ~$139,604, vs Feb $146,742 and Mar $135,736. March DL dropped $11K from Feb due to dismissals: Hughes ($3.2K), Morozov ($2.6K), Doyle ($3.2K reduction), Chavez Soto maternity ($3.1K). No anomaly — payroll timing + terminations.
+7b. **Officer's Comp** — RESOLVED. Kasey confirmed: R&D reclassification journal entry moved James Bates + others from Officer's Comp into R&D. Feb showed negative Officer's Comp as retroactive YTD correction. Gusto JE template was also incorrect (pushing to wrong Intacct accounts), corrected for April forward.
+10. **R&D dropped $75K→$43K** — RESOLVED. Feb $75K included retro YTD catch-up (Jan+Feb R&D all posted in Feb). Go-forward R&D payroll run rate = ~$26,505/mo (Annabel $9,233 + J.Bates $6,550 + T.Stewart $6,722 + Berlin $4,000). Feb was inflated by Tim Stewart $5K bonus + retroactive Jan posting. Citrin P&L shows $42,943 for Mar which also includes taxes/benefits on top of gross wages.
+
+### Q1 2026 Payroll Key Facts (from DP Payroll Support file)
+- **3-payroll January**: Jan had 3 payroll runs ($481,931 total) vs 2 in Feb ($335,778) and Mar ($343,764). Normalize Jan by ×2/3 = ~$321,287.
+- **Personnel changes**: Hughes dismissed Feb, Morozov dismissed Feb, Wallace dismissed Jan, Chavez Soto maternity leave Mar
+- **DinYero Johnson sales spike**: $14,618 (Feb) → $31,283 (Mar), +$16,665 — biggest single swing in March. Drove sales labor from $80K→$101K.
+- **Tim Stewart $5K bonus**: Approved by James, paid Feb. Normal R&D rate ~$6,722/mo.
+- **Jacob Berlin**: New R&D hire, started Feb ($1K), ramped to $4K/mo in Mar.
+- **Gusto JE fix**: Template was incorrectly pushing payroll to Intacct accounts. Corrected for April forward.
+- **Department totals (Mar)**: Admin $29,135 | DL $135,736 | Officer $8,299 | Project $42,703 | R&D $26,505 | Sales $101,385
+
+### Not Asked (lower priority, user aware)
+- Product Sales +$123K (user aware of dynamics)
+- Subcontracted tripled $4K→$15K (user aware)
+- Sales Commissions zeroed out
+
 ## Dec 2025 Year-End Adjustments
 - 23 journal entries moved net income from -$189K to -$6K
 - Other Expense $601K credit | Prof Services $231K (legal reserves)

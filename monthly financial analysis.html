@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datapath Financial Command Center</title>
@@ -451,9 +449,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 <script>
 // @@USERS_START@@
 const USERS = [
-  {id:'scott',   name:'Scott Gordon',         username:'scott',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
-  {id:'david',   name:'David Darmstandler',   username:'david',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
-  {id:'james',   name:'James Bates',          username:'james',   passwordHash:'', salt:'', role:'admin',     departments:[], views:[]},
+  {id:'scott',   name:'Scott Gordon',         username:'scott',   passwordHash:'b252829de1d110808f55d01848c4a273c7e534b4ad8262352eb3a4cfa6abc150', salt:'8e3eb7acbb98c9bd2e0d9007c43b26c8',   role:'admin',     departments:[], views:[]},
+  {id:'david',   name:'David Darmstandler',   username:'david',   passwordHash:'51ceae006ae33672ecb106b3144cb82cf9a02308d4c3dc83ab13d7b574bd7305', salt:'0b04e098aba18ce47b15d1e0ba9f0e57',   role:'admin',     departments:[], views:[]},
+  {id:'james',   name:'James Bates',          username:'james',   passwordHash:'76b59cbb1203b264777ee8752b1fad92d9d86d204a8ea837a892d8f516730b5b', salt:'aa20b4d22462a890a7f4361ad457e9b7',  role:'admin',     departments:[], views:[]},
   {id:'swalski', name:'Stephen Walski',       username:'swalski', passwordHash:'', salt:'', role:'dept_head', departments:['professional_services','security'],         views:['overview','pl','gross_profit','labor']},
   {id:'brandon', name:'Brandon H.',           username:'brandon', passwordHash:'', salt:'', role:'dept_head', departments:['managed_services'],                         views:['overview','pl','gross_profit','labor']},
   {id:'timc',    name:'Tim C.',               username:'timc',    passwordHash:'', salt:'', role:'dept_head', departments:['r_and_d','ai_consulting'],                  views:['overview','pl','gross_profit','labor']},
@@ -514,7 +512,7 @@ function auditLog(userId, action, detail=''){
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
       </button>
       <div class="brand">
         <div class="brand-name">DATAPATH</div>
@@ -5032,5 +5030,6 @@ Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', san
 state.selMonth = DATA.length - 1; // Default to latest month
 render();
 </script>
-</body>
-</html>
+
+
+</body></html>
