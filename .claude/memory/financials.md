@@ -181,3 +181,43 @@ Amortization GL: 19003, 3-year useful life
 - 2023: Rev $27.7M / Net $3.4M
 - 2024: Rev $22.1M / Net $1.1M
 - 2025: Rev $17.8M / Net $1.3M
+
+## Final March 2026 P&L (received April 26, 2026)
+Source file: "March P&L.xlsx" — sheets: P&L Condensed, P&L Detail by Account
+
+### Final March Numbers
+- Total Revenue: $1,440,439 | Total COGS: $801,856 | Gross Profit: $638,583 (44.3%)
+- Sales Labor: $141,264 | Total OpEx: $319,927 | EBITDA: $177,392 (12.3%)
+- Other Income: -$38,710 (Interest -$4,526 + Stockholder -$34,184)
+- Q1 YTD EBITDA: $409,327
+
+### Changes from Preliminary to Final (March)
+- Sales Labor: $134,018 → $141,264 (+$7,246) — only meaningful change, likely commission accruals
+- Revenue, COGS: virtually unchanged (+$369 revenue rounding, COGS identical)
+
+### New Items from Final March P&L (not yet discussed with Citrin)
+1. Sales Labor prelim to final +$7,246: What posted between prelim and final? Commission accrual?
+2. DinYero Johnson sales comp $14,618 to $31,283 (+$16,665): Commission-driven or comp structure change?
+3. Software & Maintenance $14,333 to $49,784 (+$35,451): Annual renewals, new tools, or catch-up?
+4. Admin Contractor Wages $7,817 to $12,107 (+$4,290): New contractor or rate increase?
+5. Office Supplies $10,975 to $17,821 (+$6,846): One-time or recurring?
+
+### Dashboard Discrepancies Found (Feb 2026)
+Dashboard was built from PRELIMINARY Feb P&L. Final Citrin P&L differs:
+1. Bad Debt: $47,924 in dashboard, $0 in final — reversed. Feb EBITDA understated by $47,924.
+2. Professional Services: $71,792 in dashboard, $74,415 in final — dashboard $2,623 low.
+3. Utilities: $12,269 in dashboard, $10,369 in final — dashboard $1,900 high.
+4. Sales Labor: $114,856 in dashboard, $114,379 in final — dashboard $477 high.
+- Net Feb EBITDA correction: +$47,678 (from $97,468 to $145,146)
+- Jan 2026 not yet verified against final — ~$26K gap, need Jan final P&L from Citrin.
+
+### March Dashboard Data Mapping (ready for insertion)
+Revenue: managed_services:594828, security:156637, cloud_hosting:66235, hw_sw_resale:549317, professional_services:58594, subcontracted:14828
+COGS (before labor): managed_services:35118, security:75938, cloud_hosting:12306, hw_sw_resale:456360, subcontracted:13392, r_and_d:42942
+Labor: direct:151433, project:57301. byDept: MS:152585, PS:27970, Sec:17742, Cloud:2296, HWSW:8141, R&D:0 (in COGS)
+Sales labor: 141264
+OpEx: payroll:57493, facilities:36511, operating:134308, marketing:118, ga:41730, taxIns:6825
+Other income: -38710
+Detail rev: managedIT:570649, managedSecurity:4729, managedVoice:8256, managedBackup:10686, usacErate:4346, publicCloud:1144, privateCloud:25299, cloudSaas:39792, haas:33043, chromebook:562, m365:129650, securityResale:151908, toolResale:5166, voiceResale:2951, spamFilter:891, projectService:58594, subcontracted:14828, productSales:357620, freight:8677, commissions:11648
+Detail cogs: managedIT:24897, backup:5118, spamFilter:374, domain:955, voice:3774, publicCloud:1315, privateCloud:10991, recurResale:15225, haas:12127, chromebook:0, m365:105468, securityResale:70419, voiceResale:5430, managedSecurity:5519, subcontractor:13392, productSales:311125, freight:6985
+Detail opex: adminPayroll:57493, facilities:36511, softwareMaint:49784, profServices:75806, badDebt:0, auto:8718, marketing:118, officeSupplies:17821, education:45, financeCharges:1931, travel:21933, insurance:6825, taxes:0, officeLease:21807, repairs:0, utilities:14704, rAndD:42942
