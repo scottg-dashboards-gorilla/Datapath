@@ -1848,15 +1848,15 @@ applyAddBacks(DEC25, {
 
 // ─── Q1 2026 Add-Backs ────────────────────────────────────────
 // Normalize: Facilities Modesto $15,700, Ohio $0 (Jan) / $6,107 (Feb+), Family Member Comp $3,520
-// Jan 26 — $33,963
+// Jan 26 — $34,540 (Wallace termination: ~$577 PTO est. at 0.8wk accrual, $75K salary)
 applyAddBacks(JAN26, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
-  severancePTO:0, bankFees:14743
+  severancePTO:577, bankFees:14743
 });
-// Feb 26 — $25,327 (Ohio lease $6,107; severancePTO=0 pending DP Payroll Support file — Hughes + Morozov dismissal amounts not yet confirmed)
+// Feb 26 — $26,758 (Morozov ~$508 PTO + Hughes ~$923 PTO; est. from accrual rates/tenure — gross final pay confirmed via Gusto)
 applyAddBacks(FEB26, {
   facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
-  severancePTO:0, bankFees:0
+  severancePTO:1431, bankFees:0
 });
 // Mar 26 — $25,327
 applyAddBacks(MAR26, {
