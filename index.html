@@ -1751,16 +1751,37 @@ function applyAddBacks(m, ab) {
   m.adjEbitdaM = m.totRev > 0 ? (m.adjEbitda / m.totRev * 100) : 0;
 }
 
+const NORM_ONE_TIME_ITEMS = [
+  {key:'ohioFloodRepairs',   label:'Ohio Flood Repairs',              star:true},
+  {key:'stateTaxMisc',       label:'State Tax / Misc',                star:true},
+  {key:'recruiting',         label:'Recruiting'},
+  {key:'outsideConsulting',  label:'Outside Consulting'},
+  {key:'citrinBillings',     label:'Citrin Assessment Billings'},
+  {key:'travel',             label:'Travel',                          star:true},
+  {key:'swMaintCatchUp',     label:'SW & Maint Catch-Up'},
+  {key:'legalReserves',      label:'Legal Reserves (PAGA)'},
+  {key:'dlYeReclass',        label:'DL Year-End Reclass'},
+  {key:'iusCredit',          label:'IUS Capitalization Credit'},
+  {key:'officeSupplies',     label:'Office Supplies YE',              star:true},
+  {key:'officeLease',        label:'Office Lease Catch-Up'},
+  {key:'depreciation',       label:'Depreciation Posting'},
+  {key:'bankFees',           label:'Bank Fees',                       star:true},
+  {key:'piaTradeSwCatchUp',  label:'Pia Trade SW Catch-Up'},
+  {key:'cloudSaasReversal',  label:'CloudSaaS Overbilling Reversal'},
+  {key:'capitalizedPayroll', label:'Capitalized Payroll Q1 Catch-Up'},
+  {key:'davesTaxReclass',    label:"Dave's Tax Preparer Reclass"},
+];
+
 function applyNormalization(m, norm) {
   m.normSevPTO = norm.sevPTO || 0;
-  m.normOneTime = norm.oneTime || 0;
-  m.normItems = norm.items || [];
+  m.normOneTimeItems = norm.oneTimeItems || {};
+  m.normOneTime = Object.values(m.normOneTimeItems).reduce((s,v) => s + (v||0), 0);
   m.normEbitda = m.ebitda + m.normSevPTO + m.normOneTime;
   m.normEbitdaM = m.totRev > 0 ? (m.normEbitda / m.totRev * 100) : 0;
 }
 
 // Jan 25 — $102,061
-applyNormalization(JAN25, {sevPTO:2399, oneTime:0, items:['PTO: Blunk $1,255, Upton $1,144']});
+applyNormalization(JAN25, {sevPTO:2399, oneTimeItems:{}});
 applyAddBacks(JAN25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:30000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1769,7 +1790,7 @@ applyAddBacks(JAN25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
 });
 // Feb 25 — $77,061
-applyNormalization(FEB25, {sevPTO:26911, oneTime:0, items:['PTO: Jump $19,742, Barcelos $2,112, Briney $1,915, K.Johnson $3,142']});
+applyNormalization(FEB25, {sevPTO:26911, oneTimeItems:{}});
 applyAddBacks(FEB25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:20000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1778,7 +1799,7 @@ applyAddBacks(FEB25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
 });
 // Mar 25 — $88,561
-applyNormalization(MAR25, {sevPTO:11812, oneTime:33835, items:['Sev/PTO: Freeburg, Finkton, Williams, Wise', 'Repairs & Maint $19,286*', 'Misc/Other $14,549*']});
+applyNormalization(MAR25, {sevPTO:11812, oneTimeItems:{ohioFloodRepairs:19286, stateTaxMisc:14549}});
 applyAddBacks(MAR25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:15000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1787,7 +1808,7 @@ applyAddBacks(MAR25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
 });
 // Apr 25 — $65,223
-applyNormalization(APR25, {sevPTO:0, oneTime:0, items:[]});
+applyNormalization(APR25, {sevPTO:0, oneTimeItems:{}});
 applyAddBacks(APR25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1796,7 +1817,7 @@ applyAddBacks(APR25, {
   systems1111:6174, additionalLegal:5167, websiteDev:6000, marketingGTM:0
 });
 // May 25 — $44,223
-applyNormalization(MAY25, {sevPTO:5676, oneTime:7125, items:['Sev/PTO: Pontes $5,676', 'Recruiting $7,125']});
+applyNormalization(MAY25, {sevPTO:5676, oneTimeItems:{recruiting:7125}});
 applyAddBacks(MAY25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1805,7 +1826,7 @@ applyAddBacks(MAY25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
 });
 // Jun 25 — $50,223
-applyNormalization(JUN25, {sevPTO:7807, oneTime:0, items:['Sev/PTO: Brockett $7,807']});
+applyNormalization(JUN25, {sevPTO:7807, oneTimeItems:{}});
 applyAddBacks(JUN25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1814,7 +1835,7 @@ applyAddBacks(JUN25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Jul 25 — $42,223
-applyNormalization(JUL25, {sevPTO:4647, oneTime:11250, items:['Sev/PTO: Harvey $4,647', 'Outside consulting $11,250']});
+applyNormalization(JUL25, {sevPTO:4647, oneTimeItems:{outsideConsulting:11250}});
 applyAddBacks(JUL25, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1823,7 +1844,7 @@ applyAddBacks(JUL25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Aug 25 — $66,223
-applyNormalization(AUG25, {sevPTO:14559, oneTime:26026, items:['Sev/PTO: Harsch, Moore, Kuphal $14,559', 'Prof Services spike $26,026*']});
+applyNormalization(AUG25, {sevPTO:14559, oneTimeItems:{citrinBillings:26026}});
 applyAddBacks(AUG25, {
   facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1832,7 +1853,7 @@ applyAddBacks(AUG25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Sep 25 — $46,223
-applyNormalization(SEP25, {sevPTO:35478, oneTime:15111, items:['Sev/PTO: Vicencio, Baker, Brennan, Huizar $35,478', 'Prof Services $15,111*']});
+applyNormalization(SEP25, {sevPTO:35478, oneTimeItems:{citrinBillings:15111}});
 applyAddBacks(SEP25, {
   facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1841,7 +1862,7 @@ applyAddBacks(SEP25, {
   systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Oct 25 — $40,049
-applyNormalization(OCT25, {sevPTO:572, oneTime:7672, items:['PTO: Blair $572', 'Recruiting $7,672']});
+applyNormalization(OCT25, {sevPTO:572, oneTimeItems:{recruiting:7672}});
 applyAddBacks(OCT25, {
   facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1850,7 +1871,7 @@ applyAddBacks(OCT25, {
   systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Nov 25 — $40,049
-applyNormalization(NOV25, {sevPTO:0, oneTime:7910, items:['Travel spike $7,910*']});
+applyNormalization(NOV25, {sevPTO:0, oneTimeItems:{travel:7910}});
 applyAddBacks(NOV25, {
   facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
@@ -1859,7 +1880,10 @@ applyAddBacks(NOV25, {
   systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
 });
 // Dec 25 — $482,128 (includes year-end accruals and non-cash items)
-applyNormalization(DEC25, {sevPTO:6099, oneTime:438978, items:['PTO: Schilber $6,099', 'SW&Maint catch-up $136K', 'Legal reserves $151K', 'DL reclass $166K', 'IUS credit -$91K', 'Office Supplies $50K', 'Lease catch-up $8K', 'Depreciation $19K']});
+applyNormalization(DEC25, {sevPTO:6099, oneTimeItems:{
+  swMaintCatchUp:135971, legalReserves:151184, dlYeReclass:165529,
+  iusCredit:-90648, officeSupplies:50081, officeLease:8213, depreciation:18648
+}});
 applyAddBacks(DEC25, {
   facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
   severancePTO:5664, yearEndLegal:231000, balanceSheetAdj:135253, rdTaxCredit:70940,
@@ -1871,19 +1895,22 @@ applyAddBacks(DEC25, {
 // ─── Q1 2026 Add-Backs ────────────────────────────────────────
 // Normalize: Facilities Modesto $15,700, Ohio $0 (Jan) / $6,107 (Feb+), Family Member Comp $3,520
 // Jan 26 — $34,540 (Wallace termination: ~$577 PTO est. at 0.8wk accrual, $75K salary)
-applyNormalization(JAN26, {sevPTO:577, oneTime:14743, items:['PTO: Wallace ~$577*', 'Bank fees $14,743*']});
+applyNormalization(JAN26, {sevPTO:577, oneTimeItems:{bankFees:14743}});
 applyAddBacks(JAN26, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
   severancePTO:577, bankFees:14743
 });
 // Feb 26 — $26,758 (Morozov ~$508 PTO + Hughes ~$923 PTO; est. from accrual rates/tenure — gross final pay confirmed via Gusto)
-applyNormalization(FEB26, {sevPTO:1431, oneTime:0, items:['PTO: Morozov ~$508*, Hughes ~$923*']});
+applyNormalization(FEB26, {sevPTO:1431, oneTimeItems:{}});
 applyAddBacks(FEB26, {
   facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
   severancePTO:1431, bankFees:0
 });
 // Mar 26 — $25,327
-applyNormalization(MAR26, {sevPTO:19162, oneTime:0, items:['DinYero Johnson $16,242*', 'Unknown term ~$2,920*']});
+applyNormalization(MAR26, {sevPTO:19162, oneTimeItems:{
+  piaTradeSwCatchUp:35451, cloudSaasReversal:59891,
+  capitalizedPayroll:-28341, davesTaxReclass:5000
+}});
 applyAddBacks(MAR26, {
   facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
   severancePTO:0, bankFees:0
@@ -3895,7 +3922,10 @@ function renderPnL(el) {
   // Normalization — one-time items above the EBITDA line (2025+)
   rows += divRow('Normalization (One-Time Items — 2025/2026)');
   rows += dataRow('Severance & PTO (non-recurring)', m => m.normSevPTO || 0, {indent: true, colorBySign: true});
-  rows += dataRow('One-Time Adjustments', m => m.normOneTime || 0, {indent: true, colorBySign: true});
+  NORM_ONE_TIME_ITEMS.forEach(item => {
+    if (!DATA.some(m => (m.normOneTimeItems||{})[item.key])) return;
+    rows += dataRow(item.label + (item.star ? '*' : ''), m => (m.normOneTimeItems||{})[item.key] || 0, {indent: true, colorBySign: true});
+  });
   rows += dataRow('Normalized EBITDA', m => m.normEbitda !== undefined ? m.normEbitda : m.ebitda, {isTotal: true});
   rows += dataRow('Normalized EBITDA Margin %', m => m.normEbitdaM !== undefined ? m.normEbitdaM : m.ebitdaM, {isPct: true});
 
