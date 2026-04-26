@@ -4048,20 +4048,20 @@ function buildAnomalyHtml() {
 // ═══════════════════════════════════════════════════════════════
 
 const LABOR_DEPTS = [
-  {id:'ms_delivery',   name:'Managed IT — Service Delivery',   emoji:'\U0001f5a5️',  color:'#3b82f6', section:'cogs', pnlAlloc:114494, pnlPct:'62.3%'},
-  {id:'ms_acct_mgmt',  name:'Managed IT — Account Management', emoji:'\U0001f5a5️',  color:'#60a5fa', section:'cogs', pnlAlloc:19982,  pnlPct:'10.9%'},
-  {id:'ps',            name:'Projects / Prof. Services',        emoji:'\U0001f527',  color:'#10b981', section:'cogs', pnlAlloc:24538,  pnlPct:'13.3%'},
-  {id:'security',      name:'Security (MDR/SOC)',               emoji:'\U0001f6e1️',  color:'#ef4444', section:'cogs', pnlAlloc:15562,  pnlPct:'8.5%'},
-  {id:'cloud',         name:'Cloud & Hosting',                  emoji:'☁️',  color:'#8b5cf6', section:'cogs', pnlAlloc:1998,   pnlPct:'1.1%'},
-  {id:'hwsw',          name:'HW/SW Resale',                     emoji:'\U0001f4e6',  color:'#f59e0b', section:'cogs', pnlAlloc:7263,   pnlPct:'4.0%'},
-  {id:'rd',            name:'R&D',                              emoji:'\U0001f9ea',  color:'#7c3aed', section:'rd'},
-  {id:'sales',         name:'Sales',                            emoji:'\U0001f4bc',  color:'#1e40af', section:'sales'},
-  {id:'ga_leadership', name:'G&A > Sr Leadership',              emoji:'\U0001f454',  color:'#6b7280', section:'ga'},
-  {id:'ga_central',    name:'G&A > Central Services',           emoji:'\U0001f3e2',  color:'#6b7280', section:'ga'},
-  {id:'ga_finance',    name:'G&A > Finance',                    emoji:'\U0001f4b0',  color:'#6b7280', section:'ga'},
-  {id:'ga_marketing',  name:'G&A > Marketing',                  emoji:'\U0001f4e3',  color:'#6b7280', section:'ga'},
-  {id:'ga_hr',         name:'G&A > HR',                         emoji:'\U0001f9d1‍\U0001f4bc', color:'#6b7280', section:'ga'},
-  {id:'ga_admin',      name:'G&A > Admin',                      emoji:'\U0001f4cb',  color:'#6b7280', section:'ga'},
+  {id:'ms_delivery',   name:'Managed IT — Service Delivery',   emoji:'🖥️',  color:'#3b82f6', section:'cogs', pnlAlloc:114494, pnlPct:'62.3%'},
+  {id:'ms_acct_mgmt',  name:'Managed IT — Account Management', emoji:'👥',         color:'#60a5fa', section:'cogs', pnlAlloc:19982,  pnlPct:'10.9%'},
+  {id:'ps',            name:'Projects / Prof. Services',             emoji:'🔧',         color:'#10b981', section:'cogs', pnlAlloc:24538,  pnlPct:'13.3%'},
+  {id:'security',      name:'Security (MDR/SOC)',                    emoji:'🛡️',   color:'#ef4444', section:'cogs', pnlAlloc:15562,  pnlPct:'8.5%'},
+  {id:'cloud',         name:'Cloud & Hosting',                       emoji:'☁️',        color:'#8b5cf6', section:'cogs', pnlAlloc:1998,   pnlPct:'1.1%'},
+  {id:'hwsw',          name:'HW/SW Resale',                         emoji:'📦',          color:'#f59e0b', section:'cogs', pnlAlloc:7263,   pnlPct:'4.0%'},
+  {id:'rd',            name:'R&D',                                   emoji:'🧪',          color:'#7c3aed', section:'rd'},
+  {id:'sales',         name:'Sales',                                 emoji:'💼',          color:'#1e40af', section:'sales'},
+  {id:'ga_leadership', name:'G&A > Sr Leadership',                   emoji:'👔',          color:'#6b7280', section:'ga'},
+  {id:'ga_central',    name:'G&A > Central Services',                emoji:'🏢',          color:'#6b7280', section:'ga'},
+  {id:'ga_finance',    name:'G&A > Finance',                         emoji:'💰',          color:'#6b7280', section:'ga'},
+  {id:'ga_marketing',  name:'G&A > Marketing',                       emoji:'📣',          color:'#6b7280', section:'ga'},
+  {id:'ga_hr',         name:'G&A > HR',                              emoji:'🧑‍💼', color:'#6b7280', section:'ga'},
+  {id:'ga_admin',      name:'G&A > Admin',                           emoji:'📋',          color:'#6b7280', section:'ga'},
 ];
 
 // Flat roster — Gusto W-2 rates (April 2026) + manual contractors
@@ -4143,6 +4143,7 @@ const LABOR_ROSTER = [
   {id:'consulting-office-space',n:'Consulting & Office Space',t:'',                           type:'Consulting',    baseGross:25500, manual:true, depts:[{dept:'ga_leadership',pct:100}]},
 ];
 
+
 const LABOR_OVERRIDES_KEY = 'dp_labor_overrides';
 function loadLaborOverrides() {
   try { return JSON.parse(localStorage.getItem(LABOR_OVERRIDES_KEY)) || {}; } catch { return {}; }
@@ -4151,15 +4152,26 @@ function saveLaborOverrides(ov) {
   try { localStorage.setItem(LABOR_OVERRIDES_KEY, JSON.stringify(ov)); } catch {}
 }
 
-function buildLaborGroups() {
+// Convert "Jan 25" style label to index in DATA for effective-date comparison.
+function monthToIdx(mStr) {
+  return DATA.findIndex(m => m.month === mStr);
+}
+
+function buildLaborGroups(selectedMonth) {
   const overrides = loadLaborOverrides();
+  const selIdx = selectedMonth != null ? monthToIdx(selectedMonth) : Infinity;
+  const applyOv = ovDate => {
+    if (ovDate == null) return true;
+    const oi = monthToIdx(ovDate);
+    return oi !== -1 && oi <= selIdx;
+  };
   const active = LABOR_ROSTER.map(p => {
     const ov = overrides[p.id] || {};
     return {
       ...p,
-      t:         ov.titleOverride !== undefined ? ov.titleOverride : p.t,
-      baseGross: ov.grossOverride !== undefined ? ov.grossOverride : p.baseGross,
-      depts:     ov.deptsOverride  || p.depts,
+      t:         (ov.titleOverride !== undefined && applyOv(ov.titleEffectiveDate)) ? ov.titleOverride : p.t,
+      baseGross: (ov.grossOverride  !== undefined && applyOv(ov.grossEffectiveDate)) ? ov.grossOverride : p.baseGross,
+      depts:     (ov.deptsOverride  && applyOv(ov.deptsEffectiveDate))               ? ov.deptsOverride  : p.depts,
     };
   });
   const groups = {};
@@ -4183,16 +4195,22 @@ window.laborRender = function() {
   const el = document.getElementById('labor-section');
   if (el) renderLaborAllocation(el);
 };
-window.laborSaveTitle = function(id, val) {
+window.laborSaveTitle = function(id, val, effectiveDate) {
   const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
-  ov[id].titleOverride = val.trim(); saveLaborOverrides(ov); laborRender();
+  ov[id].titleOverride = val.trim();
+  ov[id].titleEffectiveDate = effectiveDate || null;
+  saveLaborOverrides(ov); laborRender();
 };
-window.laborSaveGross = function(id, val) {
+window.laborSaveGross = function(id, val, effectiveDate) {
   const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
   const n = parseFloat(String(val).replace(/[^0-9.]/g,''));
-  if (!isNaN(n) && n >= 0) { ov[id].grossOverride = Math.round(n); saveLaborOverrides(ov); laborRender(); }
+  if (!isNaN(n) && n >= 0) {
+    ov[id].grossOverride = Math.round(n);
+    ov[id].grossEffectiveDate = effectiveDate || null;
+    saveLaborOverrides(ov); laborRender();
+  }
 };
-window.laborSavePct = function(id, deptId, val) {
+window.laborSavePct = function(id, deptId, val, effectiveDate) {
   const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
   const pct = parseInt(String(val).replace(/[^0-9]/g,''));
   if (isNaN(pct) || pct < 0 || pct > 100) return;
@@ -4204,15 +4222,18 @@ window.laborSavePct = function(id, deptId, val) {
     const oi = updated.findIndex(d => d.dept !== deptId);
     if (oi >= 0) updated[oi] = {...updated[oi], pct: 100 - pct};
   }
-  ov[id].deptsOverride = updated; saveLaborOverrides(ov); laborRender();
+  ov[id].deptsOverride = updated;
+  ov[id].deptsEffectiveDate = effectiveDate || null;
+  saveLaborOverrides(ov); laborRender();
 };
-window.laborSaveDept = function(id, fromDept, toDept) {
+window.laborSaveDept = function(id, fromDept, toDept, effectiveDate) {
   if (fromDept === toDept) return;
   const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
   const person = LABOR_ROSTER.find(p => p.id === id);
   if (!person) return;
   const base = (ov[id] && ov[id].deptsOverride) || person.depts;
   ov[id].deptsOverride = base.map(d => d.dept === fromDept ? {...d, dept: toDept} : d);
+  ov[id].deptsEffectiveDate = effectiveDate || null;
   saveLaborOverrides(ov); laborRender();
 };
 window.laborResetAll = function() {
@@ -4223,7 +4244,8 @@ window.laborResetAll = function() {
 function renderLaborAllocation(el) {
   el.id = 'labor-section';
   const fc = v => v === 0 ? '—' : '$' + Math.round(Math.abs(v)).toLocaleString();
-  const groups = buildLaborGroups();
+  const curMonth = DATA[getSelIdx()].month;
+  const groups = buildLaborGroups(curMonth);
 
   function typeBadge(t) {
     const colors = {
@@ -4247,29 +4269,27 @@ function renderLaborAllocation(el) {
           </td>
         </tr>`;
       }
-      const isSplit = p.depts.length > 1;
       const isContractor = p.type !== 'W-2';
-      const deptDef = d => LABOR_DEPTS.find(ld => ld.id === d);
-      const deptCell = isSplit
-        ? `<span style="font-size:10px;color:#b45309">${p.depts.map(d => `${d.pct}% ${deptDef(d.dept)?.emoji||''}`).join(' / ')}</span>`
-        : `<select onchange="laborSaveDept('${p.id}','${p.depts[0].dept}',this.value)"
-               style="font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;background:#f9fafb;cursor:pointer;max-width:200px">
-             ${LABOR_DEPTS.map(d => `<option value="${d.id}"${d.id===p.depts[0].dept?' selected':''}>${d.name}</option>`).join('')}
-           </select>`;
+      const deptAllocRows = p.depts.map(da => {
+        const isHere = da.dept === deptId;
+        const pctSpan = `<span contenteditable="true" title="Click to edit allocation %"
+          style="cursor:pointer;color:${isHere?'#1e40af':'#b45309'};display:inline-block;min-width:28px;text-align:right;font-weight:${isHere?'600':'400'}"
+          onblur="laborSavePct('${p.id}','${da.dept}',this.innerText,'${curMonth}')"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${da.pct}%</span>`;
+        const deptSelect = `<select onchange="laborSaveDept('${p.id}','${da.dept}',this.value,'${curMonth}')"
+          style="font-size:10px;border:1px solid ${isHere?'#93c5fd':'#d1d5db'};border-radius:3px;padding:1px 3px;background:${isHere?'#eff6ff':'#f9fafb'};cursor:pointer;max-width:190px">
+          ${LABOR_DEPTS.map(ld => `<option value="${ld.id}"${ld.id===da.dept?' selected':''}>${ld.name}</option>`).join('')}
+        </select>`;
+        return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">${pctSpan} ${deptSelect}</div>`;
+      }).join('');
       const grossCell = isContractor
         ? `<span contenteditable="true" title="Click to edit"
                style="cursor:pointer;color:#374151;display:inline-block;min-width:55px"
-               onblur="laborSaveGross('${p.id}',this.innerText)"
+               onblur="laborSaveGross('${p.id}',this.innerText,'${curMonth}')"
                onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${fc(p.g)}</span>
            <span style="font-size:9px;color:#9ca3af">✏️</span>`
         : `<span style="color:#374151" title="Base rate from Gusto">${fc(p.g)}</span>
            <span style="font-size:9px;color:#9ca3af;margin-left:2px">G</span>`;
-      const pctCell = isSplit
-        ? `<span contenteditable="true" title="Click to edit allocation %"
-               style="cursor:pointer;color:#b45309;display:inline-block;min-width:28px"
-               onblur="laborSavePct('${p.id}','${deptId}',this.innerText)"
-               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${p.pct}%</span>`
-        : `<span style="color:#6b7280">${p.pct}%</span>`;
       return `<tr style="border-bottom:1px solid #f0f0f0${p.unverified?';opacity:0.6':''}">
         <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">
           ${p.n}
@@ -4277,14 +4297,11 @@ function renderLaborAllocation(el) {
         </td>
         <td contenteditable="true" title="Click to edit title"
             style="padding:4px 8px;color:#6b7280;cursor:pointer"
-            onblur="laborSaveTitle('${p.id}',this.innerText)"
+            onblur="laborSaveTitle('${p.id}',this.innerText,'${curMonth}')"
             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${p.t}</td>
         <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}${p.manual ? '<span style="font-size:8px;color:#9ca3af;margin-left:2px">manual</span>' : ''}</td>
         <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">${grossCell}</td>
-        <td style="padding:4px 8px;text-align:right;white-space:nowrap">
-          <div style="margin-bottom:2px">${deptCell}</div>
-          <div>${pctCell}</div>
-        </td>
+        <td style="padding:4px 8px;text-align:right">${deptAllocRows}</td>
       </tr>`;
     }).join('');
     return `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
@@ -4293,7 +4310,7 @@ function renderLaborAllocation(el) {
         <th style="text-align:left;padding:4px 8px">Title <span style="font-weight:400">✏️</span></th>
         <th style="text-align:center;padding:4px 8px">Type</th>
         <th style="text-align:right;padding:4px 8px">Gross/Mo</th>
-        <th style="text-align:right;padding:4px 8px">Dept / Alloc %</th>
+        <th style="text-align:right;padding:4px 8px">Alloc % / Department</th>
       </tr>
       ${rows}
       <tr style="border-top:2px solid #d1d5db;font-weight:700;color:#1a1a1a">
@@ -4311,7 +4328,7 @@ function renderLaborAllocation(el) {
     const locked = !!(opts && opts.locked);
     const totalGross = grp.people.reduce((s,p) => s + p.g, 0);
     const pnlLine = def.pnlAlloc
-      ? `<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(def.pnlAlloc)}</div></div>`
+      ? `<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&amp;L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(def.pnlAlloc)}</div></div>`
       : '';
     const pctTag = def.pnlPct
       ? `<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${def.pnlPct} of labor pool</span>`
@@ -4355,7 +4372,7 @@ function renderLaborAllocation(el) {
 
   let html = `<div class="fade-in">${monthSelector()}
     <div class="section-title">Labor Allocation — Roster</div>
-    <div class="section-sub" style="margin-bottom:4px">Gusto W-2 rates (April 2026) • Manual entry for contractors • Click title/dept/% to edit — saved to browser</div>
+    <div class="section-sub" style="margin-bottom:4px">Gusto W-2 rates (April 2026) • Manual entry for contractors • Click title/dept/% to edit — saved to browser • Changes apply forward from current month</div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <span style="font-size:11px;color:#ef4444;font-weight:600">CONFIDENTIAL — Do not distribute</span>
       <button onclick="alert('Gusto sync requires API integration — W-2 rates last updated April 2026')"
@@ -4410,15 +4427,14 @@ function renderLaborAllocation(el) {
   gaDepts.forEach(d => { html += deptBlock(d.id, d.id === 'ga_leadership' ? {locked:true} : null); });
 
   html += `<div style="font-size:11px;color:#9ca3af;margin-top:16px;font-style:italic">
-    W-2 gross wages from Gusto base compensation (April 2026). Employer taxes and benefits allocated separately in P&L.
-    COGS depts use gross wages as proportional weights. ✏️️ = editable (saved to browser localStorage). G = Gusto rate (read-only).
+    W-2 gross wages from Gusto base compensation (April 2026). Employer taxes and benefits allocated separately in P&amp;L.
+    COGS depts use gross wages as proportional weights. ✏️ = editable (saved to browser localStorage, applies from current month forward). G = Gusto rate (read-only).
   </div>`;
   html += '</div>';
   el.innerHTML = html;
 }
 
 
-// ═══════════════════════════════════════════════════════════════
 // SALES WON VIEW — All deals by month, verified against Agreement History
 // ═══════════════════════════════════════════════════════════════
 const ALL_DEALS = [
