@@ -4046,282 +4046,377 @@ function buildAnomalyHtml() {
 // ═══════════════════════════════════════════════════════════════
 // LABOR ALLOCATION VIEW
 // ═══════════════════════════════════════════════════════════════
+
+const LABOR_DEPTS = [
+  {id:'ms_delivery',   name:'Managed IT — Service Delivery',   emoji:'\U0001f5a5️',  color:'#3b82f6', section:'cogs', pnlAlloc:114494, pnlPct:'62.3%'},
+  {id:'ms_acct_mgmt',  name:'Managed IT — Account Management', emoji:'\U0001f5a5️',  color:'#60a5fa', section:'cogs', pnlAlloc:19982,  pnlPct:'10.9%'},
+  {id:'ps',            name:'Projects / Prof. Services',        emoji:'\U0001f527',  color:'#10b981', section:'cogs', pnlAlloc:24538,  pnlPct:'13.3%'},
+  {id:'security',      name:'Security (MDR/SOC)',               emoji:'\U0001f6e1️',  color:'#ef4444', section:'cogs', pnlAlloc:15562,  pnlPct:'8.5%'},
+  {id:'cloud',         name:'Cloud & Hosting',                  emoji:'☁️',  color:'#8b5cf6', section:'cogs', pnlAlloc:1998,   pnlPct:'1.1%'},
+  {id:'hwsw',          name:'HW/SW Resale',                     emoji:'\U0001f4e6',  color:'#f59e0b', section:'cogs', pnlAlloc:7263,   pnlPct:'4.0%'},
+  {id:'rd',            name:'R&D',                              emoji:'\U0001f9ea',  color:'#7c3aed', section:'rd'},
+  {id:'sales',         name:'Sales',                            emoji:'\U0001f4bc',  color:'#1e40af', section:'sales'},
+  {id:'ga_leadership', name:'G&A > Sr Leadership',              emoji:'\U0001f454',  color:'#6b7280', section:'ga'},
+  {id:'ga_central',    name:'G&A > Central Services',           emoji:'\U0001f3e2',  color:'#6b7280', section:'ga'},
+  {id:'ga_finance',    name:'G&A > Finance',                    emoji:'\U0001f4b0',  color:'#6b7280', section:'ga'},
+  {id:'ga_marketing',  name:'G&A > Marketing',                  emoji:'\U0001f4e3',  color:'#6b7280', section:'ga'},
+  {id:'ga_hr',         name:'G&A > HR',                         emoji:'\U0001f9d1‍\U0001f4bc', color:'#6b7280', section:'ga'},
+  {id:'ga_admin',      name:'G&A > Admin',                      emoji:'\U0001f4cb',  color:'#6b7280', section:'ga'},
+];
+
+// Flat roster — Gusto W-2 rates (April 2026) + manual contractors
+// DinYero Johnson removed (terminated 3/26)
+const LABOR_ROSTER = [
+  // ── W-2: MS Service Delivery (100%) ──
+  {id:'brandon-johnson',       n:'Brandon Johnson',       t:'Natl Dir. of Service Delivery',  type:'W-2', baseGross:9167,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'william-doyle',         n:'William Doyle',         t:'Service Escalation Engineer',    type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'gabriel-espinoza',      n:'Gabriel Espinoza',      t:'Service Escalation Engineer',    type:'W-2', baseGross:6494,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'kerr-conkle',           n:'Kerr Conkle',           t:'Service Manager',                type:'W-2', baseGross:7083,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'angela-contreras',      n:'Angela Contreras',      t:'Service Team Lead',              type:'W-2', baseGross:6413,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'nathan-lanning',        n:'Nathan Lanning',        t:'Service Engineer I',             type:'W-2', baseGross:6647,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'matthew-irick',         n:'Matthew Irick',         t:'Service Escalation Engineer',    type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'colton-keim',           n:'Colton Keim',           t:'Field Service Technician I',     type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'michael-trude',         n:'Michael Trude',         t:'Service Team Lead',              type:'W-2', baseGross:6123,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'sam-dean',              n:'Sam Dean',              t:'Service Team Lead',              type:'W-2', baseGross:5547,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'luis-pena',             n:'Luis Pena',             t:'Team Lead',                      type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'arnold-vega',           n:'Arnold Vega',           t:'Service Technician I',           type:'W-2', baseGross:4680,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'brandon-hulsey-cedeno', n:'Brandon Hulsey-Cedeno', t:'Service Team Lead',              type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'cristina-chavez-soto',  n:'Cristina Chavez Soto',  t:'Service Technician I',           type:'W-2', baseGross:4333,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'oscar-contreras',       n:'Oscar Contreras',       t:'Service Technician I',           type:'W-2', baseGross:4723,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'nathaniel-dupray',      n:'Nathaniel Dupray',      t:'Service Technician I',           type:'W-2', baseGross:4333,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'kevin-barr',            n:'Kevin Barr',            t:'Helpdesk Technician',            type:'W-2', baseGross:4167,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'cole-matuszynski',      n:'Cole Matuszynski',      t:'Tier 1 Service Technician',      type:'W-2', baseGross:3813,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'christopher-vouis',     n:'Christopher Vouis',     t:'Bench Technician',               type:'W-2', baseGross:3293,  depts:[{dept:'ms_delivery',pct:100}]},
+  // Not found in active Gusto — confirm status
+  {id:'mark-mercer',           n:'Mark Mercer',           t:'Escalation Technician II',       type:'W-2', baseGross:6337,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'henry-martinez',        n:'Henry Martinez',        t:'Service Technician',             type:'W-2', baseGross:5928,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'tommy-wijaya',          n:'Tommy Wijaya',          t:'Service Technician I',           type:'W-2', baseGross:4027,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  // Engineering: 25% MS Service Delivery / 75% Projects/PS
+  {id:'keith-newson',          n:'Keith Newson',          t:'Engineering Team Manager',       type:'W-2', baseGross:9583,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'christopher-gilmore',   n:'Christopher Gilmore',   t:'Sr. Systems Analyst',            type:'W-2', baseGross:9010,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'matthew-lampe',         n:'Matthew Lampe',         t:'Network Engineer',               type:'W-2', baseGross:8083,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'james-bruce',           n:'James Bruce',           t:'Sr. Systems Analyst',            type:'W-2', baseGross:7656,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'matt-brinovec',         n:'Matt Brinovec',         t:'Network Engineer',               type:'W-2', baseGross:6600,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'christopher-fuenty',    n:'Christopher Fuenty',    t:'Service Engineer',               type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  // Account Management / Sales splits
+  {id:'nathan-la-fleche',      n:'Nathan La Fleche',      t:'Dir. of Strategic Partnerships', type:'W-2', baseGross:10000, depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'joel-walker',           n:'Joel Walker',           t:'Mgr, Inside Account Mgmt',       type:'W-2', baseGross:6667,  depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'ricky-maestas',         n:'Ricky Maestas',         t:'EDU Account Executive',          type:'W-2', baseGross:6963,  depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'jay-harvey',            n:'Jay Harvey',            t:'Senior Acct. Exec',              type:'W-2', baseGross:7500,  depts:[{dept:'ms_acct_mgmt',pct:20},{dept:'sales',pct:80}]},
+  // Security
+  {id:'angelica-jackson',      n:'Angelica Jackson',      t:'Security Analyst',               type:'W-2', baseGross:7083,  depts:[{dept:'security',pct:100}]},
+  {id:'cory-strassell',        n:'Cory Strassell',        t:'Service Escalation Engineer',    type:'W-2', baseGross:6430,  depts:[{dept:'security',pct:100}]},
+  {id:'stephen-walski',        n:'Stephen Walski',        t:'Dir. of Engineering & Security', type:'W-2', baseGross:11917, depts:[{dept:'security',pct:50},{dept:'ga_leadership',pct:50}]},
+  // Cloud / R&D split
+  {id:'peter-annabel',         n:'Peter Annabel',         t:'Dir. of Cloud Operations',       type:'W-2', baseGross:10000, depts:[{dept:'cloud',pct:25},{dept:'rd',pct:75}]},
+  // HW/SW
+  {id:'david-craig',           n:'David Craig',           t:'Procurement Manager',            type:'W-2', baseGross:6250,  depts:[{dept:'hwsw',pct:100}]},
+  // R&D
+  {id:'james-bates',           n:'James Bates',           t:'Co-CEO',                         type:'W-2', baseGross:5417,  depts:[{dept:'rd',pct:100}]},
+  {id:'timothy-stewart',       n:'Timothy Stewart',       t:'Dir. of Service Optimization',   type:'W-2', baseGross:7280,  depts:[{dept:'rd',pct:100}]},
+  {id:'jacob-berlin',          n:'Jacob Berlin',          t:'Data Engineer',                  type:'W-2', baseGross:4333,  depts:[{dept:'rd',pct:100}]},
+  {id:'haskell-macaraig',      n:'Haskell Macaraig',      t:'Data Engineer',                  type:'W-2', baseGross:6500,  depts:[{dept:'rd',pct:100}]},
+  // Sales
+  {id:'daniel-chadwell',       n:'Daniel Chadwell',       t:'Sales Engineer Lead',            type:'W-2', baseGross:8917,  depts:[{dept:'sales',pct:100}]},
+  {id:'daniel-sturdivant',     n:'Daniel Sturdivant',     t:'Vice President',                 type:'W-2', baseGross:12500, depts:[{dept:'sales',pct:50},{dept:'ga_leadership',pct:50}]},
+  // G&A
+  {id:'david-darmstandler',    n:'David Darmstandler',    t:'Co-CEO',                         type:'W-2', baseGross:5417,  depts:[{dept:'ga_leadership',pct:100}]},
+  {id:'marshall-rownd',        n:'Marshall Rownd',        t:'IT Director',                    type:'W-2', baseGross:10000, depts:[{dept:'ga_central',pct:100}]},
+  {id:'devin-peterson',        n:'Devin Peterson',        t:'Sr. Systems Analyst',            type:'W-2', baseGross:7750,  depts:[{dept:'ga_central',pct:100}]},
+  {id:'melinda-hennington',    n:'Melinda Hennington',    t:'Admin Finance',                  type:'W-2', baseGross:7553,  depts:[{dept:'ga_finance',pct:100}]},
+  {id:'colin-bates',           n:'Colin Bates',           t:'Part-time',                      type:'W-2', baseGross:3813,  depts:[{dept:'ga_admin',pct:100}]},
+  {id:'hudson-darmstandler',   n:'Hudson Darmstandler',   t:'Part-time',                      type:'W-2', baseGross:3813,  depts:[{dept:'ga_admin',pct:100}]},
+  // ── Contractors (manual entry — not in Gusto payroll) ──
+  {id:'hoover-dimson',          n:'Hoover Dimson',          t:'Service Technician I',         type:'BruntWork',     baseGross:1265,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'jenny-magcalayo',        n:'Jenny Magcalayo',        t:'Service Technician I',         type:'BruntWork',     baseGross:1323,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'girly-de-la-pena',       n:'Girly De La Pena',       t:'Service Technician I',         type:'BruntWork',     baseGross:1309,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'edwin-de-guzman',        n:'Edwin De Guzman',        t:'Sales Coordinator',            type:'Microsourcing', baseGross:2074,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'hermella-mulugeta',      n:'Hermella Mulugeta',      t:'Inside Account Manager',       type:'CRDLE',         baseGross:1600,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'mj-martinez',            n:'MJ Martinez',            t:'Business Ops Sales Specialist',type:'Gusto 1099',    baseGross:2308,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'julissa-martinez-duran', n:'Julissa Martinez Duran', t:'Inside Account Manager',       type:'Gusto 1099',    baseGross:2123,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'carla-humber-munguia',   n:'Carla Humber Munguia',   t:'Inside Account Manager',       type:'Direct',        baseGross:2500,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'genelyn-terrones',       n:'Genelyn Terrones',       t:'Procurement Specialist',       type:'BruntWork',     baseGross:1540,  manual:true, depts:[{dept:'hwsw',pct:100}]},
+  {id:'carrlyne-david',         n:'Carrlyne David',         t:'Procurement Specialist',       type:'BruntWork',     baseGross:1079,  manual:true, depts:[{dept:'hwsw',pct:100}]},
+  {id:'jaquelene-dizon',        n:'Jaquelene Dizon',        t:'Payroll Analyst',              type:'Microsourcing', baseGross:1922,  manual:true, depts:[{dept:'ga_finance',pct:100}]},
+  {id:'myca-villanueva',        n:'Myca Villanueva',        t:'RevOps Specialist',            type:'Microsourcing', baseGross:1985,  manual:true, depts:[{dept:'ga_marketing',pct:100}]},
+  {id:'nahili-bekele',          n:'Nahili Bekele',          t:'HR Manager',                   type:'CRDLE',         baseGross:1600,  manual:true, depts:[{dept:'ga_hr',pct:100}]},
+  {id:'consulting-office-space',n:'Consulting & Office Space',t:'',                           type:'Consulting',    baseGross:25500, manual:true, depts:[{dept:'ga_leadership',pct:100}]},
+];
+
+const LABOR_OVERRIDES_KEY = 'dp_labor_overrides';
+function loadLaborOverrides() {
+  try { return JSON.parse(localStorage.getItem(LABOR_OVERRIDES_KEY)) || {}; } catch { return {}; }
+}
+function saveLaborOverrides(ov) {
+  try { localStorage.setItem(LABOR_OVERRIDES_KEY, JSON.stringify(ov)); } catch {}
+}
+
+function buildLaborGroups() {
+  const overrides = loadLaborOverrides();
+  const active = LABOR_ROSTER.map(p => {
+    const ov = overrides[p.id] || {};
+    return {
+      ...p,
+      t:         ov.titleOverride !== undefined ? ov.titleOverride : p.t,
+      baseGross: ov.grossOverride !== undefined ? ov.grossOverride : p.baseGross,
+      depts:     ov.deptsOverride  || p.depts,
+    };
+  });
+  const groups = {};
+  LABOR_DEPTS.forEach(d => { groups[d.id] = {...d, people: []}; });
+  active.forEach(person => {
+    person.depts.forEach(a => {
+      if (!groups[a.dept]) return;
+      groups[a.dept].people.push({
+        id: person.id, n: person.n, t: person.t, type: person.type,
+        g: Math.round(person.baseGross * a.pct / 100),
+        baseGross: person.baseGross,
+        pct: a.pct, depts: person.depts,
+        manual: !!person.manual, unverified: !!person.unverified,
+      });
+    });
+  });
+  return groups;
+}
+
+window.laborRender = function() {
+  const el = document.getElementById('labor-section');
+  if (el) renderLaborAllocation(el);
+};
+window.laborSaveTitle = function(id, val) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  ov[id].titleOverride = val.trim(); saveLaborOverrides(ov); laborRender();
+};
+window.laborSaveGross = function(id, val) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const n = parseFloat(String(val).replace(/[^0-9.]/g,''));
+  if (!isNaN(n) && n >= 0) { ov[id].grossOverride = Math.round(n); saveLaborOverrides(ov); laborRender(); }
+};
+window.laborSavePct = function(id, deptId, val) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const pct = parseInt(String(val).replace(/[^0-9]/g,''));
+  if (isNaN(pct) || pct < 0 || pct > 100) return;
+  const person = LABOR_ROSTER.find(p => p.id === id);
+  if (!person) return;
+  const base = (ov[id] && ov[id].deptsOverride) || person.depts;
+  const updated = base.map(d => d.dept === deptId ? {...d, pct} : d);
+  if (updated.length === 2) {
+    const oi = updated.findIndex(d => d.dept !== deptId);
+    if (oi >= 0) updated[oi] = {...updated[oi], pct: 100 - pct};
+  }
+  ov[id].deptsOverride = updated; saveLaborOverrides(ov); laborRender();
+};
+window.laborSaveDept = function(id, fromDept, toDept) {
+  if (fromDept === toDept) return;
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const person = LABOR_ROSTER.find(p => p.id === id);
+  if (!person) return;
+  const base = (ov[id] && ov[id].deptsOverride) || person.depts;
+  ov[id].deptsOverride = base.map(d => d.dept === fromDept ? {...d, dept: toDept} : d);
+  saveLaborOverrides(ov); laborRender();
+};
+window.laborResetAll = function() {
+  if (!confirm('Reset all labor allocation overrides to defaults?')) return;
+  localStorage.removeItem(LABOR_OVERRIDES_KEY); laborRender();
+};
+
 function renderLaborAllocation(el) {
-  const L = latest();
-  const fc = v => v===0?'—':'$'+Math.round(Math.abs(v)).toLocaleString();
+  el.id = 'labor-section';
+  const fc = v => v === 0 ? '—' : '$' + Math.round(Math.abs(v)).toLocaleString();
+  const groups = buildLaborGroups();
 
-  // ── LABOR ALLOCATION DATA (Feb 2026 headcount roster-based) ──
-  const LABOR_DATA = {
-    cogs: [
-      { name:'Managed IT — Service Delivery', emoji:'🖥️', color:'#3b82f6',
-        pnlAlloc: 114494, pnlPct:'62.3%',
-        people:[
-          {n:'Brandon Johnson',t:'Natl Dir. of Service Delivery',type:'W-2',g:8464,p:'100%'},
-          {n:'William Doyle',t:'Service Escalation Engineer',type:'W-2',g:9024,p:'100%'},
-          {n:'Gabriel Espinoza',t:'Service Escalation Engineer',type:'W-2',g:7387,p:'100%'},
-          {n:'Kerr Conkle',t:'Service Manager',type:'W-2',g:6541,p:'100%'},
-          {n:'Michelle Contreras',t:'Service Team Lead',type:'W-2',g:6150,p:'100%'},
-          {n:'Nathan Lanning',t:'Service Engineer I',type:'W-2',g:6138,p:'100%'},
-          {n:'Mark Mercer',t:'Escalation Technician II',type:'W-2',g:6337,p:'100%'},
-          {n:'Henry Martinez',t:'Service Technician',type:'W-2',g:5928,p:'100%'},
-          {n:'Matthew Irick',t:'Service Escalation Engineer',type:'W-2',g:5904,p:'100%'},
-          {n:'Colton Keim',t:'Field Service Technician I',type:'W-2',g:5455,p:'100%'},
-          {n:'Michael Trude',t:'Service Team Lead',type:'W-2',g:5385,p:'100%'},
-          {n:'Sam Dean',t:'Service Team Lead',type:'W-2',g:5252,p:'100%'},
-          {n:'Luis Pena',t:'Team Lead',type:'W-2',g:5137,p:'100%'},
-          {n:'Arnold Vega',t:'Service Technician I',type:'W-2',g:4552,p:'100%'},
-          {n:'Brandon Hulsey-Cedeno',t:'Service Team Lead',type:'W-2',g:4398,p:'100%'},
-          {n:'Cristina Chavez Soto',t:'Service Technician I',type:'W-2',g:4286,p:'100%'},
-          {n:'Oscar Contreras',t:'Service Technician I',type:'W-2',g:4366,p:'100%'},
-          {n:'Tommy Wijaya',t:'Service Technician I',type:'W-2',g:4027,p:'100%'},
-          {n:'Nathaniel Dupray',t:'Service Technician I',type:'W-2',g:4003,p:'100%'},
-          {n:'Kevin Barr',t:'Helpdesk Technician',type:'W-2',g:3848,p:'100%'},
-          {n:'Cole Matuszynski',t:'Tier 1 Service Technician',type:'W-2',g:3282,p:'100%'},
-          {n:'Christopher Vouis',t:'Bench Technician',type:'W-2',g:3057,p:'100%'},
-          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:2212,p:'25%'},
-          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:2080,p:'25%'},
-          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:1866,p:'25%'},
-          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:1767,p:'25%'},
-          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:1524,p:'25%'},
-          {n:'Hoover Dimson',t:'Service Technician I',type:'BruntWork',g:1265,p:'100%'},
-          {n:'Jenny Magcalayo',t:'Service Technician I',type:'BruntWork',g:1323,p:'100%'},
-          {n:'Girly De La Pena',t:'Service Technician I',type:'BruntWork',g:1309,p:'100%'},
-        ]},
-      { name:'Managed IT — Account Management', emoji:'🖥️', color:'#60a5fa',
-        pnlAlloc: 19982, pnlPct:'10.9%',
-        people:[
-          {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
-          {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
-          {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
-          {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:1385,p:'20%'},
-          {n:'Edwin De Guzman',t:'Sales Coordinator',type:'Microsourcing',g:2074,p:'100%'},
-          {n:'Hermella Mulugeta',t:'Inside Account Manager',type:'CRDLE',g:1600,p:'100%'},
-          {n:'MJ Martinez',t:'Business Ops Sales Specialist',type:'Gusto 1099',g:2308,p:'100%'},
-          {n:'Julissa Martinez Duran',t:'Inside Account Manager',type:'Gusto 1099',g:2123,p:'100%'},
-          {n:'Carla Humber Munguia',t:'Inside Account Manager',type:'Direct',g:2500,p:'100%'},
-        ]},
-      { name:'Projects / Prof. Services', emoji:'🔧', color:'#10b981',
-        pnlAlloc: 24538, pnlPct:'13.3%',
-        people:[
-          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:6636,p:'75%'},
-          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:6239,p:'75%'},
-          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:5598,p:'75%'},
-          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:5302,p:'75%'},
-          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:4571,p:'75%'},
-        ]},
-      { name:'Security (MDR/SOC)', emoji:'🛡️', color:'#ef4444',
-        pnlAlloc: 15562, pnlPct:'8.5%',
-        people:[
-          {n:'Angelica Jackson',t:'Security Analyst',type:'W-2',g:6540,p:'100%'},
-          {n:'Cory Strassell',t:'Service Escalation Engineer',type:'W-2',g:5937,p:'100%'},
-          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
-        ]},
-      { name:'Cloud & Hosting', emoji:'☁️', color:'#8b5cf6',
-        pnlAlloc: 1998, pnlPct:'1.1%',
-        people:[
-          {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:2308,p:'25%'},
-        ]},
-      { name:'HW/SW Resale', emoji:'📦', color:'#f59e0b',
-        pnlAlloc: 7263, pnlPct:'4.0%',
-        people:[
-          {n:'David Craig',t:'Procurement Manager',type:'W-2',g:5771,p:'100%'},
-          {n:'Genelyn Terrones',t:'Procurement Specialist',type:'BruntWork',g:1540,p:'100%'},
-          {n:'Carrlyne David',t:'Procurement Specialist',type:'BruntWork',g:1079,p:'100%'},
-        ]},
-    ],
-    rd: { name:'R&D', emoji:'🧪', color:'#7c3aed', pnlTotal:75331,
-      people:[
-        {n:'James Bates',t:'Co-CEO',type:'W-2',g:6550,p:'100%'},
-        {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:6925,p:'75%'},
-        {n:'Timothy Stewart',t:'Dir. of Service Optimization',type:'W-2',g:6722,p:'100%'},
-        {n:'Jacob Berlin',t:'Data Engineer',type:'W-2',g:1000,p:'100%'},
-        {n:'Haskell Macaraig',t:'Data Engineer',type:'1099',g:4000,p:'100%'},
-      ]},
-    sales: { name:'Sales', emoji:'💼', pnlTotal:114856,
-      people:[
-        {n:'DinYero Johnson',t:'Sales',type:'W-2',g:14618,p:'100%'},
-        {n:'Daniel Chadwell',t:'Sales Engineer Lead',type:'W-2',g:7156,p:'100%'},
-        {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
-        {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:5540,p:'80%'},
-        {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
-        {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
-        {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
-      ]},
-    ga: [
-      { name:'G&A > Sr Leadership', emoji:'👔',
-        people:[
-          {n:'David Darmstandler',t:'Co-CEO',type:'W-2',g:8299,p:'100%'},
-          {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
-          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
-          {n:'Consulting & Office Space',t:'',type:'Consulting',g:25500,p:''},
-        ]},
-      { name:'G&A > Central Services', emoji:'🏢',
-        people:[
-          {n:'Marshall Rownd',t:'IT Director',type:'W-2',g:9233,p:'100%'},
-          {n:'Devin Peterson',t:'Sr. Systems Analyst',type:'W-2',g:7156,p:'100%'},
-        ]},
-      { name:'G&A > Finance', emoji:'💰',
-        people:[
-          {n:'Melinda Hennington',t:'Admin Finance',type:'W-2',g:6975,p:'100%'},
-          {n:'Jaquelene Dizon',t:'Payroll Analyst',type:'Microsourcing',g:1922,p:'100%'},
-        ]},
-      { name:'G&A > Marketing', emoji:'📣',
-        people:[
-          {n:'Myca Villanueva',t:'RevOps Specialist',type:'Microsourcing',g:1985,p:'100%'},
-        ]},
-      { name:'G&A > HR', emoji:'🧑‍💼',
-        people:[
-          {n:'Nahili Bekele',t:'HR Manager',type:'CRDLE',g:1600,p:'100%'},
-        ]},
-      { name:'G&A > Admin', emoji:'📋',
-        people:[
-          {n:'Colin Bates',t:'Part-time',type:'W-2',g:1760,p:'100%'},
-          {n:'Hudson Darmstandler',t:'Part-time',type:'W-2',g:1760,p:'100%'},
-        ]},
-    ],
-  };
-
-  // ── Helper: type badge ──
   function typeBadge(t) {
-    const colors = {'W-2':['#dbeafe','#1e40af'],'BruntWork':['#f3e8ff','#6b21a8'],
-      'Microsourcing':['#f3e8ff','#6b21a8'],'CRDLE':['#f3e8ff','#6b21a8'],
-      'Gusto 1099':['#fef3c7','#92400e'],'1099':['#fef3c7','#92400e'],
-      'Direct':['#dcfce7','#166534'],'Consulting':['#fef3c7','#92400e']};
-    const c = colors[t]||['#f1f5f9','#475569'];
+    const colors = {
+      'W-2':['#dbeafe','#1e40af'], 'BruntWork':['#f3e8ff','#6b21a8'],
+      'Microsourcing':['#f3e8ff','#6b21a8'], 'CRDLE':['#f3e8ff','#6b21a8'],
+      'Gusto 1099':['#fef3c7','#92400e'], '1099':['#fef3c7','#92400e'],
+      'Direct':['#dcfce7','#166534'], 'Consulting':['#fef3c7','#92400e'],
+    };
+    const c = colors[t] || ['#f1f5f9','#475569'];
     return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;background:${c[0]};color:${c[1]}">${t}</span>`;
   }
 
-  // ── Helper: people table ──
-  function peopleTable(people) {
-    const totalGross = people.reduce((s,p)=>s+p.g,0);
+  function peopleTable(people, deptId) {
+    const totalGross = people.reduce((s,p) => s + p.g, 0);
+    const rows = people.map(p => {
+      if (p.id === 'consulting-office-space') {
+        return `<tr style="border-bottom:1px solid #f0f0f0">
+          <td style="padding:4px 8px;font-weight:500;color:#1a1a1a" colspan="5">
+            Consulting &amp; Office Space
+            <span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 5px;border-radius:3px;margin-left:6px">aggregate — not broken out</span>
+          </td>
+        </tr>`;
+      }
+      const isSplit = p.depts.length > 1;
+      const isContractor = p.type !== 'W-2';
+      const deptDef = d => LABOR_DEPTS.find(ld => ld.id === d);
+      const deptCell = isSplit
+        ? `<span style="font-size:10px;color:#b45309">${p.depts.map(d => `${d.pct}% ${deptDef(d.dept)?.emoji||''}`).join(' / ')}</span>`
+        : `<select onchange="laborSaveDept('${p.id}','${p.depts[0].dept}',this.value)"
+               style="font-size:10px;border:1px solid #d1d5db;border-radius:3px;padding:1px 3px;background:#f9fafb;cursor:pointer;max-width:200px">
+             ${LABOR_DEPTS.map(d => `<option value="${d.id}"${d.id===p.depts[0].dept?' selected':''}>${d.name}</option>`).join('')}
+           </select>`;
+      const grossCell = isContractor
+        ? `<span contenteditable="true" title="Click to edit"
+               style="cursor:pointer;color:#374151;display:inline-block;min-width:55px"
+               onblur="laborSaveGross('${p.id}',this.innerText)"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${fc(p.g)}</span>
+           <span style="font-size:9px;color:#9ca3af">✏️</span>`
+        : `<span style="color:#374151" title="Base rate from Gusto">${fc(p.g)}</span>
+           <span style="font-size:9px;color:#9ca3af;margin-left:2px">G</span>`;
+      const pctCell = isSplit
+        ? `<span contenteditable="true" title="Click to edit allocation %"
+               style="cursor:pointer;color:#b45309;display:inline-block;min-width:28px"
+               onblur="laborSavePct('${p.id}','${deptId}',this.innerText)"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${p.pct}%</span>`
+        : `<span style="color:#6b7280">${p.pct}%</span>`;
+      return `<tr style="border-bottom:1px solid #f0f0f0${p.unverified?';opacity:0.6':''}">
+        <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">
+          ${p.n}
+          ${p.unverified ? '<span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 4px;border-radius:2px;margin-left:4px" title="Not found in active Gusto — confirm status">⚠️ verify</span>' : ''}
+        </td>
+        <td contenteditable="true" title="Click to edit title"
+            style="padding:4px 8px;color:#6b7280;cursor:pointer"
+            onblur="laborSaveTitle('${p.id}',this.innerText)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${p.t}</td>
+        <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}${p.manual ? '<span style="font-size:8px;color:#9ca3af;margin-left:2px">manual</span>' : ''}</td>
+        <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">${grossCell}</td>
+        <td style="padding:4px 8px;text-align:right;white-space:nowrap">
+          <div style="margin-bottom:2px">${deptCell}</div>
+          <div>${pctCell}</div>
+        </td>
+      </tr>`;
+    }).join('');
     return `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
       <tr style="color:#6b7280;font-size:11px;border-bottom:1px solid #e0e0e0">
         <th style="text-align:left;padding:4px 8px">Name</th>
-        <th style="text-align:left;padding:4px 8px">Title</th>
+        <th style="text-align:left;padding:4px 8px">Title <span style="font-weight:400">✏️</span></th>
         <th style="text-align:center;padding:4px 8px">Type</th>
         <th style="text-align:right;padding:4px 8px">Gross/Mo</th>
-        <th style="text-align:right;padding:4px 8px">Alloc %</th>
+        <th style="text-align:right;padding:4px 8px">Dept / Alloc %</th>
       </tr>
-      ${people.map(p => `<tr style="border-bottom:1px solid #f0f0f0">
-        <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">${p.n}</td>
-        <td style="padding:4px 8px;color:#6b7280">${p.t}</td>
-        <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}</td>
-        <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:#374151">${fc(p.g)}</td>
-        <td style="padding:4px 8px;text-align:right;color:${p.p==='100%'?'#6b7280':'#b45309'};font-size:11px">${p.p}</td>
-      </tr>`).join('')}
+      ${rows}
       <tr style="border-top:2px solid #d1d5db;font-weight:700;color:#1a1a1a">
-        <td style="padding:6px 8px" colspan="3">Total (${people.filter(p=>p.t).length} people)</td>
-        <td style="padding:6px 8px;text-align:right">${fc(totalGross)}</td><td></td>
-      </tr></table>`;
+        <td style="padding:6px 8px" colspan="3">Total</td>
+        <td style="padding:6px 8px;text-align:right">${fc(totalGross)}</td>
+        <td></td>
+      </tr>
+    </table>`;
   }
 
-  // ── Helper: collapsible dept block ──
-  function deptBlock(dept, pnlLine, expanded, opts) {
-    const locked = opts && opts.locked;
-    const totalGross = dept.people.reduce((s,p)=>s+p.g,0);
-    const id = dept.name.replace(/[^a-z]/gi,'');
+  function deptBlock(deptId, opts) {
+    const def = LABOR_DEPTS.find(d => d.id === deptId);
+    const grp = groups[deptId];
+    if (!def || !grp) return '';
+    const locked = !!(opts && opts.locked);
+    const totalGross = grp.people.reduce((s,p) => s + p.g, 0);
+    const pnlLine = def.pnlAlloc
+      ? `<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(def.pnlAlloc)}</div></div>`
+      : '';
+    const pctTag = def.pnlPct
+      ? `<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${def.pnlPct} of labor pool</span>`
+      : '';
     if (locked) {
-      // No headcount, no drill-through — aggregate only
-      return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      return `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
-          </div>
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${def.emoji} ${def.name}</span>
           <div style="display:flex;gap:16px;align-items:center">
-            ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+            ${pnlLine}
             <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
           </div>
         </div>
       </div>`;
     }
-    return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.chevron').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾'"
+    const bid = deptId.replace(/[^a-z0-9]/gi,'');
+    return `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div onclick="var c=document.getElementById('lc-${bid}');c.style.display=c.style.display==='none'?'block':'none';this.querySelector('.chv').textContent=c.style.display==='none'?'▸':'▾'"
            style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none">
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="chevron" style="color:#9ca3af;font-size:12px">${expanded?'▾':'▸'}</span>
-          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
-          <span style="font-size:11px;color:#6b7280">${dept.people.filter(p=>p.t).length} people</span>
-          ${dept.pnlPct?`<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${dept.pnlPct} of labor pool</span>`:''}
+          <span class="chv" style="color:#9ca3af;font-size:12px">▸</span>
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${def.emoji} ${def.name}</span>
+          ${pctTag}
         </div>
         <div style="display:flex;gap:16px;align-items:center">
-          ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+          ${pnlLine}
           <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
         </div>
       </div>
-      <div style="padding:0 16px 12px;display:${expanded?'block':'none'}">${peopleTable(dept.people)}</div>
+      <div id="lc-${bid}" style="padding:0 16px 12px;display:none">${peopleTable(grp.people, deptId)}</div>
     </div>`;
   }
 
-  // ── Build HTML ──
-  let html = `<div class="fade-in">${monthSelector()}
-    <div class="section-title">Labor Allocation — ${L.month}</div>
-    <div class="section-sub" style="margin-bottom:4px">Per-person allocation based on headcount roster • 58 total headcount</div>
-    <div style="font-size:11px;color:#ef4444;font-weight:600;margin-bottom:16px">CONFIDENTIAL — Do not distribute</div>`;
+  const cogsDepts  = LABOR_DEPTS.filter(d => d.section === 'cogs');
+  const gaDepts    = LABOR_DEPTS.filter(d => d.section === 'ga');
+  const totalCogs  = cogsDepts.reduce((s,d) => s + groups[d.id].people.reduce((ss,p) => ss+p.g, 0), 0);
+  const totalRD    = groups.rd.people.reduce((s,p) => s + p.g, 0);
+  const totalSales = groups.sales.people.reduce((s,p) => s + p.g, 0);
+  const totalGA    = gaDepts.reduce((s,d) => s + groups[d.id].people.reduce((ss,p) => ss+p.g, 0), 0);
+  const hasOverrides = Object.keys(loadLaborOverrides()).length > 0;
 
-  // Summary cards
-  const totalCogsLabor = LABOR_DATA.cogs.reduce((s,d)=>s+d.pnlAlloc,0);
+  let html = `<div class="fade-in">${monthSelector()}
+    <div class="section-title">Labor Allocation — Roster</div>
+    <div class="section-sub" style="margin-bottom:4px">Gusto W-2 rates (April 2026) • Manual entry for contractors • Click title/dept/% to edit — saved to browser</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <span style="font-size:11px;color:#ef4444;font-weight:600">CONFIDENTIAL — Do not distribute</span>
+      <button onclick="alert('Gusto sync requires API integration — W-2 rates last updated April 2026')"
+              style="font-size:11px;padding:3px 10px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;background:#f9fafb">↻ Refresh from Gusto</button>
+      ${hasOverrides ? `<button onclick="laborResetAll()" style="font-size:11px;padding:3px 10px;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;background:#fef2f2;color:#dc2626">Reset overrides</button>` : ''}
+    </div>`;
+
   html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #3b82f6;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #3b82f6;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
       <div style="font-size:11px;color:#6b7280">COGS Labor</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalCogsLabor)}</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalCogs)}</div>
       <div style="font-size:10px;color:#9ca3af">6 revenue depts</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #7c3aed;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div style="font-size:11px;color:#6b7280">R&D</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.rd.pnlTotal)}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.rd.people.length} people</div>
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #7c3aed;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">R&amp;D</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalRD)}</div>
+      <div style="font-size:10px;color:#9ca3af">R&amp;D team</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #f59e0b;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #f59e0b;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
       <div style="font-size:11px;color:#6b7280">Sales Labor</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.sales.pnlTotal)}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.sales.people.length} people</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalSales)}</div>
+      <div style="font-size:10px;color:#9ca3af">Sales team</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #9ca3af;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div style="font-size:11px;color:#6b7280">G&A Total</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.ga.reduce((s,d)=>s+d.people.reduce((ss,p)=>ss+p.g,0),0))}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.ga.reduce((s,d)=>s+d.people.filter(p=>p.t).length,0)} people + consulting</div>
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #9ca3af;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">G&amp;A Total</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalGA)}</div>
+      <div style="font-size:10px;color:#9ca3af">G&amp;A sub-depts</div>
     </div>
   </div>`;
 
-  // COGS departments
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
     COGS Labor — Allocated to Revenue Departments
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">$183,836 total direct+project labor redistributed by gross wages</span>
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Direct + project labor weighted by gross wages</span>
   </div>`;
-  LABOR_DATA.cogs.forEach(d => { html += deptBlock(d, d.pnlAlloc, false); });
+  cogsDepts.forEach(d => { html += deptBlock(d.id); });
 
-  // R&D
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    R&D — Separate COGS
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">GL 61900/61910/61930/61940 — reclassed from operating</span>
+    R&amp;D — Separate COGS
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">GL 61900/61910/61930/61940</span>
   </div>`;
-  html += deptBlock(LABOR_DATA.rd, LABOR_DATA.rd.pnlTotal, false);
+  html += deptBlock('rd');
 
-  // Sales
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    Sales Labor — OpEx Line Item
+    Sales Labor — OpEx
   </div>`;
-  html += deptBlock(LABOR_DATA.sales, LABOR_DATA.sales.pnlTotal, false);
+  html += deptBlock('sales');
 
-  // G&A
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    G&A — Sub-Buckets
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Admin payroll + operating expenses</span>
+    G&amp;A — Sub-Buckets
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Admin payroll + consulting</span>
   </div>`;
-  LABOR_DATA.ga.forEach(d => {
-    const tot = d.people.reduce((s,p)=>s+p.g,0);
-    const isLocked = d.name.includes('Sr Leadership');
-    html += deptBlock(d, tot, false, isLocked ? {locked:true} : null);
-  });
+  gaDepts.forEach(d => { html += deptBlock(d.id, d.id === 'ga_leadership' ? {locked:true} : null); });
 
   html += `<div style="font-size:11px;color:#9ca3af;margin-top:16px;font-style:italic">
-    P&L line item totals include employer taxes, benefits, and overhead beyond gross wages shown per person.
-    COGS labor uses gross wages as proportional weights to redistribute $183,836 across revenue departments.
+    W-2 gross wages from Gusto base compensation (April 2026). Employer taxes and benefits allocated separately in P&L.
+    COGS depts use gross wages as proportional weights. ✏️️ = editable (saved to browser localStorage). G = Gusto rate (read-only).
   </div>`;
-
   html += '</div>';
   el.innerHTML = html;
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // SALES WON VIEW — All deals by month, verified against Agreement History
