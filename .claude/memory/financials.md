@@ -155,6 +155,93 @@ Amortization GL: 19003, 3-year useful life
 - Subcontracted tripled $4K→$15K (user aware)
 - Sales Commissions zeroed out
 
+## EBITDA Normalization Framework
+
+### Structure
+Reported EBITDA → One-Time Adjustments (above the line) → **Normalized EBITDA** → Owner Addbacks → **Adjusted EBITDA**
+
+One-time adjustments are non-recurring items that hit EBITDA but won't repeat. They differ from addbacks (which are owner discretionary costs a buyer would eliminate). Both matter for PE valuation.
+
+### Categories of One-Time Adjustments (Above the Line)
+1. **Revenue corrections**: Overbilling reversals, catch-up credits, retroactive adjustments
+2. **COGS catch-ups**: Retroactive labor reclasses, capitalization true-ups, vendor credit corrections
+3. **OpEx spikes**: Annual renewals posted to single month, one-time consulting, legal, catch-up billings
+4. **Severance & PTO payouts**: Non-recurring separation costs (also in addback schedule)
+
+### 2025 Severance & PTO by Month (from Citrin file)
+| Month | Severance | PTO Payout | Total | Key Employees |
+|-------|-----------|------------|-------|---------------|
+| Jan 25 | $0 | $2,399 | $2,399 | Blunk $1,255, Upton $1,144 |
+| Feb 25 | $0 | $26,911 | $26,911 | Jump $19,742, Barcelos $2,112, Briney $1,915, K.Johnson $3,142 |
+| Mar 25 | $4,154 | $7,658 | $11,812 | Freeburg $6,030, Finkton $4,154 sev + $614 PTO, Williams $509, Wise $504 |
+| Apr 25 | $0 | $0 | $0 | Bennett (no payout) |
+| May 25 | $4,480 | $1,196 | $5,676 | Pontes $4,480 sev + $1,196 PTO |
+| Jun 25 | $6,667 | $1,141 | $7,807 | Brockett $6,667 sev + $1,141 PTO |
+| Jul 25 | $2,000 | $2,647 | $4,647 | Harvey $2,000 sev + $2,647 PTO |
+| Aug 25 | $4,423 | $10,136 | $14,559 | Harsch $7,666 PTO, Moore $2,470 PTO, Kuphal $4,423 sev |
+| Sep 25 | $19,401 | $16,077 | $35,478 | Vicencio $9,616 sev + $9,090 PTO, Baker $5,625 sev + $3,052 PTO, Brennan $2,480 sev, Huizar $3,229 PTO |
+| Oct 25 | $0 | $572 | $572 | Blair $572 PTO |
+| Nov 25 | $0 | $0 | $0 | — |
+| Dec 25 | $0 | $6,099 | $6,099 | Schilber $6,099 PTO |
+| **2025 Total** | **$41,125** | **$74,836** | **$115,960** | |
+
+### Q1 2026 Severance & PTO (pending Citrin confirmation)
+| Month | Employee | Final Payroll | PTO Est. | Status |
+|-------|----------|--------------|----------|--------|
+| Jan 26 | Mark Wallace | $2,885 | ~$577 | Pending actual from Citrin |
+| Feb 26 | Steve Morozov | $2,570 | ~$508 | Pending actual from Citrin |
+| Feb 26 | Michael Hughes | $3,157 | ~$923 | Pending actual from Citrin |
+| Mar 26 | DinYero Johnson | $16,242 | TBD | Last day 3/26, pending breakout |
+| Mar 26 | Unknown employee | $2,920 | TBD | Term ~3/4-3/6, pending ID |
+
+### 2025 One-Time Adjustments Above the EBITDA Line
+Source: GL analysis of "PL 2023 to 2025 by Month Condensed 3.24.26.xlsx" P&L by Month Detail sheet.
+Items flagged where GL account >$5K above median for Jan-Nov, or year-end entries for Dec.
+
+| Month | One-Time Items | Amount | Status |
+|-------|---------------|--------|--------|
+| Jan 25 | — | $0 | Clean |
+| Feb 25 | — | $0 | Clean (sev/PTO is separate) |
+| Mar 25 | Repairs & Maintenance $19,286 (acct 61800) | $19,286 | NEEDS VERIFICATION |
+| Mar 25 | Miscellaneous/Other $14,549 (acct 61600) | $14,549 | NEEDS VERIFICATION |
+| Apr 25 | — | $0 | Clean |
+| May 25 | Recruiting costs $7,125 (acct 60600) | $7,125 | Likely one-time |
+| Jun 25 | — | $0 | Clean |
+| Jul 25 | Outside consulting $11,250 (acct 60400) | $11,250 | One-time engagement |
+| Aug 25 | Prof Services +$26K vs median (acct 62100) | $26,026 | NEEDS VERIFICATION (audit timing?) |
+| Sep 25 | Prof Services +$15K vs median (acct 62100) | $15,111 | NEEDS VERIFICATION |
+| Oct 25 | Recruiting costs $7,672 (acct 60600) | $7,672 | Likely one-time |
+| Nov 25 | Elevated travel $7,910 (acct 60300) | $7,910 | NEEDS VERIFICATION |
+| Dec 25 | Software & Maint catch-up $136K (acct 61000) | $135,971 | Year-end, confirmed one-time |
+| Dec 25 | Legal reserves - Prof Svcs $151K (acct 62100) | $151,184 | Year-end, CHECK vs addback schedule |
+| Dec 25 | Direct Labor year-end reclass (acct 50610) | $165,529 | Accounting reclass, not real cost |
+| Dec 25 | Capitalized Payroll IUS credit (acct 50661) | -$90,648 | IUS credit, reduces COGS |
+| Dec 25 | Office Supplies year-end (acct 61250) | $50,081 | Year-end, CHECK vs addback schedule |
+| Dec 25 | Office Lease catch-up (acct 61300) | $8,213 | Year-end |
+| Dec 25 | Depreciation posting (acct 61700) | $18,648 | Year-end, CHECK vs addback schedule |
+| **Jan-Nov subtotal** | | **$109,929** | |
+| **Dec subtotal** | | **$438,978** | Many overlap with addback schedule |
+| **2025 total** | | **$548,907** | |
+
+**DOUBLE-COUNTING WARNING**: Some December items (legal reserves, depreciation, office supplies) may already be in the $1,297,247 addback schedule. And the $115,960 severance/PTO is counted in both normalization and addbacks. Must reconcile with Citrin before presenting to PE.
+
+**Correct PE presentation formula**:
+- Reported EBITDA: $1,595,160
+- + Non-recurring above-line items (excluding those in addbacks): TBD after reconciliation
+- = Normalized EBITDA
+- + Owner addbacks (excluding items already normalized): TBD after reconciliation
+- = Adjusted EBITDA
+
+### March 2026 One-Time Adjustments Above the Line
+| Item | Impact | Category |
+|------|--------|----------|
+| Software & Maintenance catch-up (Pia Trade AI desk licenses) | -$35,451 | OpEx spike |
+| CloudSaaS HHHC overbilling reversal | -$59,891 | Revenue correction |
+| Capitalized Payroll Q1 catch-up | +$28,341 | COGS credit |
+| Dave's tax preparer charges (reclassing to stockholder) | -$5,000 | OpEx reclass |
+| Mar 26 reported EBITDA: $177,392 | | |
+| **Mar 26 normalized EBITDA: ~$249,393** | | |
+
 ## Dec 2025 Year-End Adjustments
 - 23 journal entries moved net income from -$189K to -$6K
 - Other Expense $601K credit | Prof Services $231K (legal reserves)
@@ -195,12 +282,17 @@ Source file: "March P&L.xlsx" — sheets: P&L Condensed, P&L Detail by Account
 - Sales Labor: $134,018 → $141,264 (+$7,246) — only meaningful change, likely commission accruals
 - Revenue, COGS: virtually unchanged (+$369 revenue rounding, COGS identical)
 
-### New Items from Final March P&L (not yet discussed with Citrin)
-1. Sales Labor prelim to final +$7,246: What posted between prelim and final? Commission accrual?
-2. DinYero Johnson sales comp $14,618 to $31,283 (+$16,665): Commission-driven or comp structure change?
-3. Software & Maintenance $14,333 to $49,784 (+$35,451): Annual renewals, new tools, or catch-up?
-4. Admin Contractor Wages $7,817 to $12,107 (+$4,290): New contractor or rate increase?
-5. Office Supplies $10,975 to $17,821 (+$6,846): One-time or recurring?
+### Resolved Items from Final March P&L (confirmed with Citrin April 2026)
+1. **Sales Labor prelim to final +$7,246**: Commissions that weren't previously calculated. Confirmed.
+2. **DinYero Johnson sales comp $14,618 to $31,283**: Commission-driven. DinYero's last day was March 26. Final termination payroll was $16,242 (includes regular wages + PTO payout). Awaiting PTO/severance breakout from Citrin.
+3. **Software & Maintenance $14,333 to $49,784 (+$35,451)**: Pia Trade Co AI desk licenses (Aug-Dec bills posted in 2025, then credited in Feb 2026). $18K in OH, $11K in CA. Also $3K ZoomInfo charges in CA for March. Some ConnectWise geography issues being fixed. Mostly catch-up, not recurring at this level.
+4. **Admin Contractor Wages $7,817 to $12,107 (+$4,290)**: New account manager added + Julie M received $1,000/mo raise. This is recurring at the new level.
+5. **Office Supplies $10,975 to $17,821 (+$6,846)**: Mostly one-offs, though account can fluctuate. ~$5K of the "(blank)" charges are from Dave's tax preparer — Citrin will move to stockholder expense account. Net effect: ~$5K will be reclassed below the line, reducing OpEx.
+
+### Outstanding Citrin Items (pending)
+1. **Q1 2026 Severance & PTO Payouts**: Need per-employee PTO/severance breakout for Wallace (Jan), Morozov (Feb), Hughes (Feb), DinYero Johnson (Mar, $16,242 final payroll), and unknown employee terminated ~3/6 ($2,920 final payroll). These are EBITDA addbacks.
+2. **GL account for PTO/severance**: Are these embedded in Direct Labor Wages (50610) and Sales Labor, or is there a separate account? Requested Citrin break out going forward.
+3. **Dave's tax preparer charges (~$5K)**: Citrin confirmed will reclass from Office Supplies to stockholder expense. Pending completion.
 
 ### Dashboard Discrepancies Found (Feb 2026)
 Dashboard was built from PRELIMINARY Feb P&L. Final Citrin P&L differs:
