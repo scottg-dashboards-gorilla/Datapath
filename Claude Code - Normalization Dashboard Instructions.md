@@ -44,18 +44,62 @@ Items with * = assumptions pending Citrin verification.
 | Feb 26 | 1431 | 0 | ['PTO: Morozov ~$508*, Hughes ~$923*'] |
 | Mar 26 | 19162 | 0 | ['DinYero Johnson $16,242*', 'Unknown term ~$2,920*'] |
 
-### 2. Add Normalized EBITDA Row to P&L View
+### 2. Add Normalized EBITDA Rows to P&L View
 
-In the P&L table, after the current EBITDA row, add:
+In the P&L table, after the current EBITDA row, add the normalization section with **individual line items broken out** (not just a subtotal). Same pattern as how Add-Backs are displayed with individual items indented under the section header.
 
 ```
-EBITDA (Reported)          $xxx,xxx    ← existing row
-  Sev/PTO Addback          $xx,xxx    ← new, indented, lighter color
-  One-Time Adjustments      $xx,xxx    ← new, indented, lighter color  
-Normalized EBITDA          $xxx,xxx    ← new row, bold, same weight as EBITDA
-  Owner Addbacks            $xx,xxx    ← existing addback total
-Adjusted EBITDA            $xxx,xxx    ← existing row
+EBITDA (Reported)                    $xxx,xxx    ← existing row
+Normalization (One-Time Items):
+  Severance & PTO (non-recurring)    $xx,xxx     ← indented, lighter
+  One-Time Adjustments:                          ← subtotal row
+    [individual items indented]      $xx,xxx     ← each item on its own line
+Normalized EBITDA                    $xxx,xxx    ← bold, same weight as EBITDA
+Add-Backs (for Adjusted EBITDA):
+  [existing addback line items]      $xx,xxx     ← unchanged
+Adjusted EBITDA                      $xxx,xxx    ← existing row
 ```
+
+#### One-Time Adjustment Line Items by Month
+
+Break these out as individual rows under "One-Time Adjustments", same as addbacks are broken out:
+
+**2025:**
+| Item Name | Jan | Feb | Mar | Apr | May | Jun | Jul | Aug | Sep | Oct | Nov | Dec | Total |
+|-----------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-------|
+| Ohio Flood Repairs* | — | — | 19,286 | — | — | — | — | — | — | — | — | — | 19,286 |
+| State Tax/Misc* | — | — | 14,549 | — | — | — | — | — | — | — | — | — | 14,549 |
+| Recruiting | — | — | — | — | 7,125 | — | — | — | — | 7,672 | — | — | 14,797 |
+| Outside Consulting | — | — | — | — | — | — | 11,250 | — | — | — | — | — | 11,250 |
+| Citrin Assessment Billings | — | — | — | — | — | — | — | 26,026 | 15,111 | — | — | — | 41,137 |
+| Travel* | — | — | — | — | — | — | — | — | — | — | 7,910 | — | 7,910 |
+| SW & Maint Catch-Up | — | — | — | — | — | — | — | — | — | — | — | 135,971 | 135,971 |
+| Legal Reserves (PAGA) | — | — | — | — | — | — | — | — | — | — | — | 151,184 | 151,184 |
+| DL Year-End Reclass | — | — | — | — | — | — | — | — | — | — | — | 165,529 | 165,529 |
+| IUS Capitalization Credit | — | — | — | — | — | — | — | — | — | — | — | -90,648 | -90,648 |
+| Office Supplies YE* | — | — | — | — | — | — | — | — | — | — | — | 50,081 | 50,081 |
+| Office Lease Catch-Up | — | — | — | — | — | — | — | — | — | — | — | 8,213 | 8,213 |
+| Depreciation Posting | — | — | — | — | — | — | — | — | — | — | — | 18,648 | 18,648 |
+
+**Q1 2026:**
+| Item Name | Jan 26 | Feb 26 | Mar 26 |
+|-----------|--------|--------|--------|
+| Bank Fees* | 14,743 | — | — |
+| Pia Trade SW Catch-Up | — | — | 35,451 |
+| CloudSaaS Overbilling Reversal | — | — | 59,891 |
+| Capitalized Payroll Q1 Catch-Up | — | — | -28,341 |
+| Dave's Tax Preparer Reclass | — | — | 5,000 |
+
+Items with * = pending Citrin verification. Display these with an asterisk or lighter/italic text to indicate unverified assumptions.
+
+#### Overlap with Existing Addbacks (CRITICAL)
+
+Some December one-time items overlap with existing addbacks. Confirmed overlaps:
+- **Legal Reserves (PAGA) $151,184** → overlaps with "Year-End Legal Reserves (PAGA)" addback ($231,000)
+- **Insurance cleanup** → overlaps with "Balance Sheet Cleanup Adjustment for Insurance" addback ($135,253)
+- **Severance & PTO $115,960** → overlaps with "Severance & PTO Payouts" addback ($115,960)
+
+The Adjusted EBITDA formula must de-duplicate. See Double-Counting Guard below.
 
 Color logic: These are cost addbacks, so positive = green (adding back costs improves EBITDA).
 
