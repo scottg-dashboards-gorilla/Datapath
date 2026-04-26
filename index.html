@@ -1846,6 +1846,24 @@ applyAddBacks(DEC25, {
   systems1111:0, additionalLegal:5163, websiteDev:4888, marketingGTM:6000
 });
 
+// ─── Q1 2026 Add-Backs ────────────────────────────────────────
+// Normalize: Facilities Modesto $15,700, Ohio $0 (Jan) / $6,107 (Feb+), Family Member Comp $3,520
+// Jan 26 — $33,963
+applyAddBacks(JAN26, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:0, bankFees:14743
+});
+// Feb 26 — $30,327 (Ohio lease $6,107; severance/PTO estimated ~$5K for Hughes + Morozov dismissals)
+applyAddBacks(FEB26, {
+  facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
+  severancePTO:5000, bankFees:0
+});
+// Mar 26 — $25,327
+applyAddBacks(MAR26, {
+  facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
+  severancePTO:0, bankFees:0
+});
+
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
 // type: 'revenue' | 'expense' | 'credit' | 'adjustment'
@@ -3849,8 +3867,8 @@ function renderPnL(el) {
   rows += dataRow('EBITDA', m => m.ebitda, {isTotal: true});
   rows += dataRow('EBITDA Margin %', m => m.ebitdaM, {isPct: true});
 
-  // Add-backs for Adjusted EBITDA (2025 schedule — 18 items, $1.14M total)
-  rows += divRow('Add-Backs (for Adjusted EBITDA — 2025 Schedule)');
+  // Add-backs for Adjusted EBITDA (2025 schedule — 18 items, $1.14M total; 2026 ongoing normalize items)
+  rows += divRow('Add-Backs (for Adjusted EBITDA)');
   rows += dataRow('Facilities – Modesto HQ Rent', m => m.addBacks?.facilitiesModesto || 0, {indent: true});
   rows += dataRow('Facilities – Ohio Office', m => m.addBacks?.facilitiesOhio || 0, {indent: true});
   rows += dataRow('Family Member Compensation', m => m.addBacks?.familyMemberComp || 0, {indent: true});
@@ -3869,6 +3887,7 @@ function renderPnL(el) {
   rows += dataRow('Additional Legal Fees', m => m.addBacks?.additionalLegal || 0, {indent: true});
   rows += dataRow('Website Development', m => m.addBacks?.websiteDev || 0, {indent: true});
   rows += dataRow('Marketing GTM Consulting', m => m.addBacks?.marketingGTM || 0, {indent: true});
+  rows += dataRow('One-Time Bank / Finance Fees', m => m.addBacks?.bankFees || 0, {indent: true});
   rows += dataRow('Total Add-Backs', m => m.totalAddBacks || 0, {bold: true});
   rows += dataRow('Adjusted EBITDA', m => m.adjEbitda || m.ebitda, {isTotal: true});
   rows += dataRow('Adjusted EBITDA Margin %', m => m.adjEbitdaM || m.ebitdaM, {isPct: true});
