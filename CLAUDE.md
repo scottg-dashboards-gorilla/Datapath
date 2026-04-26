@@ -39,10 +39,10 @@ Key people: Co-CEOs James Bates & David Darmstandler, COO Scott Gordon (consulta
 - **Don't assume 2023 payroll is split** — it's all-in; use estimated ratios (direct 47.8%, project 6.8%, sales 20.5%, admin 24.9%)
 
 ## Context Pointers
-- **Full financial data** (revenue, EBITDA, addback schedule, P&L structure): Read `memory/financials.md`
-- **Employee roster & personnel changes**: Read `memory/employees.md`
-- **Dashboard details** (views, functions, anomalies, SNI data, API): Read `memory/dashboard.md`
-- **PE Investment Memorandum** (sections, editing workflow, narrative rules): Read `memory/pe-book.md`
+- **Full financial data** (revenue, EBITDA, addback schedule, P&L structure): Read `.claude/memory/financials.md`
+- **Employee roster & personnel changes**: Read `.claude/memory/employees.md`
+- **Dashboard details** (views, functions, anomalies, SNI data, API): Read `.claude/memory/dashboard.md`
+- **PE Investment Memorandum** (sections, editing workflow, narrative rules): Read `.claude/memory/pe-book.md`
 - **Legacy detailed context** (all-in-one reference): `projects/-sessions-dazzling-awesome-bell/memory/datapath-context.md`
 
 ## Key File Paths
