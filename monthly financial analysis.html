@@ -1733,6 +1733,120 @@ MAR26.detail = {
 const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26, MAR26];
 
 // ═══════════════════════════════════════════════════════════════
+// 2025 EBITDA ADD-BACK SCHEDULE
+// Source: Datapath Confidential Investment Memorandum
+// 18 items totaling $1,144,247 (excludes $153K COO consulting premium per user preference)
+// Fields: facilitiesModesto | facilitiesOhio | familyMemberComp | severancePTO |
+//         yearEndLegal | balanceSheetAdj | rdTaxCredit | citrinAssessment |
+//         phoenixStrategy | rogerGentry | podcastStudio | apLogic | ohioFlood |
+//         tpcContract | systems1111 | additionalLegal | websiteDev | marketingGTM
+// ═══════════════════════════════════════════════════════════════
+function applyAddBacks(m, ab) {
+  const total = Object.values(ab).reduce((s,v) => s + (v||0), 0);
+  m.addBacks = ab;
+  m.totalAddBacks = total;
+  m.adjEbitda = m.ebitda + total;
+  m.adjEbitdaM = m.totRev > 0 ? (m.adjEbitda / m.totRev * 100) : 0;
+}
+
+// Jan 25 — $102,061
+applyAddBacks(JAN25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:30000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:25000, phoenixStrategy:8500, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Feb 25 — $77,061
+applyAddBacks(FEB25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:20000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:8500, rogerGentry:8000,
+  podcastStudio:0, apLogic:10000, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Mar 25 — $88,561
+applyAddBacks(MAR25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:15000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:15000, apLogic:0, ohioFlood:20000, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Apr 25 — $65,223
+applyAddBacks(APR25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:15000, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:6000, marketingGTM:0
+});
+// May 25 — $44,223
+applyAddBacks(MAY25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Jun 25 — $50,223
+applyAddBacks(JUN25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Jul 25 — $42,223
+applyAddBacks(JUL25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Aug 25 — $66,223
+applyAddBacks(AUG25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:20000,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Sep 25 — $46,223
+applyAddBacks(SEP25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Oct 25 — $40,049
+applyAddBacks(OCT25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Nov 25 — $40,049
+applyAddBacks(NOV25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Dec 25 — $482,128 (includes year-end accruals and non-cash items)
+applyAddBacks(DEC25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5664, yearEndLegal:231000, balanceSheetAdj:135253, rdTaxCredit:70940,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5163, websiteDev:4888, marketingGTM:6000
+});
+
+// ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
 // type: 'revenue' | 'expense' | 'credit' | 'adjustment'
 // impact: dollar amount (positive = favorable, negative = unfavorable)
@@ -3735,12 +3849,26 @@ function renderPnL(el) {
   rows += dataRow('EBITDA', m => m.ebitda, {isTotal: true});
   rows += dataRow('EBITDA Margin %', m => m.ebitdaM, {isPct: true});
 
-  // Add-backs for Adjusted EBITDA
-  rows += divRow('Add-Backs (for Adjusted EBITDA)');
-  rows += dataRow('Owner Perks & Personal Charges', m => m.addBacks?.ownerPerks || 0, {indent: true});
-  rows += dataRow('One-Time / Non-Recurring Expenses', m => m.addBacks?.oneTime || 0, {indent: true});
-  rows += dataRow('Above-Market Rent / Related Party', m => m.addBacks?.aboveMarketRent || 0, {indent: true});
-  rows += dataRow('Other Add-Backs', m => m.addBacks?.other || 0, {indent: true});
+  // Add-backs for Adjusted EBITDA (2025 schedule — 18 items, $1.14M total)
+  rows += divRow('Add-Backs (for Adjusted EBITDA — 2025 Schedule)');
+  rows += dataRow('Facilities – Modesto HQ Rent', m => m.addBacks?.facilitiesModesto || 0, {indent: true});
+  rows += dataRow('Facilities – Ohio Office', m => m.addBacks?.facilitiesOhio || 0, {indent: true});
+  rows += dataRow('Family Member Compensation', m => m.addBacks?.familyMemberComp || 0, {indent: true});
+  rows += dataRow('Severance & PTO Payouts', m => m.addBacks?.severancePTO || 0, {indent: true});
+  rows += dataRow('Year-End Legal Reserves (PAGA)', m => m.addBacks?.yearEndLegal || 0, {indent: true});
+  rows += dataRow('Balance Sheet Adj – Insurance (Non-Cash)', m => m.addBacks?.balanceSheetAdj || 0, {indent: true});
+  rows += dataRow('R&D Tax Credit Study', m => m.addBacks?.rdTaxCredit || 0, {indent: true});
+  rows += dataRow('Citrin Cooperman Assessment', m => m.addBacks?.citrinAssessment || 0, {indent: true});
+  rows += dataRow('Phoenix Strategy Group', m => m.addBacks?.phoenixStrategy || 0, {indent: true});
+  rows += dataRow('Roger Gentry Consulting', m => m.addBacks?.rogerGentry || 0, {indent: true});
+  rows += dataRow('Podcast Studio Build-Out', m => m.addBacks?.podcastStudio || 0, {indent: true});
+  rows += dataRow('AP Logic (SharePoint Setup)', m => m.addBacks?.apLogic || 0, {indent: true});
+  rows += dataRow('Ohio Office Flood Repairs', m => m.addBacks?.ohioFlood || 0, {indent: true});
+  rows += dataRow('TPC Contract Negotiation', m => m.addBacks?.tpcContract || 0, {indent: true});
+  rows += dataRow('11:11 Systems Contract Buyout', m => m.addBacks?.systems1111 || 0, {indent: true});
+  rows += dataRow('Additional Legal Fees', m => m.addBacks?.additionalLegal || 0, {indent: true});
+  rows += dataRow('Website Development', m => m.addBacks?.websiteDev || 0, {indent: true});
+  rows += dataRow('Marketing GTM Consulting', m => m.addBacks?.marketingGTM || 0, {indent: true});
   rows += dataRow('Total Add-Backs', m => m.totalAddBacks || 0, {bold: true});
   rows += dataRow('Adjusted EBITDA', m => m.adjEbitda || m.ebitda, {isTotal: true});
   rows += dataRow('Adjusted EBITDA Margin %', m => m.adjEbitdaM || m.ebitdaM, {isPct: true});
