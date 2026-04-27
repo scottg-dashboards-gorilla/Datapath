@@ -4717,9 +4717,8 @@ function renderSalesWon(el) {
   const upMRR = (cats['Upsell']||{mrr:0}).mrr;
   const rnMRR = (cats['Renewal']||{mrr:0}).mrr;
   const rnPrior = ALL_DEALS.filter(d=>d.cat==='Renewal').reduce((s,d)=>s+(d.prior||0),0);
-  const rnNetMRR = rnMRR - rnPrior;
   const growthMRR = nnMRR + upMRR;
-  const netMRR = growthMRR + rnNetMRR;
+  const netMRR = growthMRR; // Renewals are retention, not growth
   const nnClients = new Set(ALL_DEALS.filter(d=>d.cat==='Net New').map(d=>d.c)).size;
 
   let html = `<div class="fade-in">
@@ -4744,9 +4743,9 @@ function renderSalesWon(el) {
       <div class="kpi-card" style="border-top:3px solid #ea580c"><div class="kpi-label">Upsell (Existing Clients)</div>
         <div class="kpi-value" style="color:#ea580c">$${upMRR.toLocaleString()}</div>
         <div class="kpi-sub">${(cats['Upsell']||{deals:0}).deals} deals · new services added</div></div>
-      <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Renewal Net Change</div>
-        <div class="kpi-value" style="color:${rnNetMRR>=0?'#16a34a':'#dc2626'}">$${rnNetMRR.toLocaleString()}</div>
-        <div class="kpi-sub">Renewal delta vs prior agreements</div></div>
+      <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Renewals (Retention)</div>
+        <div class="kpi-value" style="color:#2563eb">$${rnMRR.toLocaleString()}</div>
+        <div class="kpi-sub">${(cats['Renewal']||{deals:0}).deals} deals · retained, not growth</div></div>
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
@@ -4841,7 +4840,7 @@ function renderSalesWon(el) {
     const mDeals = filtered.filter(d => d.m === m);
     const mTotal = mDeals.reduce((s,d) => s + d.mrr, 0);
 
-    const mNet = mDeals.reduce((s,d) => s + (d.cat==='Renewal' ? d.mrr-(d.prior||0) : d.mrr), 0);
+    const mNet = mDeals.reduce((s,d) => s + (d.cat==='Renewal' ? 0 : d.mrr), 0);
 
     html += `<div class="chart-card" style="margin-bottom:12px;padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:2px solid #e0e0e0;padding-bottom:8px">
@@ -4861,8 +4860,8 @@ function renderSalesWon(el) {
 
     mDeals.forEach(d => {
       const color = catColors[d.cat] || '#6b7280';
-      const dealNet = d.cat === 'Renewal' ? d.mrr - (d.prior||0) : d.mrr;
-      const netColor = d.cat === 'Renewal' && d.prior > 0 ? (dealNet >= 0 ? '#16a34a' : '#dc2626') : '#16a34a';
+      const dealNet = d.cat === 'Renewal' ? 0 : d.mrr;
+      const netColor = d.cat === 'Renewal' ? '#9ca3af' : '#16a34a';
       const priorStr = d.prior > 0 ? '$'+d.prior.toLocaleString() : (d.cat === 'Upsell' ? 'New svc' : '—');
       html += `<tr style="border-bottom:1px solid #f3f4f6${dealNet<0?' ;background:#fef2f2':''}">
         <td style="padding:6px 8px;font-weight:${d.mrr>=2000?700:400}">${d.c}</td>
