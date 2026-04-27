@@ -4641,7 +4641,37 @@ const ALL_DEALS = [
   {m:'Feb 2026',c:'Dust Bowl Brewing Company',mrr:42,cy:12,r:'Julissa Martinez',cat:'Upsell',prior:0},
   {m:'Feb 2026',c:'DeHart Plumbing, Heating & Air',mrr:33,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Feb 2026',c:'Kaplan & Trombi',mrr:24,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'ABI Healthcare',mrr:17,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0}
+  {m:'Feb 2026',c:'ABI Healthcare',mrr:17,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  // ── Mar 2026 (27 MRR deals, $16,473/mo) ──
+  // Net New (4 clients)
+  {m:'Mar 2026',c:'Laguna Tools',mrr:4061,cy:12,r:'Ricky Maestas',cat:'Net New',prior:0},
+  {m:'Mar 2026',c:'Western Steel Buildings',mrr:380,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
+  {m:'Mar 2026',c:'Aweta - Americas',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Mar 2026',c:'Aweta - Americas',mrr:110,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Mar 2026',c:'Del Puerto Health Care District',mrr:176,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Mar 2026',c:'Del Puerto Health Care District',mrr:110,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  // Upsell (existing clients)
+  {m:'Mar 2026',c:'Circle of Life - First Nations - Soaring Eagles',mrr:1618,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:24282},
+  {m:'Mar 2026',c:'Hercules OEM Group',mrr:1602,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:22366},
+  {m:'Mar 2026',c:'Hercules OEM Group',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:22366},
+  {m:'Mar 2026',c:'24 Hour Home Care',mrr:1360,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:75270},
+  {m:'Mar 2026',c:'24 Hour Home Care',mrr:281,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:75270},
+  {m:'Mar 2026',c:'DiMare',mrr:845,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:10934},
+  {m:'Mar 2026',c:'Ameribest',mrr:827,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:17283},
+  {m:'Mar 2026',c:'Sierra Northern Railway',mrr:750,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:7365},
+  {m:'Mar 2026',c:'Sierra Northern Railway',mrr:6,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:7365},
+  {m:'Mar 2026',c:'Westmark Incorporated',mrr:708,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:20858},
+  {m:'Mar 2026',c:'Railpower',mrr:500,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:2250},
+  {m:'Mar 2026',c:'Railpower',mrr:66,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:2250},
+  {m:'Mar 2026',c:'Devoted Guardians',mrr:494,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:9578},
+  {m:'Mar 2026',c:'HHHC',mrr:452,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:13652},
+  {m:'Mar 2026',c:'Arts and College Preparatory Academy',mrr:345,cy:12,r:'Joel Walker',cat:'Upsell',prior:558},
+  {m:'Mar 2026',c:'PeopleCare Health Services',mrr:326,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:7381},
+  {m:'Mar 2026',c:'PASCO',mrr:300,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:577},
+  {m:'Mar 2026',c:'PASCO',mrr:204,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:577},
+  {m:'Mar 2026',c:'Alliance Services',mrr:200,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:3931},
+  {m:'Mar 2026',c:"Pearl's Hope",mrr:158,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4066},
+  {m:'Mar 2026',c:'ECS',mrr:95,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:602}
 ];
 
 let swFilter = 'all';
@@ -4649,11 +4679,17 @@ let swShowUnbilled = true;
 
 // Potentially unbilled MRR contracts — won but no active agreement found in billing system
 const UNBILLED_DEALS = [
-  {close:'Jul 29, 2025',c:'Rizo Lopez Foods',mrr:5149,type:'MRR - Managed Services (Renewal)',rep:'Jay Harvey',status:'🔴 No agreements in Power BI',days:272,risk:'high'},
-  {close:'Jul 29, 2025',c:'Samaritan Home Health',mrr:895,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🔴 Only expired $0 agreement',days:272,risk:'high'},
-  {close:'Jan 22, 2026',c:'Statuo',mrr:5385,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🟡 Billing $1,090 vs $5,385 CRM — $4,295 gap',days:94,risk:'high'},
-  {close:'Jan 07, 2026',c:'Rizo Lopez Foods',mrr:150,type:'MRR - Recurring Resale (Net New)',rep:'Jay Harvey',status:'🔴 No agreements in Power BI',days:109,risk:'high'},
-  {close:'Feb 25, 2026',c:'Advanced Radiology',mrr:2483,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🟡 Agreements start May 2026 — $2,125 set up',days:60,risk:'med'}
+  {close:'Jul 29, 2025',c:'Samaritan Home Health',mrr:140,type:'MRR - Recurring Resale',rep:'Jay Harvey',status:'⚠️ Expired agreement only',days:245,risk:'high'},
+  {close:'Jan 07, 2026',c:'Central Valley Regional Center',mrr:3500,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🆕 No agreement history',days:83,risk:'high'},
+  {close:'Jan 22, 2026',c:'Statuo',mrr:874,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:68,risk:'high'},
+  {close:'Feb 02, 2026',c:'Sierra Northern Railway',mrr:5538,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:57,risk:'med'},
+  {close:'Feb 25, 2026',c:'Advanced Radiology and Interventional Assoc.',mrr:2482.50,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🆕 No agreement history',days:34,risk:'med'},
+  {close:'Feb 27, 2026',c:'Sierra Energy',mrr:3010,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
+  {close:'Feb 27, 2026',c:'Mendocino Railway',mrr:2608,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
+  {close:'Feb 27, 2026',c:'Railpower',mrr:1937,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
+  {close:'Feb 27, 2026',c:'Sierra Northern Railway',mrr:1826.60,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'},
+  {close:'Feb 27, 2026',c:'Sierra Energy',mrr:984.84,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'},
+  {close:'Feb 27, 2026',c:'Railpower',mrr:313.30,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'}
 ];
 
 function renderSalesWon(el) {
@@ -4688,7 +4724,7 @@ function renderSalesWon(el) {
 
   let html = `<div class="fade-in">
     <div class="section-title">Sales Won — All Deals by Month</div>
-    <div class="section-sub">Jan 2025 – Feb 2026 · ${ALL_DEALS.length} deals · Verified against 2,732 agreements (521 clients)</div>
+    <div class="section-sub">Jan 2025 – Mar 2026 · ${ALL_DEALS.length} deals · Verified against 2,732 agreements (521 clients)</div>
 
     <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="kpi-card" style="border-top:3px solid #16a34a;background:linear-gradient(135deg,#f0fdf4,#fff)"><div class="kpi-label">Growth MRR (Net New + Upsell)</div>
@@ -4699,7 +4735,7 @@ function renderSalesWon(el) {
         <div class="kpi-sub">${(cats['Renewal']||{deals:0}).deals} deals · ${rnPrior>0?'replacing $'+rnPrior.toLocaleString()+' prior':'no prior data'}</div></div>
       <div class="kpi-card" style="border-top:3px solid #0891b2"><div class="kpi-label">Total MRR Won</div>
         <div class="kpi-value" style="color:#0891b2">$${totalMRR.toLocaleString()}</div>
-        <div class="kpi-sub">${ALL_DEALS.length} deals · 14 months</div></div>
+        <div class="kpi-sub">${ALL_DEALS.length} deals · 15 months</div></div>
     </div>
     <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="kpi-card" style="border-top:3px solid #16a34a"><div class="kpi-label">Net New Logos</div>
@@ -4786,9 +4822,8 @@ function renderSalesWon(el) {
 
     html += `</tbody></table>
       <div style="margin-top:10px;padding:8px 12px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a;font-size:11px;color:#92400e">
-        <strong>Action Required:</strong> Rizo Lopez Foods is highest priority — $5,149/mo renewal closed Jul 2025 with zero Power BI agreements (272 days).
-        Samaritan Home Health ($895/mo, 272 days) has only an expired $0 agreement. Statuo is billing at $1,090/mo vs $5,385 CRM — investigate $4,295 gap.
-        <br><strong>Resolved (4/26/26):</strong> Central Valley Regional Center, Sierra Northern Railway, Sierra Energy, Mendocino Railway, Railpower — all now billing in Power BI.
+        <strong>Action Required:</strong> Cross-reference these deals against ConnectWise invoicing. Samaritan Home Health is highest priority — deal closed 245 days ago with only an expired agreement on file.
+        Central Valley Regional Center ($3,500/mo) and Statuo ($874/mo) are also past 60 days.
       </div>
     </div>`;
   }
@@ -4797,7 +4832,7 @@ function renderSalesWon(el) {
 
   // Render deals grouped by month
   const filtered = swFilter === 'all' ? ALL_DEALS : ALL_DEALS.filter(d => d.cat === swFilter);
-  const fMonths = [...new Set(filtered.map(d => d.m))].reverse();
+  const fMonths = [...new Set(filtered.map(d => d.m))];
 
   fMonths.forEach(m => {
     const mDeals = filtered.filter(d => d.m === m);
