@@ -4683,30 +4683,42 @@ function renderSalesWon(el) {
   });
 
   const totalMRR = ALL_DEALS.reduce((s,d)=>s+d.mrr,0);
+  const totalPrior = ALL_DEALS.reduce((s,d)=>s+(d.prior||0),0);
+  const netMRR = totalMRR - totalPrior;
   const nnMRR = (cats['Net New']||{mrr:0}).mrr;
   const upMRR = (cats['Upsell']||{mrr:0}).mrr;
+  const upNetMRR = ALL_DEALS.filter(d=>d.cat==='Upsell').reduce((s,d)=>s+d.mrr-(d.prior||0),0);
+  const rnNetMRR = ALL_DEALS.filter(d=>d.cat==='Renewal').reduce((s,d)=>s+d.mrr-(d.prior||0),0);
   const nnClients = new Set(ALL_DEALS.filter(d=>d.cat==='Net New').map(d=>d.c)).size;
 
   let html = `<div class="fade-in">
     <div class="section-title">Sales Won — All Deals by Month</div>
     <div class="section-sub">Jan 2025 – Feb 2026 · ${ALL_DEALS.length} deals · Verified against 2,732 agreements (521 clients)</div>
 
-    <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
-      <div class="kpi-card" style="border-top:3px solid #16a34a"><div class="kpi-label">Verified Net New</div>
-        <div class="kpi-value" style="color:#16a34a">$${(nnMRR).toLocaleString()}</div>
-        <div class="kpi-sub">${nnClients} new logos · Jan 2025–Feb 2026</div></div>
-      <div class="kpi-card" style="border-top:3px solid #ea580c"><div class="kpi-label">Existing Client Upsells</div>
-        <div class="kpi-value" style="color:#ea580c">$${(upMRR).toLocaleString()}</div>
-        <div class="kpi-sub">${(cats['Upsell']||{deals:0}).deals} deals · CRM tagged "Net New"</div></div>
-      <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Renewals</div>
-        <div class="kpi-value" style="color:#2563eb">$${((cats['Renewal']||{mrr:0}).mrr).toLocaleString()}</div>
-        <div class="kpi-sub">${(cats['Renewal']||{deals:0}).deals} deals</div></div>
-      <div class="kpi-card" style="border-top:3px solid #7c3aed"><div class="kpi-label">Resale</div>
-        <div class="kpi-value" style="color:#7c3aed">$${((cats['Resale']||{mrr:0}).mrr).toLocaleString()}</div>
-        <div class="kpi-sub">${(cats['Resale']||{deals:0}).deals} deals</div></div>
-      <div class="kpi-card" style="border-top:3px solid #0891b2"><div class="kpi-label">Total MRR Won</div>
+    <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="kpi-card" style="border-top:3px solid #16a34a;background:linear-gradient(135deg,#f0fdf4,#fff)"><div class="kpi-label">Net MRR Won</div>
+        <div class="kpi-value" style="color:#16a34a">$${netMRR.toLocaleString()}</div>
+        <div class="kpi-sub">Gross $${totalMRR.toLocaleString()} minus $${totalPrior.toLocaleString()} existing</div></div>
+      <div class="kpi-card" style="border-top:3px solid #0891b2"><div class="kpi-label">Gross MRR Won</div>
         <div class="kpi-value" style="color:#0891b2">$${totalMRR.toLocaleString()}</div>
         <div class="kpi-sub">${ALL_DEALS.length} deals · 14 months</div></div>
+      <div class="kpi-card" style="border-top:3px solid #9ca3af"><div class="kpi-label">Prior Agreement MRR</div>
+        <div class="kpi-value" style="color:#6b7280">$${totalPrior.toLocaleString()}</div>
+        <div class="kpi-sub">Existing MRR replaced or renewed</div></div>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="kpi-card" style="border-top:3px solid #16a34a"><div class="kpi-label">Net New Logos</div>
+        <div class="kpi-value" style="color:#16a34a">$${nnMRR.toLocaleString()}</div>
+        <div class="kpi-sub">${nnClients} new logos · 100% net new</div></div>
+      <div class="kpi-card" style="border-top:3px solid #ea580c"><div class="kpi-label">Upsell — Net Growth</div>
+        <div class="kpi-value" style="color:#ea580c">$${upNetMRR.toLocaleString()}</div>
+        <div class="kpi-sub">Gross $${upMRR.toLocaleString()} · ${(cats['Upsell']||{deals:0}).deals} deals</div></div>
+      <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Renewals — Net Change</div>
+        <div class="kpi-value" style="color:${rnNetMRR>=0?'#2563eb':'#dc2626'}">$${rnNetMRR.toLocaleString()}</div>
+        <div class="kpi-sub">Gross $${((cats['Renewal']||{mrr:0}).mrr).toLocaleString()} · ${(cats['Renewal']||{deals:0}).deals} deals</div></div>
+      <div class="kpi-card" style="border-top:3px solid #7c3aed"><div class="kpi-label">Growth MRR</div>
+        <div class="kpi-value" style="color:#7c3aed">$${(nnMRR + upNetMRR).toLocaleString()}</div>
+        <div class="kpi-sub">${((nnMRR+upNetMRR)/netMRR*100).toFixed(0)}% of net MRR won</div></div>
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
@@ -4798,15 +4810,18 @@ function renderSalesWon(el) {
     const mDeals = filtered.filter(d => d.m === m);
     const mTotal = mDeals.reduce((s,d) => s + d.mrr, 0);
 
+    const mNet = mDeals.reduce((s,d) => s + d.mrr - (d.prior||0), 0);
+
     html += `<div class="chart-card" style="margin-bottom:12px;padding:14px 18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:2px solid #e0e0e0;padding-bottom:8px">
         <div style="font-weight:700;font-size:15px">${m}</div>
-        <div style="font-size:13px"><span style="color:#6b7280">${mDeals.length} deals</span> · <span style="font-weight:700">$${mTotal.toLocaleString()}/mo</span></div>
+        <div style="font-size:13px"><span style="color:#6b7280">${mDeals.length} deals</span> · <span style="font-weight:700">$${mTotal.toLocaleString()}/mo gross</span> · <span style="font-weight:700;color:${mNet>=0?'#16a34a':'#dc2626'}">$${mNet.toLocaleString()}/mo net</span></div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:1px solid #e5e7eb">
           <th style="text-align:left;padding:4px 8px;font-weight:600">Customer</th>
           <th style="text-align:right;padding:4px 8px;font-weight:600">MRR</th>
+          <th style="text-align:right;padding:4px 8px;font-weight:600">Net MRR</th>
           <th style="text-align:center;padding:4px 8px;font-weight:600">Term</th>
           <th style="text-align:left;padding:4px 8px;font-weight:600">Type</th>
           <th style="text-align:right;padding:4px 8px;font-weight:600">Prior Agr MRR</th>
@@ -4815,10 +4830,13 @@ function renderSalesWon(el) {
 
     mDeals.forEach(d => {
       const color = catColors[d.cat] || '#6b7280';
-      const priorStr = d.cat === 'Upsell' && d.prior > 0 ? '$'+d.prior.toLocaleString() : (d.cat === 'Upsell' ? 'New svc' : '—');
-      html += `<tr style="border-bottom:1px solid #f3f4f6">
+      const dealNet = d.mrr - (d.prior||0);
+      const netColor = dealNet > 0 ? '#16a34a' : dealNet < 0 ? '#dc2626' : '#6b7280';
+      const priorStr = d.prior > 0 ? '$'+d.prior.toLocaleString() : (d.cat === 'Upsell' ? 'New svc' : '—');
+      html += `<tr style="border-bottom:1px solid #f3f4f6${dealNet<0?' ;background:#fef2f2':''}">
         <td style="padding:6px 8px;font-weight:${d.mrr>=2000?700:400}">${d.c}</td>
         <td style="padding:6px 8px;text-align:right;font-weight:600;color:${color}">$${d.mrr.toLocaleString()}</td>
+        <td style="padding:6px 8px;text-align:right;font-weight:700;color:${netColor}">$${dealNet.toLocaleString()}</td>
         <td style="padding:6px 8px;text-align:center;color:#6b7280">${d.cy}mo</td>
         <td style="padding:6px 8px"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:${color}18;color:${color}">${d.cat}</span></td>
         <td style="padding:6px 8px;text-align:right;color:#9ca3af;font-size:11px">${priorStr}</td>
