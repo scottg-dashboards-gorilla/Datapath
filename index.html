@@ -4832,7 +4832,10 @@ function renderSalesWon(el) {
 
   // Render deals grouped by month
   const filtered = swFilter === 'all' ? ALL_DEALS : ALL_DEALS.filter(d => d.cat === swFilter);
-  const fMonths = [...new Set(filtered.map(d => d.m))];
+  const fMonths = [...new Set(filtered.map(d => d.m))].sort((a,b) => {
+    const pa = new Date(a), pb = new Date(b);
+    return pb - pa; // newest first
+  });
 
   fMonths.forEach(m => {
     const mDeals = filtered.filter(d => d.m === m);
