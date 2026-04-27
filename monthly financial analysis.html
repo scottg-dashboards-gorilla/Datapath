@@ -618,59 +618,75 @@ const WORKING_DAYS = {
 
 // Products Ordered Not Invoiced — Customer-level detail from uploaded spreadsheet
 // Source: C360 Procurement > Products Ordered Not Invoiced
-// Date range: 9/1/2025 – 2/28/2026 | Exported 3/6/2026
+// Exported 4/6/2026
+//
+// ── Previous version (3/6/2026 export, 49 customers, $631K) ──
+// Archived in source-data/Products Ordered not Invoiced 3.6.2026.xlsx
+// SNI_TOTALS was: {rev:631272.90, cost:531444.53, profit:99828.37, margin:15.8, customers:49, items:254, orders:84}
+// Notable changes: Newman-Crows Landing +$63K rev, Wave Dental/Encore Glass/Shiloh/City of Selma/City of Turlock/Weakley & Arendt/
+//   Sargent & Bryan/DeHart/Project Hope Alliance removed (invoiced or completed). New: Vanlue Local Schools, Aweta, Statuo,
+//   Empire Union SD, Groundswell, Ability Ambeck, Duarte Nursery, Winton-Ireland, Imagine Great Western, Sierra Energy,
+//   Mendocino Railway, Capital Financial, LHollingworth, Ameribest, Laguna Tools, Westmark added.
 const SNI_CUSTOMERS = [
-  {c:'Newman-Crows Landing USD',rev:139104.00,cost:115920.00,profit:23184.00,margin:16.7,items:1,orders:1},
-  {c:'Advanced Radiology and Interventional Associates',rev:83490.12,cost:74488.60,profit:9001.52,margin:10.8,items:30,orders:1},
-  {c:'Vital Care',rev:71281.33,cost:59692.39,profit:11588.94,margin:16.3,items:42,orders:14},
-  {c:'Scheurer Health',rev:66460.50,cost:54240.97,profit:12219.53,margin:18.4,items:8,orders:3},
-  {c:'Wave Dental Professionals',rev:48275.00,cost:42485.72,profit:5789.28,margin:12.0,items:2,orders:1},
-  {c:'Panoche Energy Center',rev:42857.92,cost:33129.77,profit:9728.15,margin:22.7,items:12,orders:3},
-  {c:'California Rural Legal Assistance, Inc',rev:31365.03,cost:26137.07,profit:5227.96,margin:16.7,items:4,orders:1},
-  {c:'Encore Glass Inc.',rev:22344.92,cost:20104.00,profit:2240.92,margin:10.0,items:5,orders:2},
-  {c:'Shiloh Elementary School District',rev:11211.36,cost:8873.04,profit:2338.32,margin:20.9,items:3,orders:1},
-  {c:'Hopebridge Autism Therapy Centers',rev:8947.34,cost:8002.40,profit:944.94,margin:10.6,items:4,orders:2},
-  {c:'Covington Exempted village',rev:8737.16,cost:7280.97,profit:1456.19,margin:16.7,items:3,orders:2},
+  {c:'Newman-Crows Landing USD',rev:202350.31,cost:171711.77,profit:30638.54,margin:15.1,items:13,orders:3},
+  {c:'Advanced Radiology and Interventional Associates',rev:87113.16,cost:77507.80,profit:9605.36,margin:11.0,items:30,orders:1},
+  {c:'Vital Care',rev:69446.30,cost:58899.69,profit:10546.61,margin:15.2,items:36,orders:12},
+  {c:'Panoche Energy Center',rev:40339.08,cost:31029.84,profit:9309.24,margin:23.1,items:12,orders:3},
+  {c:'Scheurer Health',rev:36830.50,cost:29668.20,profit:7162.30,margin:19.4,items:3,orders:2},
+  {c:'California Rural Legal Assistance, Inc',rev:20903.30,cost:17418.96,profit:3484.34,margin:16.7,items:3,orders:1},
+  {c:'Vanlue Local Schools',rev:15054.40,cost:13248.80,profit:1805.60,margin:12.0,items:2,orders:1},
+  {c:'Aweta - Americas',rev:11757.58,cost:9175.38,profit:2582.20,margin:22.0,items:5,orders:1},
+  {c:'Statuo',rev:10500.00,cost:8400.00,profit:2100.00,margin:20.0,items:1,orders:1},
   {c:'Graceada Partners',rev:8594.98,cost:7162.46,profit:1432.52,margin:16.7,items:4,orders:1},
-  {c:'Inland Star Distribution Center - Fresno',rev:7972.70,cost:5720.00,profit:2252.70,margin:28.3,items:4,orders:2},
+  {c:'Hopebridge Autism Therapy Centers',rev:8347.60,cost:7448.64,profit:898.96,margin:10.8,items:2,orders:1},
+  {c:'Empire Union School District',rev:7748.04,cost:7043.74,profit:704.30,margin:9.1,items:2,orders:1},
   {c:'Carmel Unified School District',rev:6581.08,cost:5484.23,profit:1096.85,margin:16.7,items:4,orders:1},
-  {c:'City of Selma',rev:6474.24,cost:5391.36,profit:1082.88,margin:16.7,items:1,orders:1},
-  {c:'City of Turlock',rev:6430.44,cost:5355.82,profit:1074.62,margin:16.7,items:9,orders:1},
-  {c:'North Shore High School',rev:6334.60,cost:5325.91,profit:1008.69,margin:15.9,items:7,orders:3},
-  {c:'Constellation Brands',rev:4344.60,cost:3495.50,profit:849.10,margin:19.5,items:4,orders:2},
-  {c:'Weakley & Arendt, LLP',rev:4215.27,cost:4210.16,profit:5.11,margin:0.1,items:5,orders:1},
-  {c:'Imagine Groveport Community School',rev:3962.87,cost:3461.37,profit:501.50,margin:12.7,items:2,orders:2},
+  {c:'Sunbridge Schools',rev:5609.97,cost:4609.30,profit:1000.67,margin:17.8,items:7,orders:2},
+  {c:'Constellation Brands',rev:5383.50,cost:4361.25,profit:1022.25,margin:19.0,items:7,orders:3},
+  {c:'Covington Exempted village',rev:4621.46,cost:3851.22,profit:770.24,margin:16.7,items:2,orders:1},
+  {c:'Sierra Northern Railway',rev:4032.88,cost:3304.48,profit:728.40,margin:18.1,items:3,orders:2},
   {c:'PASCO',rev:3910.52,cost:3358.59,profit:551.93,margin:14.1,items:4,orders:1},
-  {c:'City Day Community School',rev:3442.51,cost:2659.87,profit:782.64,margin:22.7,items:15,orders:5},
+  {c:'Imagine Groveport Community School',rev:3675.75,cost:3197.25,profit:478.50,margin:13.0,items:1,orders:1},
+  {c:'Winton-Ireland, Strom & Green',rev:3130.62,cost:2722.28,profit:408.34,margin:13.0,items:1,orders:1},
   {c:'Formulation Technology, Inc.',rev:2820.62,cost:2226.77,profit:593.85,margin:21.1,items:1,orders:1},
   {c:'Borba Farms Partners',rev:2810.30,cost:2341.92,profit:468.38,margin:16.7,items:2,orders:1},
-  {c:'HHHC',rev:2703.29,cost:2323.97,profit:379.32,margin:14.0,items:2,orders:2},
+  {c:'Imagine Great Western Academy',rev:2685.73,cost:2335.42,profit:350.31,margin:13.0,items:3,orders:1},
+  {c:'Sierra Energy',rev:2612.32,cost:2300.70,profit:311.62,margin:11.9,items:4,orders:2},
+  {c:'Team Public Choices, LLC',rev:2586.69,cost:2592.74,profit:-6.05,margin:-0.2,items:19,orders:3},
   {c:'Circle of Life - First Nations - Soaring Eagles',rev:2129.17,cost:1753.48,profit:375.69,margin:17.6,items:4,orders:1},
-  {c:'Arts and College Preparatory Academy',rev:1951.00,cost:1815.24,profit:135.76,margin:7.0,items:5,orders:1},
-  {c:'River Gate HS',rev:1769.94,cost:1474.95,profit:294.99,margin:16.7,items:2,orders:2},
-  {c:'Millennium Comm School',rev:1697.00,cost:1236.00,profit:461.00,margin:27.2,items:2,orders:2},
-  {c:'Imagine Sullivant',rev:1680.00,cost:1398.72,profit:281.28,margin:16.7,items:1,orders:1},
+  {c:'Imagine Sullivant',rev:1958.40,cost:1630.72,profit:327.68,margin:16.7,items:2,orders:2},
+  {c:'City Day Community School',rev:1788.97,cost:1490.76,profit:298.21,margin:16.7,items:2,orders:1},
+  {c:'Groundswell',rev:1725.00,cost:1466.25,profit:258.75,margin:15.0,items:1,orders:1},
   {c:'Devoted Guardians',rev:1602.09,cost:1373.53,profit:228.56,margin:14.3,items:3,orders:1},
-  {c:'Sargent & Bryan, Inc',rev:1487.52,cost:1239.60,profit:247.92,margin:16.7,items:5,orders:1},
-  {c:'Team Public Choices, LLC',rev:1482.19,cost:1508.13,profit:-25.94,margin:-1.8,items:18,orders:3},
-  {c:'DeHart Plumbing, Heating & Air, Inc.',rev:1332.40,cost:1110.33,profit:222.07,margin:16.7,items:2,orders:1},
-  {c:'Sunbridge Schools',rev:1196.67,cost:997.22,profit:199.45,margin:16.7,items:3,orders:1},
-  {c:'Imagine Madison Ave',rev:1131.91,cost:943.25,profit:188.66,margin:16.7,items:4,orders:1},
+  {c:'Ability Ambeck Mortgage',rev:1514.59,cost:1242.76,profit:271.83,margin:17.9,items:6,orders:2},
+  {c:'Duarte Nursery',rev:1425.31,cost:1187.76,profit:237.55,margin:16.7,items:2,orders:1},
+  {c:'North Shore High School',rev:1226.08,cost:993.00,profit:233.08,margin:19.0,items:3,orders:1},
+  {c:'Imagine Madison Ave',rev:1131.91,cost:899.25,profit:232.66,margin:20.6,items:4,orders:1},
   {c:"Pearl's Hope",rev:1104.91,cost:929.38,profit:175.53,margin:15.9,items:2,orders:1},
-  {c:'Cristo Rey High School',rev:1046.76,cost:843.60,profit:203.16,margin:19.4,items:6,orders:2},
+  {c:'Westmark Incorporated',rev:1072.50,cost:975.00,profit:97.50,margin:9.1,items:1,orders:1},
+  {c:'Millennium Comm School',rev:1022.00,cost:786.00,profit:236.00,margin:23.1,items:1,orders:1},
   {c:'Valley Iron',rev:900.00,cost:765.00,profit:135.00,margin:15.0,items:1,orders:1},
   {c:'Invictus HS',rev:889.99,cost:749.99,profit:140.00,margin:15.7,items:2,orders:1},
   {c:'Impact Home Health',rev:873.17,cost:746.87,profit:126.30,margin:14.5,items:3,orders:1},
   {c:'City of Mendota',rev:812.18,cost:684.30,profit:127.88,margin:15.7,items:2,orders:1},
   {c:'Garretson Team',rev:776.16,cost:729.12,profit:47.04,margin:6.1,items:1,orders:1},
   {c:'Alliance Services',rev:728.92,cost:626.66,profit:102.26,margin:14.0,items:2,orders:1},
+  {c:'Mendocino Railway',rev:650.00,cost:562.00,profit:88.00,margin:13.5,items:2,orders:1},
   {c:'DiMare',rev:620.18,cost:533.70,profit:86.48,margin:13.9,items:1,orders:1},
-  {c:'Project Hope Alliance',rev:505.56,cost:399.98,profit:105.58,margin:20.9,items:3,orders:1},
+  {c:'Cristo Rey High School',rev:527.29,cost:393.74,profit:133.55,margin:25.3,items:3,orders:2},
+  {c:'Inland Star Distribution Center - Fresno',rev:328.16,cost:298.16,profit:30.00,margin:9.1,items:5,orders:2},
   {c:'Jame O Bookkeeping',rev:312.24,cost:257.12,profit:55.12,margin:17.7,items:2,orders:1},
   {c:'Kaplan & Trombi',rev:312.24,cost:256.50,profit:55.74,margin:17.9,items:1,orders:1},
+  {c:'Capital Financial Consultants Group',rev:264.60,cost:227.99,profit:36.61,margin:13.8,items:3,orders:1},
   {c:'test company',rev:258.00,cost:199.00,profit:59.00,margin:22.9,items:1,orders:1},
+  {c:'Arts and College Preparatory Academy',rev:234.32,cost:990.06,profit:-755.74,margin:-322.5,items:1,orders:1},
+  {c:'HHHC',rev:219.00,cost:206.44,profit:12.56,margin:5.7,items:2,orders:2},
+  {c:'River Gate HS',rev:186.85,cost:181.07,profit:5.78,margin:3.1,items:1,orders:1},
+  {c:'LHollingworth',rev:169.14,cost:140.95,profit:28.19,margin:16.7,items:2,orders:1},
+  {c:'Ameribest',rev:147.99,cost:135.75,profit:12.24,margin:8.3,items:1,orders:1},
+  {c:'Laguna Tools',rev:19.20,cost:15.36,profit:3.84,margin:20.0,items:1,orders:1},
 ];
-const SNI_TOTALS = {rev:631272.90, cost:531444.53, profit:99828.37, margin:15.8, customers:49, items:254, orders:84, asOf:'3/6/2026'};
+const SNI_TOTALS = {rev:596377.25, cost:504829.10, profit:91548.15, margin:15.4, customers:57, items:239, orders:85, asOf:'4/6/2026'};
 
 function makeMonth(month, revs, cogss, labor, salesLab, opexData, otherInc, incomeTax) {
   // ── Labor Reallocation ──
@@ -3176,7 +3192,7 @@ function renderDashboard(el) {
         <tbody id="sni-body"></tbody>
       </table>
     </div>
-    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: C360 Procurement — Product Ordered Not Invoiced | Date range: 4/1/2025 – 3/31/2026 | Exported: ${SNI_TOTALS.asOf}</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:6px">Source: C360 Procurement — Product Ordered Not Invoiced | Exported: ${SNI_TOTALS.asOf}</div>
   </div>`;
 
   // Charts
