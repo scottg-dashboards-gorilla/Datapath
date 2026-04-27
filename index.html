@@ -4994,40 +4994,138 @@ let conversationHistory = [];
 let advisorStreaming = false;
 
 function buildFinancialSnapshot() {
-  const L = latest(), F = DATA[0];
+  const L = latest();
   const annRev = L.totRev * 12;
-  const hc = totalHC();
-  const deptSnap = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0 || m.d[d.id].cogs > 0)).map(d => {
-    const dd = L.d[d.id];
-    return `  ${d.name}: Rev ${fmt(dd.rev)}, COGS ${fmt(dd.cogs)}, GP ${fmt(dd.gp)} (${fmtP(dd.gpM)}), HC ${dd.hc}, Labor Alloc ${fmt(dd.labAlloc||0)}`;
-  }).join('\n');
   const momGrowth = DATA.length > 1 ? ((L.totRev - DATA[DATA.length-2].totRev) / DATA[DATA.length-2].totRev * 100).toFixed(1) : 'N/A';
   const allLabPct = ((L.totLab + L.salesLab + L.adminLab) / L.totRev * 100).toFixed(1);
 
-  return `LIVE FINANCIAL DATA (as of ${L.month}):
-Total Revenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized)
-Total COGS: ${fmt(L.totCogs)}
-Gross Profit: ${fmt(L.gp)} (${fmtP(L.gpM)})
-GP Before Labor: ${fmtP(L.gpBeforeLaborM)}
-EBITDA: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)} margin)
-Net Income: ${fmt(L.netIncome)}
-MoM Revenue Growth: ${momGrowth}%
-Headcount: ${hc} employees
-All-In Labor % of Revenue: ${allLabPct}%
-COGS Labor: ${fmt(L.totLab)} | Sales Labor: ${fmt(L.salesLab)} | Admin Payroll: ${fmt(L.adminLab)}
+  // 1. Department breakdown — latest month
+  const deptSnap = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0 || m.d[d.id].cogs > 0)).map(d => {
+    const dd = L.d[d.id];
+    return `  ${d.name}: Rev ${fmt(dd.rev)}, GP ${fmt(dd.gp)} (${fmtP(dd.gpM)}), Labor ${fmt(dd.labAlloc||0)}`;
+  }).join('\n');
 
-DEPARTMENT BREAKDOWN:
+  // 2. L12M department GP margin trend
+  const l12 = DATA.slice(-12);
+  const deptTrend = DEPTS.filter(d => l12.some(m => m.d[d.id].rev > 0)).map(d => {
+    const pts = l12.filter(m => m.d[d.id].rev > 0).map(m => `${m.month}:${fmtP(m.d[d.id].gpM)}`).join(' ');
+    return `  ${d.name}: ${pts}`;
+  }).join('\n');
+
+  // 3. Full 38-month trend
+  const fullTrend = DATA.map(m => `${m.month}:Rev ${fmt(m.totRev)}/EBITDA ${fmtP(m.ebitdaM)}`).join(' | ');
+
+  // 4. Addback schedule — 2025 annual totals
+  const yr2025 = DATA.filter(m => m.month.endsWith('25'));
+  const abKeys = ['facilitiesModesto','facilitiesOhio','ownerAboveMarket','familyMemberComp','severancePTO',
+    'yearEndLegal','balanceSheetAdj','rdTaxCredit','citrinAssessment','phoenixStrategy','rogerGentry',
+    'podcastStudio','apLogic','ohioFlood','tpcContract','systems1111','additionalLegal','websiteDev','marketingGTM','bankFees'];
+  const abLabels = {facilitiesModesto:'Facilities – Modesto HQ',facilitiesOhio:'Facilities – Ohio',
+    ownerAboveMarket:'Owner Above-Market Comp',familyMemberComp:'Family Member Comp (Colin+Hudson $3,520/mo)',
+    severancePTO:'Severance & PTO',yearEndLegal:'Year-End Legal Reserves (PAGA)',
+    balanceSheetAdj:'Balance Sheet Adj – Insurance (Non-Cash)',rdTaxCredit:'R&D Tax Credit Study',
+    citrinAssessment:'Citrin Cooperman Assessment',phoenixStrategy:'Phoenix Strategy Group',
+    rogerGentry:'Roger Gentry Consulting',podcastStudio:'Podcast Studio Build-Out',
+    apLogic:'AP Logic (SharePoint)',ohioFlood:'Ohio Office Flood Repairs',
+    tpcContract:'TPC Contract Negotiation',systems1111:'11:11 Systems Buyout',
+    additionalLegal:'Additional Legal Fees',websiteDev:'Website Development',
+    marketingGTM:'Marketing GTM Consulting',bankFees:'Bank/Finance Fees'};
+  const ab2025Total = yr2025.reduce((s,m) => s + (m.totalAddBacks||0), 0);
+  const abSnap = abKeys.map(k => {
+    const total = yr2025.reduce((s,m) => s + (m.addBacks?.[k]||0), 0);
+    return total ? `  ${abLabels[k]||k}: ${fmt(total)}` : null;
+  }).filter(Boolean).join('\n');
+
+  // 5. EBITDA normalization — one-time items by month
+  const normSnap = DATA.filter(m => (m.normSevPTO||0) + Object.values(m.normOneTimeItems||{}).reduce((a,b)=>a+b,0) > 0).map(m => {
+    const otTotal = Object.values(m.normOneTimeItems||{}).reduce((a,b)=>a+b,0);
+    const items = Object.entries(m.normOneTimeItems||{}).map(([k,v]) => `${k}:${fmt(v)}`).join(', ');
+    const parts = [];
+    if (m.normSevPTO) parts.push(`Sev/PTO ${fmt(m.normSevPTO)}`);
+    if (otTotal) parts.push(`One-Time ${fmt(otTotal)} [${items}]`);
+    return `  ${m.month}: ${parts.join(' | ')} → +${fmt((m.normSevPTO||0)+otTotal)}`;
+  }).join('\n');
+
+  // 6. Sales Won summary
+  const swCats = ['Net New','Upsell','Renewal'];
+  const swByCat = Object.fromEntries(swCats.map(c => [c, {deals:0, mrr:0}]));
+  ALL_DEALS.forEach(d => { if (swByCat[d.cat]) { swByCat[d.cat].deals++; swByCat[d.cat].mrr += d.mrr; } });
+  const totalSWMRR = Object.values(swByCat).reduce((s,v) => s + v.mrr, 0);
+  const growthSWMRR = swByCat['Net New'].mrr + swByCat['Upsell'].mrr;
+  const nnLogos = new Set(ALL_DEALS.filter(d => d.cat==='Net New' && d.prior===0).map(d => d.c)).size;
+  const mOrd = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const mKey = s => { const p=s.split(' '); return parseInt(p[1])*12+mOrd[p[0]]; };
+  const swMonths = [...new Set(ALL_DEALS.map(d => d.m))].sort((a,b) => mKey(b)-mKey(a));
+  const recentSW = swMonths.slice(0,3).map(m => {
+    const mDeals = ALL_DEALS.filter(d => d.m===m);
+    const mMRR = mDeals.reduce((s,d) => s+d.mrr, 0);
+    const byCat = swCats.map(c => { const v=mDeals.filter(d=>d.cat===c).reduce((s,d)=>s+d.mrr,0); return v?`${c}:${fmt(v)}`:null; }).filter(Boolean).join(', ');
+    return `  ${m}: ${fmt(mMRR)} total (${byCat})`;
+  }).join('\n');
+  const byRep = {}; ALL_DEALS.forEach(d => { byRep[d.r]=(byRep[d.r]||0)+d.mrr; });
+  const topReps = Object.entries(byRep).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([r,v]) => `  ${r}: ${fmt(v)}`).join('\n');
+
+  // 7. Labor by department
+  const deptTotals = {};
+  LABOR_ROSTER.forEach(p => {
+    p.depts.forEach(da => {
+      if (!deptTotals[da.dept]) deptTotals[da.dept] = {count:0, gross:0};
+      deptTotals[da.dept].count++;
+      deptTotals[da.dept].gross += p.baseGross * da.pct / 100;
+    });
+  });
+  const laborSnap = LABOR_DEPTS.map(ld => {
+    const t = deptTotals[ld.id];
+    return t ? `  ${ld.name}: ${t.count} people, ${fmt(Math.round(t.gross))}/mo` : null;
+  }).filter(Boolean).join('\n');
+
+  // 8. Unbilled pipeline
+  const highRisk = UNBILLED_DEALS.filter(d => d.risk==='high');
+  const medRisk  = UNBILLED_DEALS.filter(d => d.risk==='med');
+  const totalUnbilled = UNBILLED_DEALS.reduce((s,d) => s+d.mrr, 0);
+  const unbilledSnap = UNBILLED_DEALS.map(d =>
+    `  ${d.c}: ${fmt(d.mrr)}/mo [${d.risk.toUpperCase()}] — ${d.status.replace(/[✅⚠️🆕]/gu,'').trim()}`
+  ).join('\n');
+
+  return `LIVE FINANCIAL DATA (as of ${L.month}):
+Revenue: ${fmt(L.totRev)}/mo (${fmt(annRev)} annualized) | MoM Growth: ${momGrowth}%
+COGS: ${fmt(L.totCogs)} | Gross Profit: ${fmt(L.gp)} (${fmtP(L.gpM)}) | GP Before Labor: ${fmtP(L.gpBeforeLaborM)}
+EBITDA: ${fmt(L.ebitda)} (${fmtP(L.ebitdaM)}) | Adj EBITDA: ${fmt(L.adjEbitda)} (${fmtP(L.adjEbitdaM)})
+All-In Labor: ${allLabPct}% of rev | COGS Labor: ${fmt(L.totLab)} | Sales Labor: ${fmt(L.salesLab)} | Admin: ${fmt(L.adminLab)}
+OpEx: Admin ${fmt(L.adminLab)} | Facilities ${fmt(L.facilities)} | Marketing ${fmt(L.marketing)} | G&A ${fmt(L.ga)} | Tax/Ins ${fmt(L.taxIns)} | Total ${fmt(L.opex)}
+
+DEPARTMENT BREAKDOWN (${L.month}):
 ${deptSnap}
 
-OPERATING EXPENSES:
-  Admin Payroll: ${fmt(L.adminLab)}
-  Facilities: ${fmt(L.facilities)}
-  Marketing: ${fmt(L.marketing)}
-  G&A: ${fmt(L.ga)}
-  Tax & Insurance: ${fmt(L.taxIns)}
-  Total OpEx: ${fmt(L.opex)}
+DEPARTMENT GP MARGIN TREND (L12M):
+${deptTrend}
 
-TREND (${DATA.length} periods loaded): ${DATA.map(m => m.month + ': Rev ' + fmt(m.totRev) + ', EBITDA ' + fmtP(m.ebitdaM)).join(' | ')}`;
+38-MONTH REVENUE/EBITDA TREND:
+${fullTrend}
+
+2025 ADDBACK SCHEDULE (${fmt(ab2025Total)} total, 19 items):
+${abSnap}
+
+EBITDA NORMALIZATION — ONE-TIME ITEMS BY MONTH:
+${normSnap}
+
+SALES WON (Jan 2025–Mar 2026, ${ALL_DEALS.length} deals across 15 months):
+Net New: ${swByCat['Net New'].deals} deals · ${fmt(swByCat['Net New'].mrr)}/mo · ${nnLogos} new logos
+Upsell: ${swByCat['Upsell'].deals} deals · ${fmt(swByCat['Upsell'].mrr)}/mo
+Renewals (retention): ${swByCat['Renewal'].deals} deals · ${fmt(swByCat['Renewal'].mrr)}/mo
+Total MRR won: ${fmt(totalSWMRR)}/mo | Growth MRR (NN+Upsell): ${fmt(growthSWMRR)}/mo (${(growthSWMRR/totalSWMRR*100).toFixed(1)}%)
+Recent 3 months:
+${recentSW}
+Top reps by MRR won:
+${topReps}
+
+LABOR ALLOCATION BY DEPARTMENT:
+${laborSnap}
+
+UNBILLED PIPELINE (CRM deals not yet invoicing — ${fmt(totalUnbilled)}/mo at risk):
+High risk: ${highRisk.length} items · ${fmt(highRisk.reduce((s,d)=>s+d.mrr,0))}/mo
+Medium risk: ${medRisk.length} items · ${fmt(medRisk.reduce((s,d)=>s+d.mrr,0))}/mo
+${unbilledSnap}`;
 }
 
 const DATAPATH_SYSTEM_PROMPT = `You are a senior MSP financial advisor for Datapath, a managed service provider headquartered in Modesto, CA with operations in Ohio. You have deep expertise in MSP operations, recurring revenue models, and PE-backed IT services valuations. You are advising the co-CEOs (James Bates and David Darmstandler) and COO (Scott Gordon).
