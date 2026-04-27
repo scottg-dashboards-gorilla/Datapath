@@ -4679,46 +4679,47 @@ let swShowUnbilled = true;
 
 // Potentially unbilled MRR contracts — won but no active agreement found in billing system
 const UNBILLED_DEALS = [
-  {close:'Jul 29, 2025',c:'Samaritan Home Health',mrr:140,type:'MRR - Recurring Resale',rep:'Jay Harvey',status:'⚠️ Expired agreement only',days:245,risk:'high'},
-  {close:'Jan 07, 2026',c:'Central Valley Regional Center',mrr:3500,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🆕 No agreement history',days:83,risk:'high'},
-  {close:'Jan 22, 2026',c:'Statuo',mrr:874,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:68,risk:'high'},
-  {close:'Feb 02, 2026',c:'Sierra Northern Railway',mrr:5538,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:57,risk:'med'},
-  {close:'Feb 25, 2026',c:'Advanced Radiology and Interventional Assoc.',mrr:2482.50,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🆕 No agreement history',days:34,risk:'med'},
-  {close:'Feb 27, 2026',c:'Sierra Energy',mrr:3010,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
-  {close:'Feb 27, 2026',c:'Mendocino Railway',mrr:2608,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
-  {close:'Feb 27, 2026',c:'Railpower',mrr:1937,type:'MRR - Managed Services (Net New)',rep:'Dan Sturdivant',status:'🆕 No agreement history',days:32,risk:'med'},
-  {close:'Feb 27, 2026',c:'Sierra Northern Railway',mrr:1826.60,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'},
-  {close:'Feb 27, 2026',c:'Sierra Energy',mrr:984.84,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'},
-  {close:'Feb 27, 2026',c:'Railpower',mrr:313.30,type:'MRR - Recurring Resale',rep:'Nathan La Fleche',status:'🆕 No agreement history',days:32,risk:'med'},
-  // ── Mar 2026 deals (27 MRR deals, $16,473/mo) — needs verification against CW invoicing ──
-  // Net New
-  {close:'Mar 2026',c:'Laguna Tools',mrr:4061,type:'MRR - Managed Services (Net New)',rep:'Ricky Maestas',status:'🔄 M365 contract replacement — verify new agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Western Steel Buildings',mrr:380,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
+  // ── HIGH RISK — verified issues ──
+  {close:'Feb 25, 2026',c:'Advanced Radiology and Interventional Assoc.',mrr:2482.50,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'⚠️ CW agreement exists but INACTIVE — additions match CRM exactly ($2,482.50), needs activation. Created 2/25/26, planned start 4/1/26, 0 invoices sent. Escalate to ops immediately.',days:61,risk:'high'},
+  // ── REMOVED (verified billing in CW 4/27/26): ──
+  // Samaritan Home Health $140 — embedded in Jul 2025 security package ($3,675→$6,041/mo), 105 invoices all "Closed - Emailed"
+  // CVRC $3,500 — active $3,500/mo T-Services-MSP, 0 unbilled periods
+  // Statuo $874 — active $1,530/mo T-Services-MSP, invoicing confirmed
+  // Sierra Northern Railway $5,538 — active $5,574.11 T-Services-MSP started 3/1/26, invoices "Closed - Emailed" confirmed
+  // Sierra Energy $3,010 — active $2,897 T-Services-MSP started 3/1/26
+  // Mendocino Railway $2,608 — active T-Services-MSP, last invoice $2,449 on 4/1/26
+  // Railpower $1,937 — active $1,910.06 T-Services-MSP started 3/1/26, invoices "Closed - Emailed" confirmed
+  // Sierra Northern Railway Resale $1,826.60 — active $1,879.10 Recurring Resale
+  // Sierra Energy Resale $984.84 — active $984.84 Recurring Resale
+  // Railpower Resale $313.30 — active $313.30 Recurring Resale
+  // Laguna Tools $4,061 — M365 Business Premium Monthly $4,012.80 replacement effective 4/1/26
+  // ── Mar 2026 — CW addition confirmed via bulk search (verify amounts individually) ──
+  {close:'Mar 2026',c:'Western Steel Buildings',mrr:380,type:'MRR - Managed Services (Net New)',rep:'Jay Harvey',status:'✅ CW addition found (Firewall, eff 4/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Hercules OEM Group',mrr:1602,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (M365/O365/Huntress, eff 5/1-6/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Hercules OEM Group',mrr:250,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (eff 5/1-6/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Ameribest',mrr:827,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW addition found (NCE Power BI Pro, eff 5/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Sierra Northern Railway',mrr:750,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW addition found (Copilot Business, eff 5/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Sierra Northern Railway',mrr:6,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW addition found — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Railpower',mrr:500,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW active agreement confirmed — verify addition amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'Railpower',mrr:66,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW active agreement confirmed — verify addition amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'PeopleCare Health Services',mrr:326,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (ZTNA, eff 4/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'PASCO',mrr:300,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (DR + ZTNA, eff 4/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:'PASCO',mrr:204,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (DR + ZTNA, eff 4/1/26) — verify amount',days:26,risk:'low'},
+  {close:'Mar 2026',c:"Pearl's Hope",mrr:158,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'✅ CW additions found (ZTNA, eff 4/1/26) — verify amount',days:26,risk:'low'},
+  // ── Mar 2026 — not yet verified in CW, needs individual check ──
   {close:'Mar 2026',c:'Aweta - Americas',mrr:250,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Aweta - Americas',mrr:110,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Del Puerto Health Care District',mrr:176,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Del Puerto Health Care District',mrr:110,type:'MRR - Managed Services (Net New)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  // Upsell
   {close:'Mar 2026',c:'Circle of Life - First Nations - Soaring Eagles',mrr:1618,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Hercules OEM Group',mrr:1602,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Hercules OEM Group',mrr:250,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'24 Hour Home Care',mrr:1360,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'24 Hour Home Care',mrr:281,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'DiMare',mrr:845,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Ameribest',mrr:827,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Sierra Northern Railway',mrr:750,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Sierra Northern Railway',mrr:6,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Westmark Incorporated',mrr:708,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Railpower',mrr:500,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'Railpower',mrr:66,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Devoted Guardians',mrr:494,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'HHHC',mrr:452,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Arts and College Preparatory Academy',mrr:345,type:'MRR - Managed Services (Upsell)',rep:'Joel Walker',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'PeopleCare Health Services',mrr:326,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'PASCO',mrr:300,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:'PASCO',mrr:204,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'Alliance Services',mrr:200,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
-  {close:'Mar 2026',c:"Pearl's Hope",mrr:158,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'},
   {close:'Mar 2026',c:'ECS',mrr:95,type:'MRR - Managed Services (Upsell)',rep:'Nathan La Fleche',status:'🆕 Verify addition on existing agreement',days:26,risk:'med'}
 ];
 
