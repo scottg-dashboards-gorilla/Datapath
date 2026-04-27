@@ -106,134 +106,31 @@ Validate CRM "Sales Won" data each month-end by cross-referencing against Power 
 - DOM structure: `[role="gridcell"]` for all columns, Cell[0] = checkbox, Cell[1] = Customer name
 - Cell values contain "Additional Conditional Formatting" text that must be cleaned
 
-### Data Extraction Tips (UI scraping — SLOW, avoid)
+### Data Extraction Tips
 - Extract in batches due to virtual scrolling
 - Use shorter delimiters to avoid output truncation
 - Multiple scroll+extract cycles needed for full dataset
 - Clean extracted data: remove "Additional Conditional Formatting" text, trim whitespace
-
-### Power BI REST API — FAST, use this instead
-The Power BI API lets you run DAX queries directly against the dataset, bypassing the UI entirely. This is **dramatically faster** than scraping the virtual-scroll table.
-
-#### Setup (run from Chrome DevTools / javascript_tool on any Power BI page)
-```javascript
-// These values are stable across sessions:
-const token = window.powerBIAccessToken;  // auto-refreshed by Power BI session
-const groupId = 'f17eba89-44a2-4b3d-94a7-1d2ef4e84358';
-const datasetId = '5ee15556-ded0-4d30-b34b-21757d0c1a82';
-```
-
-#### Key Tables in the Dataset (33 total, these matter)
-| Table | Purpose |
-|-------|---------|
-| `reportdimension Company` | Customer name, status, territory, account manager |
-| `reportdimension Agreement` | Agreement name, type, category, status, billing cycle |
-| `reportfact Agreements` | **StartDate**, EndDate, CancelDate, Value, Agreement First Billing Date, Agreement Term |
-| `reportfact Billings` | Invoice-level billing data |
-| `reportdimension Billing` | Billing dimensions |
-| `reportdimension AgreementAddition` | Agreement addition details |
-| `reportfact AgreementAdditions` | Addition fact data |
-| `reportdimension BusinessUnit` | Business unit/department |
-| `core Organisation` | Organization-level data |
-
-#### DAX Query: Earliest Agreement Start Date per Customer (the key query)
-```javascript
-(async () => {
-  const token = window.powerBIAccessToken;
-  const groupId = 'f17eba89-44a2-4b3d-94a7-1d2ef4e84358';
-  const datasetId = '5ee15556-ded0-4d30-b34b-21757d0c1a82';
-  
-  const query = `
-    EVALUATE
-    SUMMARIZE(
-      'reportfact Agreements',
-      'reportdimension Company'[Customer],
-      "EarliestStart", MIN('reportfact Agreements'[StartDate]),
-      "EarliestBilling", MIN('reportfact Agreements'[Agreement First Billing Date]),
-      "AgreementCount", COUNTROWS('reportfact Agreements')
-    )
-    ORDER BY 'reportdimension Company'[Customer]
-  `;
-  
-  const resp = await fetch(
-    `https://api.powerbi.com/v1.0/myorg/groups/${groupId}/datasets/${datasetId}/executeQueries`,
-    {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ queries: [{ query }], serializerSettings: { includeNulls: true } })
-    }
-  );
-  const data = await resp.json();
-  const rows = data.results?.[0]?.tables?.[0]?.rows || [];
-  // rows[i] keys: 'reportdimension Company[Customer]', '[EarliestStart]', '[EarliestBilling]', '[AgreementCount]'
-  // Date format: '2025-03-01T00:00:00'
-  return JSON.stringify({ count: rows.length, sample: rows.slice(0, 3) });
-})();
-```
-
-#### Other Useful DAX Queries
-```sql
--- All agreements for a specific customer
-EVALUATE
-FILTER(
-  SUMMARIZE(
-    'reportfact Agreements',
-    'reportdimension Company'[Customer],
-    'reportdimension Agreement'[Agreement Name],
-    'reportdimension Agreement'[Agreement Type],
-    "Start", MIN('reportfact Agreements'[StartDate]),
-    "End", MIN('reportfact Agreements'[EndDate]),
-    "Value", SUM('reportfact Agreements'[Value])
-  ),
-  'reportdimension Company'[Customer] = "Advantage Home Care"
-)
-
--- Simple connectivity test
-EVALUATE ROW("test", 1)
-
--- Discover all columns in any table
-EVALUATE TOPN(1, 'reportfact Agreements')
-
--- List all tables and columns
-EVALUATE COLUMNSTATISTICS()
-```
-
-#### Important Notes
-- `powerBIAccessToken` is available on any Power BI page — just navigate to the report first
-- Token refreshes automatically with the session; no manual auth needed
-- Dataset ID is stable (tied to the workspace, not the report)
-- Returns up to ~100K rows per query; use TOPN() or FILTER() for large results
-- Wrap in `(async () => { ... })()` for javascript_tool since top-level await isn't supported
 
 ## Current Audit Results (as of 4/26/2026)
 
 ### Category Totals (204 deals, Jan 2025 – Feb 2026)
 | Category | Deals | MRR/mo |
 |----------|-------|--------|
-| Net New | 28 | $60,963 |
-| Upsell | 140 | $176,176 |
+| Net New | 7 | $19,949 |
+| Upsell | 161 | $217,190 |
 | Renewal | 36 | $97,964 |
 | **Total** | **204** | **$335,103** |
 
 ### Growth Split
 - Growth (Net New + Upsell): $237,139/mo (70.8%)
 - Non-Growth (Renewal): $97,964/mo (29.2%)
-- Net New logos: 20 unique clients
-
-### Net New Clients (20 logos, first Power BI agreement 2025+)
-- Advantage Home Care (2025-03-01), Ameribest (2025-01-31), Yosemite Farm Credit (2025-04-01)
-- PASCO (2025-01-23), Impact Home Health (2025-03-01), Inteli-care LLC (2025-04-01)
-- City of Mendota (2025-04-18), Samaritan Home Health (2025-09-01), Jame O Bookkeeping (2025-09-01)
-- ECS (2025-10-01), Cerbat Mountain Farm LLC (2025-10-01), Rizo Lopez Foods (not in Power BI)
-- Sierra Northern Railway (2026-03-01), The Ohio District - LCMS (2026-03-01), Sierra Energy (2026-03-01)
-- Central Valley Regional Center, Statuo, Mendocino Railway, Advanced Radiology, Railpower (2026 logos)
 
 ### Reclassification History
 - 29 Resale deals ($23,183/mo) → all reclassified as Upsell (net new product subscriptions, not replacements)
 - 37 Other/Misc deals ($18,688/mo) → all reclassified as Upsell (additional services to existing clients)
 - 1 Renewal (Imagine Columbus Primary Academy, $229/mo) → reclassified as Upsell (new service add confirmed in Power BI)
-- 21 Upsell deals ($41,014/mo) across 13 clients → reclassified as Net New (Power BI API query confirmed first agreements 2025+)
-- Method: DAX query via Power BI REST API against dataset 5ee15556, table 'reportfact Agreements', MIN(StartDate) per customer
+- ~94 CRM "Net New" deals → reclassified as Upsell (existing clients confirmed in Power BI)
 
 ## Files
 | File | Path |

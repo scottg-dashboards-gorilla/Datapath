@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Datapath Financial Command Center</title>
@@ -270,6 +268,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .sni-val { font-size: 14px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .sni-total { border-top: 2px solid #e0e0e0; border-bottom: none; margin-top: 4px; padding-top: 10px; }
 .sni-count { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: right; }
+
+/* ── PDF export ────────────────────────────────────────── */
+@media print {
+  #dh-header, #dh-pills { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body > *:not(#dh-app) { display: none !important; }
+  #dh-app { display: flex !important; }
+  #dh-view-tabs, .dh-no-print { display: none !important; }
+  #dh-header button { display: none !important; }
+  #dh-main { padding: 0 !important; }
+}
+
+/* ── Dept head mobile ──────────────────────────────────── */
+@media (max-width: 640px) {
+  #dh-header > div { flex-wrap: wrap; gap: 8px; }
+  .dh-kpi-grid { grid-template-columns: 1fr !important; }
+  #dh-pills { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #dh-main { padding: 16px !important; }
+}
 </style>
 </head>
 <body>
@@ -278,62 +294,225 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
   <div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.08);text-align:center">
     <div style="font-weight:800;font-size:20px;color:#1e40af;letter-spacing:-0.3px;margin-bottom:4px">DATAPATH</div>
     <div style="font-size:11px;color:#2563eb;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:24px">Financial Command Center</div>
-    <div style="font-size:14px;color:#6b7280;margin-bottom:16px">Enter password to continue</div>
-    <input id="pw-input" type="password" placeholder="Password" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')checkPw()">
-    <button onclick="checkPw()" style="width:100%;padding:12px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Sign In</button>
-    <div id="pw-error" style="color:#dc2626;font-size:13px;margin-top:10px;display:none">Incorrect password</div>
+    <input id="login-username" type="text" placeholder="Username" autocomplete="username" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:10px;box-sizing:border-box" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+    <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:12px 16px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;box-sizing:border-box" onkeydown="if(event.key==='Enter')checkLogin()">
+    <button onclick="checkLogin()" style="width:100%;padding:12px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Sign In</button>
+    <div id="login-error" style="color:#dc2626;font-size:13px;margin-top:10px;min-height:18px"></div>
   </div>
 </div>
 <script>
-// Password stored as SHA-256 hash — not in plain text
-async function hashPw(pw){const e=new TextEncoder().encode(pw);const h=await crypto.subtle.digest('SHA-256',e);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-const PW_HASH='b6b3a5c7b8d2dd7df447fcad8ad4b402b0d9a2f61651ceb130b56ce800028358';
-const AUTH_TIMEOUT=60*60*1000; // 1 hour in ms
-function refreshAuth(){localStorage.setItem('dp_auth_ts',Date.now().toString());}
-function isAuthValid(){
-  const ts=localStorage.getItem('dp_auth_ts');
-  if(!ts) return false;
-  return (Date.now()-parseInt(ts,10))<AUTH_TIMEOUT;
+const AUTH_TIMEOUT = 60 * 60 * 1000; // 1 hour
+const LOCKOUT_MAX  = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
+
+// ─── Session helpers ─────────────────────────────────────────────
+function _sessionStore(role){ return role === 'admin' ? localStorage : sessionStorage; }
+
+function saveSession(user){
+  const tok = {userId:user.id, role:user.role, loginTime:Date.now(), lastActive:Date.now()};
+  _sessionStore(user.role).setItem('dp_session', JSON.stringify(tok));
 }
+function loadSession(){
+  let tok = null;
+  try { tok = JSON.parse(localStorage.getItem('dp_session')); } catch(e){}
+  if(!tok) try { tok = JSON.parse(sessionStorage.getItem('dp_session')); } catch(e){}
+  return tok;
+}
+function clearSession(){
+  localStorage.removeItem('dp_session');
+  sessionStorage.removeItem('dp_session');
+}
+function refreshSession(){
+  const tok = loadSession();
+  if(!tok) return;
+  tok.lastActive = Date.now();
+  _sessionStore(tok.role).setItem('dp_session', JSON.stringify(tok));
+}
+function isSessionValid(){
+  const tok = loadSession();
+  if(!tok) return false;
+  return (Date.now() - tok.lastActive) < AUTH_TIMEOUT;
+}
+
+// ─── Lockout helpers ─────────────────────────────────────────────
+function _lockoutKey(username){ return 'dp_lockout_' + username; }
+function getLockout(username){
+  try { return JSON.parse(sessionStorage.getItem(_lockoutKey(username)) || 'null'); } catch(e){ return null; }
+}
+function setLockout(username, data){
+  sessionStorage.setItem(_lockoutKey(username), JSON.stringify(data));
+}
+function checkLockout(username){
+  const lk = getLockout(username);
+  if(!lk) return null;
+  const age = Date.now() - lk.ts;
+  if(age >= LOCKOUT_MS){ sessionStorage.removeItem(_lockoutKey(username)); return null; }
+  if(lk.attempts >= LOCKOUT_MAX) return Math.ceil((LOCKOUT_MS - age) / 60000);
+  return null;
+}
+function recordFailedAttempt(username){
+  const existing = getLockout(username);
+  const lk = existing || {attempts:0, ts:Date.now()};
+  lk.attempts++;
+  setLockout(username, lk);
+}
+function clearLockout(username){ sessionStorage.removeItem(_lockoutKey(username)); }
+
+// ─── App show/hide ───────────────────────────────────────────────
 function showApp(){
+  const user = state.currentUser;
   document.getElementById('login-gate').style.display='none';
-  document.getElementById('main-app').style.display='flex';
-  refreshAuth();
-}
-function lockApp(){
-  localStorage.removeItem('dp_auth_ts');
-  document.getElementById('main-app').style.display='none';
-  document.getElementById('login-gate').style.display='flex';
-  document.getElementById('pw-input').value='';
-  document.getElementById('pw-error').style.display='none';
-}
-async function checkPw(){
-  const v=document.getElementById('pw-input').value;
-  const h=await hashPw(v);
-  if(h===PW_HASH){
-    showApp();
+  if(user && user.role === 'dept_head'){
+    document.getElementById('dh-app').style.display='flex';
+    document.getElementById('main-app').style.display='none';
   } else {
-    document.getElementById('pw-error').style.display='block';
-    document.getElementById('pw-input').value='';
-    document.getElementById('pw-input').focus();
+    document.getElementById('main-app').style.display='flex';
+    document.getElementById('dh-app').style.display='none';
   }
 }
-// Reset inactivity timer on user interaction
+function lockApp(){
+  clearSession();
+  if(typeof state !== 'undefined') state.currentUser = null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('dh-app').style.display='none';
+  document.getElementById('login-gate').style.display='flex';
+  document.getElementById('login-username').value='';
+  document.getElementById('login-password').value='';
+  document.getElementById('login-error').textContent='';
+}
+
+// ─── Login ───────────────────────────────────────────────────────
+async function checkLogin(){
+  const username = (document.getElementById('login-username').value||'').trim().toLowerCase();
+  const password = document.getElementById('login-password').value||'';
+  const errEl    = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  const remaining = checkLockout(username);
+  if(remaining !== null){
+    errEl.textContent = 'Too many attempts. Try again in ' + remaining + ' min.';
+    auditLog(username, 'login_blocked', 'locked out');
+    return;
+  }
+
+  const user = USERS.find(u => u.username === username);
+  if(!user){
+    errEl.textContent = 'Invalid username or password.';
+    recordFailedAttempt(username);
+    auditLog(username, 'login_fail', 'username not found');
+    return;
+  }
+
+  if(!user.passwordHash || !user.salt){
+    errEl.textContent = 'Account not configured. Contact an admin.';
+    return;
+  }
+
+  const hash = await sha256WithSalt(user.salt, password);
+  if(hash !== user.passwordHash){
+    recordFailedAttempt(username);
+    const lk   = getLockout(username);
+    const left = LOCKOUT_MAX - (lk ? lk.attempts : 1);
+    errEl.textContent = left > 0
+      ? 'Incorrect password. ' + left + ' attempt' + (left===1?'':'s') + ' remaining.'
+      : 'Account locked for 15 minutes.';
+    auditLog(username, 'login_fail', 'wrong password');
+    return;
+  }
+
+  clearLockout(username);
+  saveSession(user);
+  state.currentUser = user;
+  auditLog(username, 'login_success', user.role);
+  showApp();
+  render();
+}
+
+// ─── Inactivity & auto-restore ───────────────────────────────────
 ['click','keydown','mousemove','scroll','touchstart'].forEach(evt=>{
-  document.addEventListener(evt,()=>{if(isAuthValid())refreshAuth();});
+  document.addEventListener(evt, ()=>{ if(isSessionValid()) refreshSession(); });
 });
-// Check for expiry every 60 seconds
-setInterval(()=>{if(localStorage.getItem('dp_auth_ts')&&!isAuthValid())lockApp();},60000);
-// Auto-login if authenticated within the timeout window
-if(isAuthValid()){
-  document.addEventListener('DOMContentLoaded',()=>showApp());
+setInterval(()=>{
+  const tok = loadSession();
+  if(tok && !isSessionValid()){ auditLog(tok.userId,'session_expired','inactivity'); lockApp(); }
+}, 60000);
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const tok = loadSession();
+  if(tok && isSessionValid()){
+    const user = USERS.find(u => u.id === tok.userId);
+    if(user){ state.currentUser = user; showApp(); render(); }
+    else lockApp();
+  }
+});
+</script>
+<script>
+// @@USERS_START@@
+const USERS = [
+  {id:'scott',   name:'Scott Gordon',         username:'scott',   passwordHash:'85f3d5b8240414c45e022cc9d215a27e77bba2d8b1ec8ec0ea62c07cc9c504eb', salt:'989f85ce1ba33e2599a054ff280d869a',   role:'admin',     departments:[], views:[]},
+  {id:'david',   name:'David Darmstandler',   username:'david',   passwordHash:'faba7856c0f69c349d2f9a5f981a4193808dc595b142f002406f2229c3613e1f', salt:'4c39dadee3ff1674323bf579f79f8e0d',   role:'admin',     departments:[], views:[]},
+  {id:'james',   name:'James Bates',          username:'james',   passwordHash:'8e5317b0320517a106041b34b8c8dd4bf29725e987985441d32c3d78b9ac17a4', salt:'d1c556657c3ebe613fe2b046079f64ff',  role:'admin',     departments:[], views:[]},
+  {id:'swalski', name:'Stephen Walski',       username:'swalski', passwordHash:'', salt:'', role:'dept_head', departments:['professional_services','security'],         views:['overview','pl','gross_profit','labor']},
+  {id:'brandon', name:'Brandon H.',           username:'brandon', passwordHash:'', salt:'', role:'dept_head', departments:['managed_services'],                         views:['overview','pl','gross_profit','labor']},
+  {id:'timc',    name:'Tim C.',               username:'timc',    passwordHash:'', salt:'', role:'dept_head', departments:['r_and_d','ai_consulting'],                  views:['overview','pl','gross_profit','labor']},
+  {id:'nathan',  name:'Nathan R.',            username:'nathan',  passwordHash:'', salt:'', role:'dept_head', departments:['managed_services','professional_services'],  views:['overview','pl','gross_profit','labor','sales']},
+  {id:'dan',     name:'Dan S.',               username:'dan',     passwordHash:'', salt:'', role:'dept_head', departments:['managed_services'],                         views:['overview','pl','gross_profit','labor','sales','marketing']},
+];
+// @@USERS_END@@
+
+// @@COMMENTARY_START@@
+const COMMENTARY = {
+  // key format: 'Mon YY:dept_key'  e.g. 'Mar 26:professional_services'
+};
+// @@COMMENTARY_END@@
+
+// ─── HTML escape (always use for user-supplied strings in innerHTML) ──
+function escHtml(str){
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ─── Crypto utilities ────────────────────────────────────────────
+function generateSalt(len=16){
+  const arr=new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function sha256WithSalt(salt, pw){
+  const enc = new TextEncoder().encode(salt + pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ─── Audit log ───────────────────────────────────────────────────
+const _auditMem = [];
+function auditLog(userId, action, detail=''){
+  const entry = {ts: new Date().toISOString(), userId, action, detail};
+  _auditMem.push(entry);
+  if(_auditMem.length > 500) _auditMem.splice(0, _auditMem.length - 500);
+  try {
+    const stored = JSON.parse(localStorage.getItem('dp_audit_log')||'[]');
+    stored.push(entry);
+    if(stored.length > 500) stored.splice(0, stored.length-500);
+    localStorage.setItem('dp_audit_log', JSON.stringify(stored));
+  } catch(e){}
 }
 </script>
+<div id="dh-app" style="display:none;flex-direction:column;height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8f9fa">
+  <div id="dh-header"></div>
+  <div id="dh-pills" style="background:#fff;border-bottom:1px solid #e0e0e0;padding:8px 20px;display:flex;gap:8px;align-items:center;overflow-x:auto"></div>
+  <div id="dh-main" style="flex:1;overflow:auto;padding:24px 28px"></div>
+</div>
 <div class="app" id="main-app" style="display:none">
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>
       </button>
       <div class="brand">
         <div class="brand-name">DATAPATH</div>
@@ -356,6 +535,16 @@ const state = {
   selDept: null,
   selMonth: -1, // -1 means "latest"; set after DATA is built
   sidebarCollapsed: false,
+  currentUser: null,      // populated on login
+  dhDept: 'all',          // dept head active dept filter: 'all' | dept_key
+  dhView: 'overview',     // dept head active view tab
+  dhChatMessages: null,   // dept head advisor chat history
+  dhSystemPrompt: '',     // dept head scoped system prompt
+  adminSubTab: 'users',   // admin panel sub-tab: 'users' | 'commentary' | 'audit'
+  adminSelUser: null,     // id of user selected in admin panel
+  adminComMonth: null,    // commentary editor selected month
+  adminComDept: null,     // commentary editor selected dept
+  adminAuditFilter: '',   // audit log user filter
   chatMessages: [{role:'assistant', content: `Welcome to the Datapath MSP Advisor.\n\nI analyze your P&L data against industry benchmarks from Service Leadership, ConnectWise Peer Groups, and Kaseya.\n\nTry asking:\n• "How do we improve our EBITDA margin?"\n• "What's our business worth?"\n• "How does our security division compare?"\n• "Where should we focus to maximize exit value?"\n• "Analyze our labor costs"\n• "Compare us to top-performing MSPs"`}],
   charts: {},
 };
@@ -424,7 +613,7 @@ const WORKING_DAYS = {
   'FY 2023':252,'FY 2024':253,
   'Jan 25':21,'Feb 25':19,'Mar 25':21,'Apr 25':22,'May 25':21,'Jun 25':20,
   'Jul 25':22,'Aug 25':21,'Sep 25':21,'Oct 25':22,'Nov 25':18,'Dec 25':22,
-  'Jan 26':20,'Feb 26':19
+  'Jan 26':20,'Feb 26':19,'Mar 26':21
 };
 
 // Products Ordered Not Invoiced — Customer-level detail from uploaded spreadsheet
@@ -1440,8 +1629,8 @@ DEC25.detail = {
 // ═══════════════════════════════════════════════════════════════
 // Revenue: MS(593456) + Sec(150488) + Cloud(65607) + HW/SW(422620) + PS(24460) = 1,256,631
 // COGS before labor: 497,138 | Labor: Direct(134465)+Project(49371)=183,836
-// GP after labor: 575,657 | Sales Labor: 114,856 | OpEx: 363,333
-// Operating Net Income: 97,468 | Other: -34,560 | Tax: 104 | Net Income: 62,804
+// GP after labor: 575,657 | Sales Labor: 114,379 | OpEx: 316,132
+// Operating Net Income: 145,146 | Other: -34,560 | Tax: 104 | Net Income: 110,482
 const FEB26 = makeMonth('Feb 26',
   // Revenue by department
   {managed_services:593456, security:150488, cloud_hosting:65607, hw_sw_resale:422620,
@@ -1463,9 +1652,9 @@ const FEB26 = makeMonth('Feb 26',
   }, direct:134465, project:49371,
   hc:{managed_services:25, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:5}},
   // Sales labor (Sales team: DinYero, Danny, Dan 50%, Jay 80%, Nathan 50%, Joel 50%, Ricky 50%)
-  114856,
+  114379,
   // OpEx breakdown (admin payroll includes G&A sub-buckets, Central Services)
-  {payroll:33491, facilities:37777, operating:141480, marketing:8685, ga:63602, taxIns:2967},
+  {payroll:33491, facilities:35877, operating:96179, marketing:8685, ga:63602, taxIns:2967},
   -34560, 104
 );
 FEB26.detail = {
@@ -1480,13 +1669,252 @@ FEB26.detail = {
     recurResale:27933, haas:11807, chromebook:79, m365:99693,
     securityResale:67835, voiceResale:5267, managedSecurity:5142,
     subcontractor:2975, productSales:215474, freight:7746},
-  opex: {adminPayroll:33491, facilities:37777, softwareMaint:14333, profServices:71792,
-    badDebt:47924, auto:7431, marketing:8685, officeSupplies:10975, education:10000,
+  opex: {adminPayroll:33491, facilities:35877, softwareMaint:14333, profServices:74415,
+    badDebt:0, auto:7431, marketing:8685, officeSupplies:10975, education:10000,
     financeCharges:2018, travel:40609, insurance:2967, taxes:0,
-    officeLease:21807, repairs:3701, utilities:12269, rAndD:75331, charitable:-1221}
+    officeLease:21807, repairs:3701, utilities:10369, rAndD:75331, charitable:-1221}
 };
 
-const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26];
+const MAR26 = makeMonth('Mar 26',
+  // Revenue by department
+  // Source: Citrin Intacct P&L Detail by Account (March 2026)
+  // Sales: 598,666 MRS − 4,729 security + security(4,729+151,908) + cloud(26,443+39,792)
+  // HW/SW: MRR(363,963)−security(151,908)−cloudSaaS(39,792) + product(366,297) + commissions(11,648)
+  {managed_services:594828, security:156637, cloud_hosting:66235, hw_sw_resale:549317,
+   professional_services:58594, subcontracted:14828, ai_consulting:0, r_and_d:0},
+  // COGS by department (before labor)
+  // managed: 50000(24,897)+backup(5,118)+spam(374)+domain(955)+voice(3,774)=35,118
+  // security: 52100(70,419)+62500 managedSecurity(5,519)=75,938
+  // cloud: 50090(1,315)+50095(10,991)=12,306
+  // hw_sw: 50150 recurResale(15,225)+haas(12,127)+m365(105,468)+voiceResale(5,430)+50300(311,125)+freight(6,985)=456,360
+  // Note: 50661 Capitalized Payroll (−28,341) is a Q1 catch-up; already netted into direct labor 151,433
+  {managed_services:35118, security:75938, cloud_hosting:12306, hw_sw_resale:456360,
+   professional_services:8, subcontracted:13392, ai_consulting:0, r_and_d:42942},
+  // Labor — per-department allocation based on Feb 2026 roster proportions scaled to March total
+  // Total direct+project labor: $208,734 (direct:151,433 + project:57,301)
+  // Scale factor vs Feb: 208,734/183,836 = 1.1355
+  // Note: Direct labor includes capitalized payroll credit (−28,341) for Vision/AI software (50661)
+  {byDept: {
+    managed_services: 152585,   // from DP Payroll Support (Kasey)
+    professional_services: 27970,
+    security: 17742,
+    cloud_hosting: 2296,
+    hw_sw_resale: 8141,
+    ai_consulting: 0, subcontracted: 0, r_and_d: 0
+  }, direct:151433, project:57301,
+  hc:{managed_services:25, professional_services:5, cloud_hosting:1, security:3, hw_sw_resale:3, ai_consulting:0, subcontracted:0, r_and_d:5}},
+  // Sales labor (same team as Feb: DinYero, Danny, Dan 50%, Jay 80%, Nathan 50%, Joel 50%, Ricky 50%)
+  141264,
+  // OpEx breakdown
+  {payroll:57493, facilities:36511, operating:134308, marketing:118, ga:41730, taxIns:6825},
+  // Other income/expense (below EBITDA line: −34,184 stockholder + −4,526 interest + −10,500 other/amort + 258 charitable + −18,900 year-end taxes + 3,961 other income)
+  -64407,
+  // Income tax
+  0
+);
+MAR26.detail = {
+  rev: {managedIT:570649, managedSecurity:4729, managedVoice:8256, managedBackup:10686,
+    usacErate:4346, publicCloud:1144, privateCloud:25299, cloudSaas:39792,
+    haas:33043, chromebook:562, m365:129650, securityResale:151908,
+    toolResale:5166, voiceResale:2951, spamFilter:891,
+    projectService:58594, subcontracted:14828,
+    productSales:357620, freight:8677, commissions:11648},
+  cogs: {managedIT:24897, backup:5118, spamFilter:374, domain:955, voice:3774,
+    publicCloud:1315, privateCloud:10991,
+    recurResale:15225, haas:12127, chromebook:0, m365:105468,
+    securityResale:70419, voiceResale:5430, managedSecurity:5519,
+    projectServiceCosts:8, subcontractor:13392, productSales:311125, freight:6985},
+  opex: {adminPayroll:57493, officeLease:21807, repairs:0, utilities:14704,
+    softwareMaint:49784, profServices:75806, badDebt:0, auto:8718,
+    marketing:118, officeSupplies:17821, education:45,
+    financeCharges:1931, travel:21933, insurance:6825, taxes:0, rAndD:42942}
+};
+
+const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT23, NOV23, DEC23, JAN24, FEB24, MAR24, APR24, MAY24, JUN24, JUL24, AUG24, SEP24, OCT24, NOV24, DEC24, JAN25, FEB25, MAR25, APR25, MAY25, JUN25, JUL25, AUG25, SEP25, OCT25, NOV25, DEC25, JAN26, FEB26, MAR26];
+
+// ═══════════════════════════════════════════════════════════════
+// 2025 EBITDA ADD-BACK SCHEDULE
+// Source: Datapath Confidential Investment Memorandum
+// 18 items totaling $1,144,247 (excludes $153K COO consulting premium per user preference)
+// Fields: facilitiesModesto | facilitiesOhio | familyMemberComp | severancePTO |
+//         yearEndLegal | balanceSheetAdj | rdTaxCredit | citrinAssessment |
+//         phoenixStrategy | rogerGentry | podcastStudio | apLogic | ohioFlood |
+//         tpcContract | systems1111 | additionalLegal | websiteDev | marketingGTM
+// ═══════════════════════════════════════════════════════════════
+function applyAddBacks(m, ab) {
+  const total = Object.values(ab).reduce((s,v) => s + (v||0), 0);
+  m.addBacks = ab;
+  m.totalAddBacks = total;
+  const base = m.normEbitda !== undefined ? m.normEbitda : m.ebitda;
+  const dedupSevPTO = m.normSevPTO || 0;
+  m.adjEbitda = base + total - dedupSevPTO;
+  m.adjEbitdaM = m.totRev > 0 ? (m.adjEbitda / m.totRev * 100) : 0;
+}
+
+const NORM_ONE_TIME_ITEMS = [
+  {key:'ohioFloodRepairs',   label:'Ohio Flood Repairs',              star:true},
+  {key:'stateTaxMisc',       label:'State Tax / Misc',                star:true},
+  {key:'recruiting',         label:'Recruiting'},
+  {key:'outsideConsulting',  label:'Outside Consulting'},
+  {key:'citrinBillings',     label:'Citrin Assessment Billings'},
+  {key:'travel',             label:'Travel',                          star:true},
+  {key:'swMaintCatchUp',     label:'SW & Maint Catch-Up'},
+  {key:'legalReserves',      label:'Legal Reserves (PAGA)'},
+  {key:'dlYeReclass',        label:'DL Year-End Reclass'},
+  {key:'iusCredit',          label:'IUS Capitalization Credit'},
+  {key:'officeSupplies',     label:'Office Supplies YE',              star:true},
+  {key:'officeLease',        label:'Office Lease Catch-Up'},
+  {key:'depreciation',       label:'Depreciation Posting'},
+  {key:'bankFees',           label:'Bank Fees',                       star:true},
+  {key:'piaTradeSwCatchUp',  label:'Pia Trade SW Catch-Up'},
+  {key:'cloudSaasReversal',  label:'CloudSaaS Overbilling Reversal'},
+  {key:'capitalizedPayroll', label:'Capitalized Payroll Q1 Catch-Up'},
+  {key:'davesTaxReclass',    label:"Dave's Tax Preparer Reclass"},
+];
+
+function applyNormalization(m, norm) {
+  m.normSevPTO = norm.sevPTO || 0;
+  m.normOneTimeItems = norm.oneTimeItems || {};
+  m.normOneTime = Object.values(m.normOneTimeItems).reduce((s,v) => s + (v||0), 0);
+  m.normEbitda = m.ebitda + m.normSevPTO + m.normOneTime;
+  m.normEbitdaM = m.totRev > 0 ? (m.normEbitda / m.totRev * 100) : 0;
+}
+
+// Jan 25 — $102,061
+applyNormalization(JAN25, {sevPTO:2399, oneTimeItems:{}});
+applyAddBacks(JAN25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:30000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:25000, phoenixStrategy:8500, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Feb 25 — $77,061
+applyNormalization(FEB25, {sevPTO:26911, oneTimeItems:{}});
+applyAddBacks(FEB25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:20000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:8500, rogerGentry:8000,
+  podcastStudio:0, apLogic:10000, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Mar 25 — $88,561
+applyNormalization(MAR25, {sevPTO:11812, oneTimeItems:{ohioFloodRepairs:19286, stateTaxMisc:14549}});
+applyAddBacks(MAR25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:15000, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:15000, apLogic:0, ohioFlood:20000, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Apr 25 — $65,223
+applyNormalization(APR25, {sevPTO:0, oneTimeItems:{}});
+applyAddBacks(APR25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:15000, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:6000, marketingGTM:0
+});
+// May 25 — $44,223
+applyNormalization(MAY25, {sevPTO:5676, oneTimeItems:{recruiting:7125}});
+applyAddBacks(MAY25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:0
+});
+// Jun 25 — $50,223
+applyNormalization(JUN25, {sevPTO:7807, oneTimeItems:{}});
+applyAddBacks(JUN25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:8000,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Jul 25 — $42,223
+applyNormalization(JUL25, {sevPTO:4647, oneTimeItems:{outsideConsulting:11250}});
+applyAddBacks(JUL25, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Aug 25 — $66,223
+applyNormalization(AUG25, {sevPTO:14559, oneTimeItems:{citrinBillings:26026}});
+applyAddBacks(AUG25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:20000,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Sep 25 — $46,223
+applyNormalization(SEP25, {sevPTO:35478, oneTimeItems:{citrinBillings:15111}});
+applyAddBacks(SEP25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Oct 25 — $40,049
+applyNormalization(OCT25, {sevPTO:572, oneTimeItems:{recruiting:7672}});
+applyAddBacks(OCT25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Nov 25 — $40,049
+applyNormalization(NOV25, {sevPTO:0, oneTimeItems:{travel:7910}});
+applyAddBacks(NOV25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+});
+// Dec 25 — $482,128 (includes year-end accruals and non-cash items)
+applyNormalization(DEC25, {sevPTO:6099, oneTimeItems:{
+  swMaintCatchUp:135971, legalReserves:151184, dlYeReclass:165529,
+  iusCredit:-90648, officeSupplies:50081, officeLease:8213, depreciation:18648
+}});
+applyAddBacks(DEC25, {
+  facilitiesModesto:15700, facilitiesOhio:4000, familyMemberComp:3520,
+  severancePTO:5664, yearEndLegal:231000, balanceSheetAdj:135253, rdTaxCredit:70940,
+  citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
+  podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
+  systems1111:0, additionalLegal:5163, websiteDev:4888, marketingGTM:6000
+});
+
+// ─── Q1 2026 Add-Backs ────────────────────────────────────────
+// Normalize: Facilities Modesto $15,700, Ohio $0 (Jan) / $6,107 (Feb+), Family Member Comp $3,520
+// Jan 26 — $34,540 (Wallace termination: ~$577 PTO est. at 0.8wk accrual, $75K salary)
+applyNormalization(JAN26, {sevPTO:577, oneTimeItems:{bankFees:14743}});
+applyAddBacks(JAN26, {
+  facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
+  severancePTO:577, bankFees:14743
+});
+// Feb 26 — $26,758 (Morozov ~$508 PTO + Hughes ~$923 PTO; est. from accrual rates/tenure — gross final pay confirmed via Gusto)
+applyNormalization(FEB26, {sevPTO:1431, oneTimeItems:{}});
+applyAddBacks(FEB26, {
+  facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
+  severancePTO:1431, bankFees:0
+});
+// Mar 26 — $25,327
+applyNormalization(MAR26, {sevPTO:19162, oneTimeItems:{
+  piaTradeSwCatchUp:35451, cloudSaasReversal:59891,
+  capitalizedPayroll:-28341, davesTaxReclass:5000
+}});
+applyAddBacks(MAR26, {
+  facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
+  severancePTO:0, bankFees:0
+});
 
 // ═══════════════════════════════════════════════════════════════
 // ANOMALIES & ONE-TIME ITEMS — Monthly notes on non-recurring items
@@ -1844,6 +2272,16 @@ const ANOMALIES = {
     {type:'adjustment', category:'Operating Expenses', description:'Pia Trade Co recurring charge write-off — reversed charges that should not have continued billing', impact: 0, dept:'general'},
     {type:'credit', category:'Insurance Refund', description:'Insurance refund of $3,565 on 2/11 netted against monthly expenses', impact: 3565, dept:'general'},
   ],
+  'Mar 26': [
+    {type:'adjustment', category:'R&D Department (Month 3)', description:'R&D COGS normalized to $42,942 — Feb was elevated ($75,331) due to YTD retroactive adjustments. March reflects true monthly run rate: $33,121 wages + $2,954 benefits + $2,338 taxes + $529 pension + $4,000 contractor (Haskell).', impact: 0, dept:'r_and_d'},
+    {type:'credit', category:'Capitalized Payroll (Q1 Catch-Up)', description:'Account 50661 recorded -$28,341 capitalization of Direct Labor wages for Vision and AI software development (Peter Annabel, Haskell Macaraig). Q1 catch-up posted 3/31/2026 per Citrin note. Reduces direct labor COGS, improves EBITDA.', impact: 28341, dept:'general'},
+    {type:'adjustment', category:'CloudSaaS: HHHC Overbilling Reversal', description:'Account 41300 contains ~$59,891 reversal of prior HHHC overbilling (CA side). Net March CloudSaaS = $39,792 vs ~$99,683 gross. One-time revenue reduction; underlying run rate remains ~$39K/mo net of correction.', impact: -59891, dept:'cloud_hosting'},
+    {type:'expense', category:'Operating Expenses Spike', description:'Software & maintenance jumped to $49,784 vs $14,333 Feb: Connectwise catch-up (~$12K each OH and CA) + Pia Trade bill reversals from Feb re-recorded in March. Not indicative of new run-rate.', impact: -35451, dept:'general'},
+    {type:'expense', category:'Year-End Tax Payments (Below Line)', description:'$18,900 in year-end state/other taxes paid in March ($14,400 OH + $4,500 CA) — recorded below operating income line in account 61750. Reduces net income but not EBITDA.', impact: -18900, dept:'general'},
+    {type:'expense', category:'Stockholder/Partnership Expenses', description:'$34,184 co-CEO compensation and related charges recorded below EBITDA line in account 62600. Standard monthly item per partnership structure.', impact: -34184, dept:'general'},
+    {type:'expense', category:'Amortization of Capitalized Software', description:'$7,083 amortization of internally capitalized software (Vision/AI features, account 60100) recorded in Other Expense below the line. Increases as software development is completed and placed in service.', impact: -7083, dept:'general'},
+    {type:'credit', category:'Travel Down Significantly', description:'Business travel of $21,933 vs $40,609 in Feb — return to more normal levels as Feb had elevated airfare charges. Marketing also dropped to $118 from $8,685 (no event recurrence).', impact: 18676, dept:'general'},
+  ],
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1954,22 +2392,33 @@ function monthSelector() {
 // NAV
 // ═══════════════════════════════════════════════════════════════
 const NAV = [
-  {id:'dashboard', label:'Dashboard', icon:'📊'},
-  {id:'departments', label:'Departments', icon:'🏢'},
-  {id:'grossprofit', label:'Gross Profit', icon:'💰'},
-  {id:'pnl', label:'P&L Detail', icon:'📄'},
-  {id:'labor', label:'Labor Allocation', icon:'👥'},
-  {id:'saleswon', label:'Sales Won', icon:'🏆'},
-  {id:'advisor', label:'Intelligence', icon:'🧠'},
-  {id:'data', label:'Import Data', icon:'📤'},
+  {id:'dashboard',   label:'Dashboard',        icon:'📊', adminOnly:false},
+  {id:'departments', label:'Departments',       icon:'🏢', adminOnly:false},
+  {id:'grossprofit', label:'Gross Profit',      icon:'💰', adminOnly:false},
+  {id:'pnl',         label:'P&L Detail',        icon:'📄', adminOnly:false},
+  {id:'labor',       label:'Labor Allocation',  icon:'👥', adminOnly:false},
+  {id:'saleswon',    label:'Sales Won',         icon:'🏆', adminOnly:false},
+  {id:'advisor',     label:'Intelligence',      icon:'🧠', adminOnly:false},
+  {id:'data',        label:'Import Data',       icon:'📤', adminOnly:false},
+  {id:'admin',       label:'Admin',             icon:'⚙️',  adminOnly:true},
 ];
 
 function renderNav() {
-  const nav = document.getElementById('nav');
-  nav.innerHTML = NAV.map(n => `<button class="nav-btn ${state.view===n.id||(n.id==='departments'&&state.selDept)?'active':''}" onclick="navigate('${n.id}')">
+  const nav     = document.getElementById('nav');
+  const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+  const visible = NAV.filter(n => !n.adminOnly || isAdmin);
+  nav.innerHTML = visible.map(n => `<button class="nav-btn ${state.view===n.id||(n.id==='departments'&&state.selDept)?'active':''}" onclick="navigate('${n.id}')">
     <span>${n.icon}</span><span class="nav-label">${n.label}</span></button>`).join('');
-  const footer = document.getElementById('sidebar-footer');
-  footer.innerHTML = `Data: ${latest().month}<br>Annualized: ${fmt(latest().totRev*12)}`;
+  const footer   = document.getElementById('sidebar-footer');
+  const userName = state.currentUser ? escHtml(state.currentUser.name.split(' ')[0]) : '';
+  footer.innerHTML = (isAdmin ? 'Data: ' + latest().month + '<br>Annualized: ' + fmt(latest().totRev*12) + '<br>' : '')
+    + '<button onclick="doLogout()" style="margin-top:8px;width:100%;padding:5px;background:none;border:1px solid #e0e0e0;border-radius:6px;color:#6b7280;font-size:11px;cursor:pointer">Sign out (' + userName + ')</button>';
+}
+
+function doLogout(){
+  const tok = loadSession();
+  if(tok) auditLog(tok.userId, 'logout', '');
+  lockApp();
 }
 
 function toggleSidebar() {
@@ -1979,6 +2428,8 @@ function toggleSidebar() {
 
 function navigate(view) {
   if (view === 'data') { showUploadModal(); return; }
+  if (view === 'admin' && state.currentUser?.role !== 'admin') return;
+  auditLog(state.currentUser?.id||'unknown', 'navigate', view);
   state.view = view;
   if (view !== 'departments') state.selDept = null;
   render();
@@ -1988,18 +2439,629 @@ function navigate(view) {
 // RENDER ROUTER
 // ═══════════════════════════════════════════════════════════════
 function render() {
+  const user = state.currentUser;
+  if(!user){ lockApp(); return; }
+  if(user.role === 'dept_head'){ renderDeptHead(); return; }
+
   destroyCharts();
   renderNav();
   const main = document.getElementById('main');
   main.scrollTop = 0;
-  if (state.view === 'dashboard') renderDashboard(main);
+  if      (state.view === 'dashboard')                    renderDashboard(main);
   else if (state.view === 'departments' && state.selDept) renderDrilldown(main);
-  else if (state.view === 'departments') renderDeptList(main);
-  else if (state.view === 'grossprofit') renderGrossProfit(main);
-  else if (state.view === 'pnl') renderPnL(main);
-  else if (state.view === 'labor') renderLaborAllocation(main);
-  else if (state.view === 'saleswon') renderSalesWon(main);
-  else if (state.view === 'advisor') renderAdvisor(main);
+  else if (state.view === 'departments')                  renderDeptList(main);
+  else if (state.view === 'grossprofit')                  renderGrossProfit(main);
+  else if (state.view === 'pnl')                          renderPnL(main);
+  else if (state.view === 'labor')                        renderLaborAllocation(main);
+  else if (state.view === 'saleswon')                     renderSalesWon(main);
+  else if (state.view === 'advisor')                      renderAdvisor(main);
+  else if (state.view === 'admin')                        renderAdmin(main);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DATA SCOPING — dept head views
+// ═══════════════════════════════════════════════════════════════
+
+function scopedRev(m, depts){
+  return depts.reduce((s,d) => s + (m.d && m.d[d] ? m.d[d].rev : 0), 0);
+}
+
+function scopedVendorCOGS(m, depts){
+  return depts.reduce((s,d) => s + (m.d && m.d[d] ? (m.d[d].cogsBeforeAlloc || m.d[d].cogs || 0) : 0), 0);
+}
+
+function scopedLabor(m, depts){
+  // Jan26+: per-dept labor tracked in m.d[d].lab
+  if(m.d && depts.every(d => m.d[d] && m.d[d].lab != null)){
+    return depts.reduce((s,d) => s + (m.d[d].lab || 0), 0);
+  }
+  // Legacy pre-2026: distribute direct+project labor by dept revenue share
+  const totalRev = m.totRev || 0;
+  if(!totalRev) return 0;
+  const share    = scopedRev(m, depts) / totalRev;
+  const totalLab = (m.directLabor||0) + (m.projectLabor||0);
+  return Math.round(totalLab * share);
+}
+
+function scopedCOGS(m, depts){ return scopedVendorCOGS(m, depts) + scopedLabor(m, depts); }
+function scopedGP(m, depts){ return scopedRev(m, depts) - scopedCOGS(m, depts); }
+function scopedGPpct(m, depts){ const r = scopedRev(m, depts); return r ? (scopedGP(m, depts) / r * 100) : 0; }
+
+// Returns last `count` months of a metric as array of numbers
+function sparklineData(depts, metric, count=6){
+  return DATA.slice(-count).map(m => {
+    if(metric === 'rev')   return scopedRev(m, depts);
+    if(metric === 'gp')    return scopedGP(m, depts);
+    if(metric === 'labor') return scopedLabor(m, depts);
+    return 0;
+  });
+}
+
+// Renders a tiny inline SVG sparkline
+function renderSparkline(data, color='#3b82f6', w=80, h=24){
+  if(!data || data.length < 2) return '';
+  const min = Math.min(...data), max = Math.max(...data), range = max - min || 1;
+  const pts  = data.map((v,i) => {
+    const x = (i / (data.length-1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  return '<svg width="' + w + '" height="' + h + '" style="display:block;overflow:visible"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+function userDepts(user){ return DEPTS.filter(d => user.departments.includes(d.id)); }
+function activeDepts(user){ return state.dhDept === 'all' ? user.departments : [state.dhDept].filter(d => user.departments.includes(d)); }
+
+function shortDeptName(name){
+  return name.replace('Projects / Prof. Services','Prof. Services').replace('Security (MDR/SOC)','Security');
+}
+
+function renderAdmin(main){
+  if(!state.currentUser || state.currentUser.role !== 'admin') return;
+  const subTab = state.adminSubTab || 'users';
+  const tabBar = ['users','commentary','audit'].map(t =>
+    '<button onclick="state.adminSubTab=\'' + t + '\';renderAdmin(document.getElementById(\'main\'))" style="' + (subTab===t?'color:#1e40af;border-bottom:2px solid #1e40af':'color:#64748b;border-bottom:2px solid transparent') + ';background:none;border-top:none;border-left:none;border-right:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">'
+    + {users:'Users',commentary:'Commentary',audit:'Audit Log'}[t] + '</button>'
+  ).join('');
+
+  main.innerHTML = '<div style="padding:24px 28px">'
+    + '<div style="font-size:20px;font-weight:700;color:#111;margin-bottom:16px">Admin</div>'
+    + '<div style="border-bottom:1px solid #e0e0e0;margin-bottom:24px;display:flex">' + tabBar + '</div>'
+    + '<div id="admin-content"></div></div>';
+
+  const content = document.getElementById('admin-content');
+  if(subTab === 'users')           renderAdminUsers(content);
+  else if(subTab === 'commentary') renderAdminCommentary(content);
+  else if(subTab === 'audit')      renderAdminAudit(content);
+}
+
+function renderAdminUsers(el){
+  const deptHeads = USERS.filter(u => u.role === 'dept_head');
+  if(!state.adminSelUser && deptHeads[0]) state.adminSelUser = deptHeads[0].id;
+  const selId   = state.adminSelUser;
+  const selUser = USERS.find(u => u.id === selId);
+
+  const sidebar = deptHeads.map(u =>
+    '<div onclick="state.adminSelUser=\'' + u.id + '\';renderAdmin(document.getElementById(\'main\'))" style="padding:10px 14px;border-left:3px solid ' + (u.id===selId?'#1e40af':'transparent') + ';background:' + (u.id===selId?'#eff6ff':'transparent') + ';cursor:pointer">'
+    + '<div style="font-weight:' + (u.id===selId?'700':'600') + ';color:' + (u.id===selId?'#1e40af':'#374151') + ';font-size:13px">' + escHtml(u.name) + '</div>'
+    + '<div style="font-size:11px;color:#94a3b8">' + escHtml(u.username) + ' &middot; ' + escHtml(userDepts(u).map(d=>shortDeptName(d.name)).join(', ')) + '</div></div>'
+  ).join('');
+
+  el.innerHTML = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0;background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;min-height:400px">'
+    + '<div style="border-right:1px solid #e0e0e0">'
+    + '<div style="padding:10px 14px;font-size:11px;font-weight:700;color:#64748b;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #f1f5f9">Users (' + deptHeads.length + ')</div>'
+    + sidebar
+    + '<div style="padding:10px 14px;border-top:1px solid #f1f5f9;margin-top:8px"><button onclick="addNewUser()" style="color:#2563eb;background:none;border:none;font-size:12px;font-weight:600;cursor:pointer">+ Add User</button></div>'
+    + '</div>'
+    + '<div style="padding:20px">' + (selUser ? renderAdminUserPanel(selUser) : '<div style="color:#94a3b8;padding:20px">Select a user</div>') + '</div>'
+    + '</div>';
+}
+
+function renderAdminUserPanel(user){
+  const allViews = [{id:'overview',label:'Overview'},{id:'pl',label:'P&L'},{id:'gross_profit',label:'Gross Profit'},{id:'labor',label:'Labor'},{id:'sales',label:'Sales'},{id:'marketing',label:'Marketing'}];
+
+  const deptPills = DEPTS.map(d =>
+    '<button onclick="toggleUserDept(\'' + user.id + '\',\'' + d.id + '\')" style="' + (user.departments.includes(d.id)?'background:#dbeafe;color:#1e40af':'background:#f1f5f9;color:#94a3b8') + ';border:none;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;margin:2px">'
+    + (user.departments.includes(d.id)?'&#10003; ':'') + escHtml(shortDeptName(d.name)) + '</button>'
+  ).join('');
+
+  const viewPills = allViews.map(v =>
+    '<button onclick="toggleUserView(\'' + user.id + '\',\'' + v.id + '\')" style="' + (user.views.includes(v.id)?'background:#dbeafe;color:#1e40af':'background:#f1f5f9;color:#94a3b8') + ';border:none;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;margin:2px">'
+    + (user.views.includes(v.id)?'&#10003; ':'') + escHtml(v.label) + '</button>'
+  ).join('');
+
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    + '<div style="font-size:16px;font-weight:700;color:#111">' + escHtml(user.name) + '</div>'
+    + '<button onclick="removeUser(\'' + user.id + '\')" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Remove</button>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Username</div>'
+    + '<input id="edit-username-' + user.id + '" value="' + escHtml(user.username) + '" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div>'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">New Password <span style="font-weight:400">(blank = keep)</span></div>'
+    + '<input id="edit-password-' + user.id + '" type="password" placeholder="Enter new password..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box"></div>'
+    + '</div>'
+    + '<div style="margin-bottom:14px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px">Departments</div><div>' + deptPills + '</div></div>'
+    + '<div style="margin-bottom:20px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px">Views</div><div>' + viewPills + '</div></div>'
+    + '<div style="display:flex;justify-content:flex-end"><button onclick="saveUser(\'' + user.id + '\')" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Changes</button></div>';
+}
+
+function toggleUserDept(userId, deptId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const idx = user.departments.indexOf(deptId);
+  if(idx>=0) user.departments.splice(idx,1); else user.departments.push(deptId);
+  renderAdmin(document.getElementById('main'));
+}
+function toggleUserView(userId, viewId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const idx = user.views.indexOf(viewId);
+  if(idx>=0) user.views.splice(idx,1); else user.views.push(viewId);
+  renderAdmin(document.getElementById('main'));
+}
+async function saveUser(userId){
+  const user = USERS.find(u=>u.id===userId); if(!user) return;
+  const newUser = (document.getElementById('edit-username-'+userId)?.value||'').trim().toLowerCase();
+  const newPass = document.getElementById('edit-password-'+userId)?.value||'';
+  if(newUser) user.username = newUser;
+  if(newPass){ user.salt = generateSalt(); user.passwordHash = await sha256WithSalt(user.salt, newPass); }
+  auditLog(state.currentUser?.id||'admin', 'user_saved', userId);
+  await saveToFile();
+  renderAdmin(document.getElementById('main'));
+}
+function removeUser(userId){
+  const userToRemove = USERS.find(u=>u.id===userId);
+  if(!confirm('Remove ' + (userToRemove?.name||userId) + '? This cannot be undone.')) return;
+  const idx = USERS.findIndex(u=>u.id===userId);
+  if(idx>=0) USERS.splice(idx,1);
+  state.adminSelUser = USERS.find(u=>u.role==='dept_head')?.id||null;
+  saveToFile().then(()=>renderAdmin(document.getElementById('main')));
+}
+function addNewUser(){
+  const id = 'user_'+Date.now();
+  USERS.push({id, name:'New User', username:'newuser', passwordHash:'', salt:'', role:'dept_head', departments:[], views:['overview']});
+  state.adminSelUser = id;
+  renderAdmin(document.getElementById('main'));
+}
+
+function renderAdminCommentary(el){
+  const months   = DATA.map(m=>m.month).reverse();
+  const selMonth = state.adminComMonth || months[0];
+  const selDept  = state.adminComDept  || DEPTS[0].id;
+  const key      = selMonth + ':' + selDept;
+  const current  = COMMENTARY[key] || '';
+
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:24px;max-width:700px">'
+    + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:16px">Add / Edit Notes for Dept Heads</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Month</div>'
+    + '<select onchange="state.adminComMonth=this.value;renderAdmin(document.getElementById(\'main\'))" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'
+    + months.map(m=>'<option value="' + escHtml(m) + '"' + (m===selMonth?' selected':'') + '>' + escHtml(m) + '</option>').join('')
+    + '</select></div>'
+    + '<div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Department</div>'
+    + '<select onchange="state.adminComDept=this.value;renderAdmin(document.getElementById(\'main\'))" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">'
+    + DEPTS.map(d=>'<option value="' + d.id + '"' + (d.id===selDept?' selected':'') + '>' + escHtml(shortDeptName(d.name)) + '</option>').join('')
+    + '</select></div></div>'
+    + '<div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:4px">Note (shown as amber callout to dept head)</div>'
+    + '<textarea id="commentary-input" rows="4" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;resize:vertical">' + escHtml(current) + '</textarea>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">'
+    + (current ? '<button data-key="' + escHtml(key) + '" onclick="clearCommentary(this.dataset.key)" style="color:#dc2626;background:none;border:none;font-size:12px;cursor:pointer">Clear note</button>' : '<div></div>')
+    + '<button data-key="' + escHtml(key) + '" onclick="saveCommentary(this.dataset.key)" style="background:#1e40af;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Save Note</button>'
+    + '</div></div>';
+}
+
+async function saveCommentary(key){
+  const text = (document.getElementById('commentary-input')?.value||'').trim();
+  if(text) COMMENTARY[key] = text; else delete COMMENTARY[key];
+  auditLog(state.currentUser?.id||'admin', 'commentary_saved', key);
+  await saveToFile();
+  renderAdmin(document.getElementById('main'));
+}
+function clearCommentary(key){
+  delete COMMENTARY[key];
+  saveToFile().then(()=>renderAdmin(document.getElementById('main')));
+}
+
+function renderAdminAudit(el){
+  let entries = [];
+  try { entries = JSON.parse(localStorage.getItem('dp_audit_log')||'[]'); } catch(e){}
+  entries = entries.slice().reverse();
+  const filterUser = state.adminAuditFilter || '';
+  const filtered   = filterUser ? entries.filter(e=>e.userId===filterUser) : entries;
+  const users      = [...new Set(entries.map(e=>e.userId))].sort();
+  const rows = filtered.slice(0,100).map(e =>
+    '<tr style="border-bottom:1px solid #f1f5f9">'
+    + '<td style="padding:7px 12px;font-size:11px;color:#94a3b8;white-space:nowrap">' + new Date(e.ts).toLocaleString() + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#374151;font-weight:600">' + escHtml(e.userId) + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#374151">' + escHtml(e.action) + '</td>'
+    + '<td style="padding:7px 12px;font-size:12px;color:#64748b">' + escHtml(e.detail) + '</td>'
+    + '</tr>'
+  ).join('');
+  el.innerHTML = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">'
+    + '<div style="padding:14px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:12px">'
+    + '<span style="font-size:13px;font-weight:600;color:#374151">Audit Log</span>'
+    + '<span style="font-size:12px;color:#94a3b8">' + filtered.length + ' events' + (filterUser?' for '+escHtml(filterUser):'') + '</span>'
+    + '<select onchange="state.adminAuditFilter=this.value;renderAdmin(document.getElementById(\'main\'))" style="margin-left:auto;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px">'
+    + '<option value="">All users</option>'
+    + users.map(u=>'<option value="' + escHtml(u) + '"' + (u===filterUser?' selected':'') + '>' + escHtml(u) + '</option>').join('')
+    + '</select></div>'
+    + '<div style="overflow-x:auto;max-height:500px;overflow-y:auto">'
+    + '<table style="width:100%;border-collapse:collapse">'
+    + '<thead style="background:#f8fafc;position:sticky;top:0"><tr>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;white-space:nowrap">Timestamp</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">User</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Action</th>'
+    + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Detail</th>'
+    + '</tr></thead>'
+    + '<tbody>' + (rows||'<tr><td colspan="4" style="padding:20px;text-align:center;color:#94a3b8">No events yet</td></tr>') + '</tbody>'
+    + '</table></div></div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN SAVE FLOW
+// ═══════════════════════════════════════════════════════════════
+
+function serializeUsersBlock(){
+  return '// @@USERS_START@@\nconst USERS = ' + JSON.stringify(USERS, null, 2) + ';\n// @@USERS_END@@';
+}
+
+function serializeCommentaryBlock(){
+  return '// @@COMMENTARY_START@@\nconst COMMENTARY = ' + JSON.stringify(COMMENTARY, null, 2) + ';\n// @@COMMENTARY_END@@';
+}
+
+async function buildUpdatedHTML(){
+  let html = document.documentElement.outerHTML;
+  html = html.replace(/\/\/ @@USERS_START@@[\s\S]*?\/\/ @@USERS_END@@/, serializeUsersBlock());
+  html = html.replace(/\/\/ @@COMMENTARY_START@@[\s\S]*?\/\/ @@COMMENTARY_END@@/, serializeCommentaryBlock());
+  return html;
+}
+
+async function saveToFile(){
+  const html = await buildUpdatedHTML();
+  const blob = new Blob([html], {type:'text/html'});
+
+  if('showSaveFilePicker' in window){
+    try {
+      const fh = await window.showSaveFilePicker({
+        suggestedName: 'monthly financial analysis.html',
+        types:[{description:'HTML file', accept:{'text/html':['.html']}}]
+      });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+      showSaveToast('Saved to file.');
+      return;
+    } catch(e){
+      if(e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback: trigger download
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href    = url;
+  a.download = 'monthly financial analysis.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showSaveToast('Downloaded. Replace the file in your project folder and let the auto-push sync it to GitHub.');
+}
+
+function showSaveToast(msg){
+  let t = document.getElementById('save-toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'save-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1e40af;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 4000);
+}
+
+const DH_VIEWS = [
+  {id:'overview',     label:'Overview'},
+  {id:'pl',           label:'P&L'},
+  {id:'gross_profit', label:'Gross Profit'},
+  {id:'labor',        label:'Labor'},
+  {id:'sales',        label:'Sales'},
+  {id:'marketing',    label:'Marketing'},
+  {id:'intelligence', label:'Intelligence'},
+];
+
+function renderDeptHead(){
+  destroyCharts();
+  const user  = state.currentUser;
+  if(!user || user.role !== 'dept_head') return;
+  const depts = userDepts(user);
+  const midx  = getSelIdx();
+  const month = DATA[midx];
+  const isPre = !!month.preliminary;
+
+  // ── Header ───────────────────────────────────────────────────
+  const roleLabel = depts.map(d=>shortDeptName(d.name)).join(' + ');
+  document.getElementById('dh-header').innerHTML =
+    '<div style="background:#1e40af;padding:12px 20px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<span style="color:#fff;font-weight:800;font-size:16px;letter-spacing:-0.3px">DATAPATH</span>'
+    + '<span style="background:rgba(255,255,255,0.18);color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px">' + escHtml(roleLabel) + '</span>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px">'
+    + '<span style="color:rgba(255,255,255,0.8);font-size:12px">' + escHtml(user.name) + '</span>'
+    + '<button onclick="window.print()" class="dh-no-print" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">&#x2B07; Report</button>'
+    + '<button onclick="doLogout()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer">Sign out</button>'
+    + '</div></div>';
+
+  // ── Dept pills + month selector ───────────────────────────────
+  const pills = depts.length > 1
+    ? '<button onclick="dhSetDept(\'all\')" style="' + (state.dhDept==='all'?'background:#1e40af;color:#fff':'background:#f1f5f9;color:#374151') + ';border:none;padding:5px 14px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">All Depts</button>'
+      + depts.map(d=>'<button onclick="dhSetDept(\'' + d.id + '\')" style="' + (state.dhDept===d.id?'background:#1e40af;color:#fff':'background:#f1f5f9;color:#374151') + ';border:none;padding:5px 14px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer">' + escHtml(shortDeptName(d.name)) + '</button>').join('')
+    : '';
+  const monthOpts = DATA.map((m,i) =>
+    '<option value="' + i + '"' + (i===midx?' selected':'') + '>' + escHtml(m.month) + (m.preliminary?' *':'') + '</option>'
+  ).reverse().join('');
+  const dataThrough = 'Data through ' + escHtml(month.month) + (isPre ? ' &middot; PRELIMINARY' : ' &middot; Final');
+
+  document.getElementById('dh-pills').innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #e0e0e0;flex-wrap:wrap">'
+    + pills
+    + '<div style="margin-left:auto;display:flex;align-items:center;gap:10px">'
+    + '<span style="font-size:11px;color:#94a3b8">' + dataThrough + '</span>'
+    + '<select onchange="dhSetMonth(this.value)" style="border:1px solid #e0e0e0;border-radius:6px;padding:4px 8px;font-size:12px;color:#374151;background:#fff">' + monthOpts + '</select>'
+    + '</div></div>';
+
+  // ── View tabs ─────────────────────────────────────────────────
+  const allowedViews = DH_VIEWS.filter(v => user.views.includes(v.id) || v.id === 'intelligence');
+  if(!allowedViews.find(v=>v.id===state.dhView)) state.dhView = allowedViews[0].id;
+  const tabs = allowedViews.map(v =>
+    '<button onclick="dhNavigate(\'' + v.id + '\')" style="' + (state.dhView===v.id?'color:#1e40af;border-bottom:2px solid #1e40af':'color:#64748b;border-bottom:2px solid transparent') + ';background:none;border-top:none;border-left:none;border-right:none;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">' + escHtml(v.label) + '</button>'
+  ).join('');
+
+  // ── Render main area ─────────────────────────────────────────
+  document.getElementById('dh-main').innerHTML = '<div id="dh-view-tabs" style="border-bottom:1px solid #e0e0e0;margin-bottom:20px;display:flex">' + tabs + '</div><div id="dh-view"></div>';
+  auditLog(user.id, 'view', state.dhView);
+  renderDHView(document.getElementById('dh-view'), user, month);
+}
+
+function dhSetDept(key){ state.dhDept = key; renderDeptHead(); }
+function dhSetMonth(idx){ state.selMonth = parseInt(idx,10); renderDeptHead(); }
+function dhNavigate(viewId){ state.dhView = viewId; renderDeptHead(); }
+
+function renderDHView(el, user, month){
+  if(state.dhView && state.dhView !== 'overview'){
+    renderDHViewByTab(el, user, month, state.dhView);
+    return;
+  }
+  const depts = activeDepts(user);
+  const isPre = !!month.preliminary;
+  const midx  = getSelIdx();
+  const prev  = midx > 0 ? DATA[midx-1] : null;
+
+  const rev  = scopedRev(month, depts);
+  const gp   = scopedGP(month, depts);
+  const gpPct= scopedGPpct(month, depts);
+  const lab  = scopedLabor(month, depts);
+
+  function momDelta(curr, fn){
+    if(!prev) return '';
+    const pc = fn(prev);
+    if(!pc) return '';
+    const d     = ((curr - pc)/pc*100).toFixed(1);
+    const color = curr >= pc ? '#16a34a' : '#dc2626';
+    return '<div style="font-size:11px;color:' + color + '">' + (curr>=pc?'&#x2191;':'&#x2193;') + ' ' + Math.abs(d) + '% MoM</div>';
+  }
+
+  function budgetRow(val, budgetKey){
+    if(!month.budget) return '';
+    const b = depts.reduce((s,d)=>{ const bd=month.budget[d]; return s+(bd&&bd[budgetKey]?bd[budgetKey]:0); },0);
+    if(!b) return '';
+    const diff = val - b;
+    const color = diff >= 0 ? '#16a34a' : '#dc2626';
+    return '<div style="font-size:11px;color:' + color + '">vs budget: ' + (diff>=0?'+':'') + fmt(diff) + '</div>';
+  }
+
+  // Commentary lookup
+  const noteText = (() => {
+    for(const d of depts){ const key=month.month+':'+d; if(COMMENTARY[key]) return COMMENTARY[key]; }
+    return null;
+  })();
+
+  const preBadge = isPre
+    ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><strong>PRELIMINARY</strong> — Numbers not yet finalized by Citrin Cooperman.</div>'
+    : '';
+  const commentaryHtml = noteText
+    ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px 16px;margin-bottom:20px">'
+      + '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">NOTE FROM LEADERSHIP</div>'
+      + '<div style="font-size:13px;color:#78350f">' + escHtml(noteText) + '</div></div>'
+    : '';
+
+  function kpiCard(label, valHtml, border, extra, spark){
+    return '<div style="background:#fff;border:1px solid #e0e0e0;border-left:4px solid ' + border + ';border-radius:8px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">'
+      + '<div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">' + label + '</div>'
+      + '<div style="font-size:22px;font-weight:700;color:#111;margin-bottom:4px">' + valHtml + '</div>'
+      + extra
+      + '<div style="margin-top:8px">' + spark + '</div></div>';
+  }
+
+  const gpValHtml = fmt(gp) + ' <span style="font-size:13px;color:#64748b">(' + gpPct.toFixed(1) + '%)</span>';
+  const cards = '<div class="dh-kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">'
+    + kpiCard('Revenue',     fmt(rev),    '#3b82f6', momDelta(rev,  m=>scopedRev(m,depts))   + budgetRow(rev,'revenue'),  renderSparkline(sparklineData(depts,'rev',6),'#3b82f6'))
+    + kpiCard('Gross Profit',gpValHtml,   '#16a34a', momDelta(gp,   m=>scopedGP(m,depts))    + budgetRow(gp,'gp'),        renderSparkline(sparklineData(depts,'gp',6),'#16a34a'))
+    + kpiCard('Labor',       fmt(lab),    '#f59e0b', momDelta(lab,  m=>scopedLabor(m,depts)),                              renderSparkline(sparklineData(depts,'labor',6),'#f59e0b'))
+    + '</div>';
+
+  // Per-dept breakdown table (multi-dept + 'all' selected)
+  let tableHtml = '';
+  if(user.departments.length > 1 && state.dhDept === 'all'){
+    const rows = userDepts(user).map(d => {
+      const dr  = scopedRev(month,[d.id]);
+      const dgp = scopedGP(month,[d.id]);
+      const dpct= dr ? (dgp/dr*100).toFixed(1) : null;
+      const color= dpct !== null && parseFloat(dpct) >= (BM[d.id]?.tgt||50) ? '#16a34a' : '#f59e0b';
+      return '<tr>'
+        + '<td style="padding:8px 12px;font-weight:600;color:#374151">' + escHtml(shortDeptName(d.name)) + '</td>'
+        + '<td style="padding:8px 12px;color:#374151">' + fmt(dr) + '</td>'
+        + '<td style="padding:8px 12px;color:#374151">' + fmt(dgp) + '</td>'
+        + '<td style="padding:8px 12px;color:' + color + ';font-weight:600">' + (dpct !== null ? dpct+'%' : '&#x2014;') + '</td>'
+        + '</tr>';
+    }).join('');
+    tableHtml = '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:#f8fafc;border-bottom:1px solid #e0e0e0">'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Department</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Revenue</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Gross Profit</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">GP%</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  el.innerHTML = preBadge + commentaryHtml + cards + tableHtml;
+}
+
+function renderDHViewByTab(el, user, month, viewId){
+  const depts = activeDepts(user);
+  const isPre = !!month.preliminary;
+  const preBadge = isPre ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400e"><strong>PRELIMINARY</strong></div>' : '';
+
+  if(viewId === 'pl'){
+    const rows = userDepts(user).filter(d=>depts.includes(d.id)).map(d=>{
+      const r   = scopedRev(month,[d.id]);
+      const lab = scopedLabor(month,[d.id]);
+      const vc  = scopedVendorCOGS(month,[d.id]);
+      const gp  = r - vc - lab;
+      return '<tr style="background:#f8fafc"><td colspan="2" style="padding:8px 12px;font-weight:700;color:#374151">' + escHtml(shortDeptName(d.name)) + '</td></tr>'
+        + '<tr><td style="padding:6px 12px 6px 24px;color:#64748b">Revenue</td><td style="padding:6px 12px;text-align:right">' + fmt(r) + '</td></tr>'
+        + '<tr><td style="padding:6px 12px 6px 24px;color:#64748b">Vendor COGS</td><td style="padding:6px 12px;text-align:right">' + fmt(vc) + '</td></tr>'
+        + '<tr><td style="padding:6px 12px 6px 24px;color:#64748b">Labor</td><td style="padding:6px 12px;text-align:right">' + fmt(lab) + '</td></tr>'
+        + '<tr style="border-top:1px solid #e0e0e0"><td style="padding:8px 12px 8px 24px;font-weight:600">Gross Profit</td><td style="padding:8px 12px;text-align:right;font-weight:700;color:' + (gp>=0?'#16a34a':'#dc2626') + '">' + fmt(gp) + '</td></tr>';
+    }).join('');
+    el.innerHTML = preBadge + '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden"><table style="width:100%;border-collapse:collapse">' + rows + '</table></div>';
+
+  } else if(viewId === 'gross_profit'){
+    const bars = userDepts(user).filter(d=>depts.includes(d.id)).map(d=>{
+      const r   = scopedRev(month,[d.id]);
+      const gp  = scopedGP(month,[d.id]);
+      const pct = r ? gp/r*100 : 0;
+      const tgt = BM[d.id]?.tgt||50;
+      const color = pct >= tgt ? '#16a34a' : pct >= tgt*0.85 ? '#f59e0b' : '#dc2626';
+      return '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:16px 20px;margin-bottom:12px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+        + '<span style="font-weight:600;color:#374151">' + escHtml(shortDeptName(d.name)) + '</span>'
+        + '<span style="font-weight:700;font-size:18px;color:' + color + '">' + pct.toFixed(1) + '%</span></div>'
+        + '<div style="background:#f1f5f9;border-radius:4px;height:8px"><div style="background:' + color + ';border-radius:4px;height:8px;width:' + Math.min(pct,100).toFixed(1) + '%"></div></div>'
+        + '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#94a3b8">'
+        + '<span>GP: ' + fmt(gp) + ' of ' + fmt(r) + '</span><span>Target: ' + tgt + '%</span></div></div>';
+    }).join('');
+    el.innerHTML = preBadge + bars;
+
+  } else if(viewId === 'labor'){
+    const rows = userDepts(user).filter(d=>depts.includes(d.id)).map(d=>{
+      const lab = scopedLabor(month,[d.id]);
+      const rev = scopedRev(month,[d.id]);
+      const pct = rev ? (lab/rev*100).toFixed(1)+'%' : '&#x2014;';
+      return '<tr>'
+        + '<td style="padding:10px 12px;font-weight:600;color:#374151">' + escHtml(shortDeptName(d.name)) + '</td>'
+        + '<td style="padding:10px 12px;color:#374151">' + fmt(lab) + '</td>'
+        + '<td style="padding:10px 12px;color:#64748b">' + pct + ' of revenue</td></tr>';
+    }).join('');
+    el.innerHTML = preBadge + '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden">'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:#f8fafc;border-bottom:1px solid #e0e0e0">'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Department</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Labor Cost</th>'
+      + '<th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">% of Revenue</th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+  } else if(viewId === 'sales'){
+    el.innerHTML = preBadge + '<div id="dh-sales-inner"></div>';
+    setTimeout(()=>{ const inner=document.getElementById('dh-sales-inner'); if(!inner) return; const tmp=document.createElement('div'); renderSalesWon(tmp); inner.appendChild(tmp); },0);
+
+  } else if(viewId === 'marketing'){
+    const mktSpend = month.opex ? (month.opex.marketing||0) : 0;
+    el.innerHTML = preBadge + '<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:24px">'
+      + '<div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;margin-bottom:6px">Marketing Spend &mdash; ' + escHtml(month.month) + '</div>'
+      + '<div style="font-size:28px;font-weight:700;color:#374151">' + fmt(mktSpend) + '</div>'
+      + '<div style="font-size:12px;color:#94a3b8;margin-top:4px">From OpEx marketing bucket</div></div>';
+
+  } else if(viewId === 'intelligence'){
+    renderDHAdvisor(el, user);
+
+  } else {
+    el.innerHTML = '<div style="color:#94a3b8;padding:20px">View not available.</div>';
+  }
+}
+
+function renderDHAdvisor(el, user){
+  const depts     = userDepts(user);
+  const deptNames = depts.map(d=>d.name).join(' and ');
+  const last3     = DATA.slice(-3);
+  const scopedCtx = last3.map(m=>{
+    const d2 = user.departments;
+    return m.month + ': Revenue ' + fmt(scopedRev(m,d2)) + ', GP ' + fmt(scopedGP(m,d2)) + ' (' + scopedGPpct(m,d2).toFixed(1) + '%), Labor ' + fmt(scopedLabor(m,d2));
+  }).join('\n');
+
+  state.dhSystemPrompt = 'You are a financial advisor for ' + user.name + ' at Datapath, focused exclusively on the ' + deptNames + ' department' + (depts.length>1?'s':'') + '.\n\n'
+    + 'IMPORTANT RESTRICTIONS:\n'
+    + '- Only discuss data for: ' + deptNames + '\n'
+    + '- Do NOT reveal company-wide revenue, total EBITDA, overall company profit, or any other department\'s numbers\n'
+    + '- If asked about company-wide metrics or other departments, politely explain you can only discuss their assigned departments\n'
+    + '- Do NOT reveal headcount numbers or individual salaries\n\n'
+    + 'THEIR RECENT DATA:\n' + scopedCtx + '\n\n'
+    + 'MSP BENCHMARKS:\n'
+    + depts.map(d=>'- ' + d.name + ': GP target ' + (BM[d.id]?.tgt||50) + '% (top ' + (BM[d.id]?.top||55) + '%, median ' + (BM[d.id]?.med||45) + '%)').join('\n') + '\n\n'
+    + 'Be direct, use their actual numbers, compare to benchmarks. Frame advice in terms of what they can improve in their department.';
+
+  if(!state.dhChatMessages){
+    state.dhChatMessages = [{role:'assistant', content:'Hi ' + user.name.split(' ')[0] + '! I can help you understand your ' + depts.map(d=>shortDeptName(d.name)).join(' and ') + ' financial performance. What would you like to know?'}];
+  }
+
+  el.innerHTML = '<div style="display:flex;flex-direction:column;height:calc(100vh - 240px)">'
+    + '<div id="dh-chat-msgs" style="flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:12px"></div>'
+    + '<div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid #e0e0e0;margin-top:12px">'
+    + '<input id="dh-chat-input" type="text" placeholder="Ask about your department financials..." style="flex:1;padding:10px 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\')dhSendMessage()">'
+    + '<button onclick="dhSendMessage()" style="background:#1e40af;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer">Send</button>'
+    + '</div></div>';
+  renderDHChatMessages();
+}
+
+function renderDHChatMessages(){
+  const el = document.getElementById('dh-chat-msgs');
+  if(!el) return;
+  el.innerHTML = (state.dhChatMessages||[]).map(m=>{
+    const isUser = m.role === 'user';
+    return '<div style="display:flex;' + (isUser?'justify-content:flex-end':'') + '">'
+      + '<div style="max-width:80%;background:' + (isUser?'#1e40af':'#f8fafc') + ';color:' + (isUser?'#fff':'#374151') + ';border:1px solid ' + (isUser?'#1e40af':'#e0e0e0') + ';border-radius:10px;padding:10px 14px;font-size:13px;line-height:1.5;white-space:pre-wrap">'
+      + escHtml(m.content) + '</div></div>';
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function dhSendMessage(){
+  const input = document.getElementById('dh-chat-input');
+  const text  = (input.value||'').trim();
+  if(!text) return;
+  input.value = '';
+  if(!state.dhChatMessages) state.dhChatMessages = [];
+  state.dhChatMessages.push({role:'user', content:text});
+  renderDHChatMessages();
+
+  const apiKey = localStorage.getItem('dp_api_key');
+  if(!apiKey){
+    state.dhChatMessages.push({role:'assistant', content:'Please have an admin set up the API key in the Intelligence tab first.'});
+    renderDHChatMessages();
+    return;
+  }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:1024, system:state.dhSystemPrompt, messages:state.dhChatMessages})
+    });
+    const data = await res.json();
+    state.dhChatMessages.push({role:'assistant', content:data.content?.[0]?.text||'No response.'});
+  } catch(e){
+    state.dhChatMessages.push({role:'assistant', content:'Error contacting AI. Check your API key.'});
+  }
+  renderDHChatMessages();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2857,13 +3919,39 @@ function renderPnL(el) {
   rows += dataRow('EBITDA', m => m.ebitda, {isTotal: true});
   rows += dataRow('EBITDA Margin %', m => m.ebitdaM, {isPct: true});
 
-  // Add-backs for Adjusted EBITDA
+  // Normalization — one-time items above the EBITDA line (2025+)
+  rows += divRow('Normalization (One-Time Items — 2025/2026)');
+  rows += dataRow('Severance & PTO (non-recurring)', m => m.normSevPTO || 0, {indent: true, colorBySign: true});
+  NORM_ONE_TIME_ITEMS.forEach(item => {
+    if (!DATA.some(m => (m.normOneTimeItems||{})[item.key])) return;
+    rows += dataRow(item.label + (item.star ? '*' : ''), m => (m.normOneTimeItems||{})[item.key] || 0, {indent: true, colorBySign: true});
+  });
+  rows += dataRow('Normalized EBITDA', m => m.normEbitda !== undefined ? m.normEbitda : m.ebitda, {isTotal: true});
+  rows += dataRow('Normalized EBITDA Margin %', m => m.normEbitdaM !== undefined ? m.normEbitdaM : m.ebitdaM, {isPct: true});
+
+  // Add-backs for Adjusted EBITDA (2025 schedule — 18 items, $1.14M total; 2026 ongoing normalize items)
   rows += divRow('Add-Backs (for Adjusted EBITDA)');
-  rows += dataRow('Owner Perks & Personal Charges', m => m.addBacks?.ownerPerks || 0, {indent: true});
-  rows += dataRow('One-Time / Non-Recurring Expenses', m => m.addBacks?.oneTime || 0, {indent: true});
-  rows += dataRow('Above-Market Rent / Related Party', m => m.addBacks?.aboveMarketRent || 0, {indent: true});
-  rows += dataRow('Other Add-Backs', m => m.addBacks?.other || 0, {indent: true});
+  rows += dataRow('Facilities – Modesto HQ Rent', m => m.addBacks?.facilitiesModesto || 0, {indent: true});
+  rows += dataRow('Facilities – Ohio Office', m => m.addBacks?.facilitiesOhio || 0, {indent: true});
+  rows += dataRow('Family Member Compensation', m => m.addBacks?.familyMemberComp || 0, {indent: true});
+  rows += dataRow('Severance & PTO Payouts', m => m.addBacks?.severancePTO || 0, {indent: true});
+  rows += dataRow('Year-End Legal Reserves (PAGA)', m => m.addBacks?.yearEndLegal || 0, {indent: true});
+  rows += dataRow('Balance Sheet Adj – Insurance (Non-Cash)', m => m.addBacks?.balanceSheetAdj || 0, {indent: true});
+  rows += dataRow('R&D Tax Credit Study', m => m.addBacks?.rdTaxCredit || 0, {indent: true});
+  rows += dataRow('Citrin Cooperman Assessment', m => m.addBacks?.citrinAssessment || 0, {indent: true});
+  rows += dataRow('Phoenix Strategy Group', m => m.addBacks?.phoenixStrategy || 0, {indent: true});
+  rows += dataRow('Roger Gentry Consulting', m => m.addBacks?.rogerGentry || 0, {indent: true});
+  rows += dataRow('Podcast Studio Build-Out', m => m.addBacks?.podcastStudio || 0, {indent: true});
+  rows += dataRow('AP Logic (SharePoint Setup)', m => m.addBacks?.apLogic || 0, {indent: true});
+  rows += dataRow('Ohio Office Flood Repairs', m => m.addBacks?.ohioFlood || 0, {indent: true});
+  rows += dataRow('TPC Contract Negotiation', m => m.addBacks?.tpcContract || 0, {indent: true});
+  rows += dataRow('11:11 Systems Contract Buyout', m => m.addBacks?.systems1111 || 0, {indent: true});
+  rows += dataRow('Additional Legal Fees', m => m.addBacks?.additionalLegal || 0, {indent: true});
+  rows += dataRow('Website Development', m => m.addBacks?.websiteDev || 0, {indent: true});
+  rows += dataRow('Marketing GTM Consulting', m => m.addBacks?.marketingGTM || 0, {indent: true});
+  rows += dataRow('One-Time Bank / Finance Fees', m => m.addBacks?.bankFees || 0, {indent: true});
   rows += dataRow('Total Add-Backs', m => m.totalAddBacks || 0, {bold: true});
+  rows += dataRow('Less: Sev/PTO (already in Normalized EBITDA)', m => -(m.normSevPTO || 0), {indent: true, colorBySign: true});
   rows += dataRow('Adjusted EBITDA', m => m.adjEbitda || m.ebitda, {isTotal: true});
   rows += dataRow('Adjusted EBITDA Margin %', m => m.adjEbitdaM || m.ebitdaM, {isPct: true});
 
@@ -2958,312 +4046,423 @@ function buildAnomalyHtml() {
 // ═══════════════════════════════════════════════════════════════
 // LABOR ALLOCATION VIEW
 // ═══════════════════════════════════════════════════════════════
-function renderLaborAllocation(el) {
-  const L = latest();
-  const fc = v => v===0?'—':'$'+Math.round(Math.abs(v)).toLocaleString();
 
-  // ── LABOR ALLOCATION DATA (Feb 2026 headcount roster-based) ──
-  const LABOR_DATA = {
-    cogs: [
-      { name:'Managed IT — Service Delivery', emoji:'🖥️', color:'#3b82f6',
-        pnlAlloc: 114494, pnlPct:'62.3%',
-        people:[
-          {n:'Brandon Johnson',t:'Natl Dir. of Service Delivery',type:'W-2',g:8464,p:'100%'},
-          {n:'William Doyle',t:'Service Escalation Engineer',type:'W-2',g:9024,p:'100%'},
-          {n:'Gabriel Espinoza',t:'Service Escalation Engineer',type:'W-2',g:7387,p:'100%'},
-          {n:'Kerr Conkle',t:'Service Manager',type:'W-2',g:6541,p:'100%'},
-          {n:'Michelle Contreras',t:'Service Team Lead',type:'W-2',g:6150,p:'100%'},
-          {n:'Nathan Lanning',t:'Service Engineer I',type:'W-2',g:6138,p:'100%'},
-          {n:'Mark Mercer',t:'Escalation Technician II',type:'W-2',g:6337,p:'100%'},
-          {n:'Henry Martinez',t:'Service Technician',type:'W-2',g:5928,p:'100%'},
-          {n:'Matthew Irick',t:'Service Escalation Engineer',type:'W-2',g:5904,p:'100%'},
-          {n:'Colton Keim',t:'Field Service Technician I',type:'W-2',g:5455,p:'100%'},
-          {n:'Michael Trude',t:'Service Team Lead',type:'W-2',g:5385,p:'100%'},
-          {n:'Sam Dean',t:'Service Team Lead',type:'W-2',g:5252,p:'100%'},
-          {n:'Luis Pena',t:'Team Lead',type:'W-2',g:5137,p:'100%'},
-          {n:'Arnold Vega',t:'Service Technician I',type:'W-2',g:4552,p:'100%'},
-          {n:'Brandon Hulsey-Cedeno',t:'Service Team Lead',type:'W-2',g:4398,p:'100%'},
-          {n:'Cristina Chavez Soto',t:'Service Technician I',type:'W-2',g:4286,p:'100%'},
-          {n:'Oscar Contreras',t:'Service Technician I',type:'W-2',g:4366,p:'100%'},
-          {n:'Tommy Wijaya',t:'Service Technician I',type:'W-2',g:4027,p:'100%'},
-          {n:'Nathaniel Dupray',t:'Service Technician I',type:'W-2',g:4003,p:'100%'},
-          {n:'Kevin Barr',t:'Helpdesk Technician',type:'W-2',g:3848,p:'100%'},
-          {n:'Cole Matuszynski',t:'Tier 1 Service Technician',type:'W-2',g:3282,p:'100%'},
-          {n:'Christopher Vouis',t:'Bench Technician',type:'W-2',g:3057,p:'100%'},
-          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:2212,p:'25%'},
-          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:2080,p:'25%'},
-          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:1866,p:'25%'},
-          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:1767,p:'25%'},
-          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:1524,p:'25%'},
-          {n:'Hoover Dimson',t:'Service Technician I',type:'BruntWork',g:1265,p:'100%'},
-          {n:'Jenny Magcalayo',t:'Service Technician I',type:'BruntWork',g:1323,p:'100%'},
-          {n:'Girly De La Pena',t:'Service Technician I',type:'BruntWork',g:1309,p:'100%'},
-        ]},
-      { name:'Managed IT — Account Management', emoji:'🖥️', color:'#60a5fa',
-        pnlAlloc: 19982, pnlPct:'10.9%',
-        people:[
-          {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
-          {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
-          {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
-          {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:1385,p:'20%'},
-          {n:'Edwin De Guzman',t:'Sales Coordinator',type:'Microsourcing',g:2074,p:'100%'},
-          {n:'Hermella Mulugeta',t:'Inside Account Manager',type:'CRDLE',g:1600,p:'100%'},
-          {n:'MJ Martinez',t:'Business Ops Sales Specialist',type:'Gusto 1099',g:2308,p:'100%'},
-          {n:'Julissa Martinez Duran',t:'Inside Account Manager',type:'Gusto 1099',g:2123,p:'100%'},
-          {n:'Carla Humber Munguia',t:'Inside Account Manager',type:'Direct',g:2500,p:'100%'},
-        ]},
-      { name:'Projects / Prof. Services', emoji:'🔧', color:'#10b981',
-        pnlAlloc: 24538, pnlPct:'13.3%',
-        people:[
-          {n:'Keith Newson',t:'Engineering Team Manager',type:'W-2',g:6636,p:'75%'},
-          {n:'Christopher Gilmore',t:'Sr. Systems Analyst',type:'W-2',g:6239,p:'75%'},
-          {n:'Matthew Lampe',t:'Network Engineer',type:'W-2',g:5598,p:'75%'},
-          {n:'James Bruce',t:'Sr. Systems Analyst',type:'W-2',g:5302,p:'75%'},
-          {n:'Matt Brinovec',t:'Network Engineer',type:'W-2',g:4571,p:'75%'},
-        ]},
-      { name:'Security (MDR/SOC)', emoji:'🛡️', color:'#ef4444',
-        pnlAlloc: 15562, pnlPct:'8.5%',
-        people:[
-          {n:'Angelica Jackson',t:'Security Analyst',type:'W-2',g:6540,p:'100%'},
-          {n:'Cory Strassell',t:'Service Escalation Engineer',type:'W-2',g:5937,p:'100%'},
-          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
-        ]},
-      { name:'Cloud & Hosting', emoji:'☁️', color:'#8b5cf6',
-        pnlAlloc: 1998, pnlPct:'1.1%',
-        people:[
-          {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:2308,p:'25%'},
-        ]},
-      { name:'HW/SW Resale', emoji:'📦', color:'#f59e0b',
-        pnlAlloc: 7263, pnlPct:'4.0%',
-        people:[
-          {n:'David Craig',t:'Procurement Manager',type:'W-2',g:5771,p:'100%'},
-          {n:'Genelyn Terrones',t:'Procurement Specialist',type:'BruntWork',g:1540,p:'100%'},
-          {n:'Carrlyne David',t:'Procurement Specialist',type:'BruntWork',g:1079,p:'100%'},
-        ]},
-    ],
-    rd: { name:'R&D', emoji:'🧪', color:'#7c3aed', pnlTotal:75331,
-      people:[
-        {n:'James Bates',t:'Co-CEO',type:'W-2',g:6550,p:'100%'},
-        {n:'Peter Annabel',t:'Dir. of Cloud Operations',type:'W-2',g:6925,p:'75%'},
-        {n:'Timothy Stewart',t:'Dir. of Service Optimization',type:'W-2',g:6722,p:'100%'},
-        {n:'Jacob Berlin',t:'Data Engineer',type:'W-2',g:1000,p:'100%'},
-        {n:'Haskell Macaraig',t:'Data Engineer',type:'1099',g:4000,p:'100%'},
-      ]},
-    sales: { name:'Sales', emoji:'💼', pnlTotal:114856,
-      people:[
-        {n:'DinYero Johnson',t:'Sales',type:'W-2',g:14618,p:'100%'},
-        {n:'Daniel Chadwell',t:'Sales Engineer Lead',type:'W-2',g:7156,p:'100%'},
-        {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
-        {n:'Jay Harvey',t:'Senior Acct. Exec',type:'W-2',g:5540,p:'80%'},
-        {n:'Nathan La Fleche',t:'Dir. of Strategic Partnerships',type:'W-2',g:4144,p:'50%'},
-        {n:'Joel Walker',t:'Mgr, Inside Account Mgmt',type:'W-2',g:3828,p:'50%'},
-        {n:'Ricky Maestas',t:'EDU Account Executive',type:'W-2',g:3121,p:'50%'},
-      ]},
-    ga: [
-      { name:'G&A > Sr Leadership', emoji:'👔',
-        people:[
-          {n:'David Darmstandler',t:'Co-CEO',type:'W-2',g:8299,p:'100%'},
-          {n:'Daniel Sturdivant',t:'Vice President',type:'W-2',g:5770,p:'50%'},
-          {n:'Stephen Walski',t:'Dir. of Engineering & Security',type:'W-2',g:5501,p:'50%'},
-          {n:'Consulting & Office Space',t:'',type:'Consulting',g:25500,p:''},
-        ]},
-      { name:'G&A > Central Services', emoji:'🏢',
-        people:[
-          {n:'Marshall Rownd',t:'IT Director',type:'W-2',g:9233,p:'100%'},
-          {n:'Devin Peterson',t:'Sr. Systems Analyst',type:'W-2',g:7156,p:'100%'},
-        ]},
-      { name:'G&A > Finance', emoji:'💰',
-        people:[
-          {n:'Melinda Hennington',t:'Admin Finance',type:'W-2',g:6975,p:'100%'},
-          {n:'Jaquelene Dizon',t:'Payroll Analyst',type:'Microsourcing',g:1922,p:'100%'},
-        ]},
-      { name:'G&A > Marketing', emoji:'📣',
-        people:[
-          {n:'Myca Villanueva',t:'RevOps Specialist',type:'Microsourcing',g:1985,p:'100%'},
-        ]},
-      { name:'G&A > HR', emoji:'🧑‍💼',
-        people:[
-          {n:'Nahili Bekele',t:'HR Manager',type:'CRDLE',g:1600,p:'100%'},
-        ]},
-      { name:'G&A > Admin', emoji:'📋',
-        people:[
-          {n:'Colin Bates',t:'Part-time',type:'W-2',g:1760,p:'100%'},
-          {n:'Hudson Darmstandler',t:'Part-time',type:'W-2',g:1760,p:'100%'},
-        ]},
-    ],
+const LABOR_DEPTS = [
+  {id:'ms_delivery',   name:'Managed IT — Service Delivery',   emoji:'🖥️',  color:'#3b82f6', section:'cogs', pnlAlloc:114494, pnlPct:'62.3%'},
+  {id:'ms_acct_mgmt',  name:'Managed IT — Account Management', emoji:'👥',         color:'#60a5fa', section:'cogs', pnlAlloc:19982,  pnlPct:'10.9%'},
+  {id:'ps',            name:'Projects / Prof. Services',             emoji:'🔧',         color:'#10b981', section:'cogs', pnlAlloc:24538,  pnlPct:'13.3%'},
+  {id:'security',      name:'Security (MDR/SOC)',                    emoji:'🛡️',   color:'#ef4444', section:'cogs', pnlAlloc:15562,  pnlPct:'8.5%'},
+  {id:'cloud',         name:'Cloud & Hosting',                       emoji:'☁️',        color:'#8b5cf6', section:'cogs', pnlAlloc:1998,   pnlPct:'1.1%'},
+  {id:'hwsw',          name:'HW/SW Resale',                         emoji:'📦',          color:'#f59e0b', section:'cogs', pnlAlloc:7263,   pnlPct:'4.0%'},
+  {id:'rd',            name:'R&D',                                   emoji:'🧪',          color:'#7c3aed', section:'rd'},
+  {id:'sales',         name:'Sales',                                 emoji:'💼',          color:'#1e40af', section:'sales'},
+  {id:'ga_leadership', name:'G&A > Sr Leadership',                   emoji:'👔',          color:'#6b7280', section:'ga'},
+  {id:'ga_central',    name:'G&A > Central Services',                emoji:'🏢',          color:'#6b7280', section:'ga'},
+  {id:'ga_finance',    name:'G&A > Finance',                         emoji:'💰',          color:'#6b7280', section:'ga'},
+  {id:'ga_marketing',  name:'G&A > Marketing',                       emoji:'📣',          color:'#6b7280', section:'ga'},
+  {id:'ga_hr',         name:'G&A > HR',                              emoji:'🧑‍💼', color:'#6b7280', section:'ga'},
+  {id:'ga_admin',      name:'G&A > Admin',                           emoji:'📋',          color:'#6b7280', section:'ga'},
+];
+
+// Flat roster — Gusto W-2 rates (April 2026) + manual contractors
+// DinYero Johnson removed (terminated 3/26)
+const LABOR_ROSTER = [
+  // ── W-2: MS Service Delivery (100%) ──
+  {id:'brandon-johnson',       n:'Brandon Johnson',       t:'Natl Dir. of Service Delivery',  type:'W-2', baseGross:9167,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'william-doyle',         n:'William Doyle',         t:'Service Escalation Engineer',    type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'gabriel-espinoza',      n:'Gabriel Espinoza',      t:'Service Escalation Engineer',    type:'W-2', baseGross:6494,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'kerr-conkle',           n:'Kerr Conkle',           t:'Service Manager',                type:'W-2', baseGross:7083,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'angela-contreras',      n:'Angela Contreras',      t:'Service Team Lead',              type:'W-2', baseGross:6413,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'nathan-lanning',        n:'Nathan Lanning',        t:'Service Engineer I',             type:'W-2', baseGross:6647,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'matthew-irick',         n:'Matthew Irick',         t:'Service Escalation Engineer',    type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'colton-keim',           n:'Colton Keim',           t:'Field Service Technician I',     type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'michael-trude',         n:'Michael Trude',         t:'Service Team Lead',              type:'W-2', baseGross:6123,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'sam-dean',              n:'Sam Dean',              t:'Service Team Lead',              type:'W-2', baseGross:5547,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'luis-pena',             n:'Luis Pena',             t:'Team Lead',                      type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'arnold-vega',           n:'Arnold Vega',           t:'Service Technician I',           type:'W-2', baseGross:4680,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'brandon-hulsey-cedeno', n:'Brandon Hulsey-Cedeno', t:'Service Team Lead',              type:'W-2', baseGross:5373,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'cristina-chavez-soto',  n:'Cristina Chavez Soto',  t:'Service Technician I',           type:'W-2', baseGross:4333,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'oscar-contreras',       n:'Oscar Contreras',       t:'Service Technician I',           type:'W-2', baseGross:4723,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'nathaniel-dupray',      n:'Nathaniel Dupray',      t:'Service Technician I',           type:'W-2', baseGross:4333,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'kevin-barr',            n:'Kevin Barr',            t:'Helpdesk Technician',            type:'W-2', baseGross:4167,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'cole-matuszynski',      n:'Cole Matuszynski',      t:'Tier 1 Service Technician',      type:'W-2', baseGross:3813,  depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'christopher-vouis',     n:'Christopher Vouis',     t:'Bench Technician',               type:'W-2', baseGross:3293,  depts:[{dept:'ms_delivery',pct:100}]},
+  // Not found in active Gusto — confirm status
+  {id:'mark-mercer',           n:'Mark Mercer',           t:'Escalation Technician II',       type:'W-2', baseGross:6337,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'henry-martinez',        n:'Henry Martinez',        t:'Service Technician',             type:'W-2', baseGross:5928,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'tommy-wijaya',          n:'Tommy Wijaya',          t:'Service Technician I',           type:'W-2', baseGross:4027,  unverified:true, depts:[{dept:'ms_delivery',pct:100}]},
+  // Engineering: 25% MS Service Delivery / 75% Projects/PS
+  {id:'keith-newson',          n:'Keith Newson',          t:'Engineering Team Manager',       type:'W-2', baseGross:9583,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'christopher-gilmore',   n:'Christopher Gilmore',   t:'Sr. Systems Analyst',            type:'W-2', baseGross:9010,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'matthew-lampe',         n:'Matthew Lampe',         t:'Network Engineer',               type:'W-2', baseGross:8083,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'james-bruce',           n:'James Bruce',           t:'Sr. Systems Analyst',            type:'W-2', baseGross:7656,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'matt-brinovec',         n:'Matt Brinovec',         t:'Network Engineer',               type:'W-2', baseGross:6600,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  {id:'christopher-fuenty',    n:'Christopher Fuenty',    t:'Service Engineer',               type:'W-2', baseGross:5720,  depts:[{dept:'ms_delivery',pct:25},{dept:'ps',pct:75}]},
+  // Account Management / Sales splits
+  {id:'nathan-la-fleche',      n:'Nathan La Fleche',      t:'Dir. of Strategic Partnerships', type:'W-2', baseGross:10000, depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'joel-walker',           n:'Joel Walker',           t:'Mgr, Inside Account Mgmt',       type:'W-2', baseGross:6667,  depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'ricky-maestas',         n:'Ricky Maestas',         t:'EDU Account Executive',          type:'W-2', baseGross:6963,  depts:[{dept:'ms_acct_mgmt',pct:50},{dept:'sales',pct:50}]},
+  {id:'jay-harvey',            n:'Jay Harvey',            t:'Senior Acct. Exec',              type:'W-2', baseGross:7500,  depts:[{dept:'ms_acct_mgmt',pct:20},{dept:'sales',pct:80}]},
+  // Security
+  {id:'angelica-jackson',      n:'Angelica Jackson',      t:'Security Analyst',               type:'W-2', baseGross:7083,  depts:[{dept:'security',pct:100}]},
+  {id:'cory-strassell',        n:'Cory Strassell',        t:'Service Escalation Engineer',    type:'W-2', baseGross:6430,  depts:[{dept:'security',pct:100}]},
+  {id:'stephen-walski',        n:'Stephen Walski',        t:'Dir. of Engineering & Security', type:'W-2', baseGross:11917, depts:[{dept:'security',pct:50},{dept:'ga_leadership',pct:50}]},
+  // Cloud / R&D split
+  {id:'peter-annabel',         n:'Peter Annabel',         t:'Dir. of Cloud Operations',       type:'W-2', baseGross:10000, depts:[{dept:'cloud',pct:25},{dept:'rd',pct:75}]},
+  // HW/SW
+  {id:'david-craig',           n:'David Craig',           t:'Procurement Manager',            type:'W-2', baseGross:6250,  depts:[{dept:'hwsw',pct:100}]},
+  // R&D
+  {id:'james-bates',           n:'James Bates',           t:'Co-CEO',                         type:'W-2', baseGross:5417,  depts:[{dept:'rd',pct:100}]},
+  {id:'timothy-stewart',       n:'Timothy Stewart',       t:'Dir. of Service Optimization',   type:'W-2', baseGross:7280,  depts:[{dept:'rd',pct:100}]},
+  {id:'jacob-berlin',          n:'Jacob Berlin',          t:'Data Engineer',                  type:'W-2', baseGross:4333,  depts:[{dept:'rd',pct:100}]},
+  {id:'haskell-macaraig',      n:'Haskell Macaraig',      t:'Data Engineer',                  type:'W-2', baseGross:6500,  depts:[{dept:'rd',pct:100}]},
+  // Sales
+  {id:'daniel-chadwell',       n:'Daniel Chadwell',       t:'Sales Engineer Lead',            type:'W-2', baseGross:8917,  depts:[{dept:'sales',pct:100}]},
+  {id:'daniel-sturdivant',     n:'Daniel Sturdivant',     t:'Vice President',                 type:'W-2', baseGross:12500, depts:[{dept:'sales',pct:50},{dept:'ga_leadership',pct:50}]},
+  // G&A
+  {id:'david-darmstandler',    n:'David Darmstandler',    t:'Co-CEO',                         type:'W-2', baseGross:5417,  depts:[{dept:'ga_leadership',pct:100}]},
+  {id:'marshall-rownd',        n:'Marshall Rownd',        t:'IT Director',                    type:'W-2', baseGross:10000, depts:[{dept:'ga_central',pct:100}]},
+  {id:'devin-peterson',        n:'Devin Peterson',        t:'Sr. Systems Analyst',            type:'W-2', baseGross:7750,  depts:[{dept:'ga_central',pct:100}]},
+  {id:'melinda-hennington',    n:'Melinda Hennington',    t:'Admin Finance',                  type:'W-2', baseGross:7553,  depts:[{dept:'ga_finance',pct:100}]},
+  {id:'colin-bates',           n:'Colin Bates',           t:'Part-time',                      type:'W-2', baseGross:3813,  depts:[{dept:'ga_admin',pct:100}]},
+  {id:'hudson-darmstandler',   n:'Hudson Darmstandler',   t:'Part-time',                      type:'W-2', baseGross:3813,  depts:[{dept:'ga_admin',pct:100}]},
+  // ── Contractors (manual entry — not in Gusto payroll) ──
+  {id:'hoover-dimson',          n:'Hoover Dimson',          t:'Service Technician I',         type:'BruntWork',     baseGross:1265,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'jenny-magcalayo',        n:'Jenny Magcalayo',        t:'Service Technician I',         type:'BruntWork',     baseGross:1323,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'girly-de-la-pena',       n:'Girly De La Pena',       t:'Service Technician I',         type:'BruntWork',     baseGross:1309,  manual:true, depts:[{dept:'ms_delivery',pct:100}]},
+  {id:'edwin-de-guzman',        n:'Edwin De Guzman',        t:'Sales Coordinator',            type:'Microsourcing', baseGross:2074,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'hermella-mulugeta',      n:'Hermella Mulugeta',      t:'Inside Account Manager',       type:'CRDLE',         baseGross:1600,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'mj-martinez',            n:'MJ Martinez',            t:'Business Ops Sales Specialist',type:'Gusto 1099',    baseGross:2308,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'julissa-martinez-duran', n:'Julissa Martinez Duran', t:'Inside Account Manager',       type:'Gusto 1099',    baseGross:2123,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'carla-humber-munguia',   n:'Carla Humber Munguia',   t:'Inside Account Manager',       type:'Direct',        baseGross:2500,  manual:true, depts:[{dept:'ms_acct_mgmt',pct:100}]},
+  {id:'genelyn-terrones',       n:'Genelyn Terrones',       t:'Procurement Specialist',       type:'BruntWork',     baseGross:1540,  manual:true, depts:[{dept:'hwsw',pct:100}]},
+  {id:'carrlyne-david',         n:'Carrlyne David',         t:'Procurement Specialist',       type:'BruntWork',     baseGross:1079,  manual:true, depts:[{dept:'hwsw',pct:100}]},
+  {id:'jaquelene-dizon',        n:'Jaquelene Dizon',        t:'Payroll Analyst',              type:'Microsourcing', baseGross:1922,  manual:true, depts:[{dept:'ga_finance',pct:100}]},
+  {id:'myca-villanueva',        n:'Myca Villanueva',        t:'RevOps Specialist',            type:'Microsourcing', baseGross:1985,  manual:true, depts:[{dept:'ga_marketing',pct:100}]},
+  {id:'nahili-bekele',          n:'Nahili Bekele',          t:'HR Manager',                   type:'CRDLE',         baseGross:1600,  manual:true, depts:[{dept:'ga_hr',pct:100}]},
+  {id:'consulting-office-space',n:'Consulting & Office Space',t:'',                           type:'Consulting',    baseGross:25500, manual:true, depts:[{dept:'ga_leadership',pct:100}]},
+];
+
+
+const LABOR_OVERRIDES_KEY = 'dp_labor_overrides';
+function loadLaborOverrides() {
+  try { return JSON.parse(localStorage.getItem(LABOR_OVERRIDES_KEY)) || {}; } catch { return {}; }
+}
+function saveLaborOverrides(ov) {
+  try { localStorage.setItem(LABOR_OVERRIDES_KEY, JSON.stringify(ov)); } catch {}
+}
+
+// Convert "Jan 25" style label to index in DATA for effective-date comparison.
+function monthToIdx(mStr) {
+  return DATA.findIndex(m => m.month === mStr);
+}
+
+function buildLaborGroups(selectedMonth) {
+  const overrides = loadLaborOverrides();
+  const selIdx = selectedMonth != null ? monthToIdx(selectedMonth) : Infinity;
+  const applyOv = ovDate => {
+    if (ovDate == null) return true;
+    const oi = monthToIdx(ovDate);
+    return oi !== -1 && oi <= selIdx;
   };
+  const active = LABOR_ROSTER.map(p => {
+    const ov = overrides[p.id] || {};
+    return {
+      ...p,
+      t:         (ov.titleOverride !== undefined && applyOv(ov.titleEffectiveDate)) ? ov.titleOverride : p.t,
+      baseGross: (ov.grossOverride  !== undefined && applyOv(ov.grossEffectiveDate)) ? ov.grossOverride : p.baseGross,
+      depts:     (ov.deptsOverride  && applyOv(ov.deptsEffectiveDate))               ? ov.deptsOverride  : p.depts,
+    };
+  });
+  const groups = {};
+  LABOR_DEPTS.forEach(d => { groups[d.id] = {...d, people: []}; });
+  active.forEach(person => {
+    person.depts.forEach(a => {
+      if (!groups[a.dept]) return;
+      groups[a.dept].people.push({
+        id: person.id, n: person.n, t: person.t, type: person.type,
+        g: Math.round(person.baseGross * a.pct / 100),
+        baseGross: person.baseGross,
+        pct: a.pct, depts: person.depts,
+        manual: !!person.manual, unverified: !!person.unverified,
+      });
+    });
+  });
+  return groups;
+}
 
-  // ── Helper: type badge ──
+window.laborRender = function() {
+  const el = document.getElementById('labor-section');
+  if (el) renderLaborAllocation(el);
+};
+window.laborSaveTitle = function(id, val, effectiveDate) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  ov[id].titleOverride = val.trim();
+  ov[id].titleEffectiveDate = effectiveDate || null;
+  saveLaborOverrides(ov); laborRender();
+};
+window.laborSaveGross = function(id, val, effectiveDate) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const n = parseFloat(String(val).replace(/[^0-9.]/g,''));
+  if (!isNaN(n) && n >= 0) {
+    ov[id].grossOverride = Math.round(n);
+    ov[id].grossEffectiveDate = effectiveDate || null;
+    saveLaborOverrides(ov); laborRender();
+  }
+};
+window.laborSavePct = function(id, deptId, val, effectiveDate) {
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const pct = parseInt(String(val).replace(/[^0-9]/g,''));
+  if (isNaN(pct) || pct < 0 || pct > 100) return;
+  const person = LABOR_ROSTER.find(p => p.id === id);
+  if (!person) return;
+  const base = (ov[id] && ov[id].deptsOverride) || person.depts;
+  const updated = base.map(d => d.dept === deptId ? {...d, pct} : d);
+  if (updated.length === 2) {
+    const oi = updated.findIndex(d => d.dept !== deptId);
+    if (oi >= 0) updated[oi] = {...updated[oi], pct: 100 - pct};
+  }
+  ov[id].deptsOverride = updated;
+  ov[id].deptsEffectiveDate = effectiveDate || null;
+  saveLaborOverrides(ov); laborRender();
+};
+window.laborSaveDept = function(id, fromDept, toDept, effectiveDate) {
+  if (fromDept === toDept) return;
+  const ov = loadLaborOverrides(); if (!ov[id]) ov[id] = {};
+  const person = LABOR_ROSTER.find(p => p.id === id);
+  if (!person) return;
+  const base = (ov[id] && ov[id].deptsOverride) || person.depts;
+  ov[id].deptsOverride = base.map(d => d.dept === fromDept ? {...d, dept: toDept} : d);
+  ov[id].deptsEffectiveDate = effectiveDate || null;
+  saveLaborOverrides(ov); laborRender();
+};
+window.laborResetAll = function() {
+  if (!confirm('Reset all labor allocation overrides to defaults?')) return;
+  localStorage.removeItem(LABOR_OVERRIDES_KEY); laborRender();
+};
+
+function renderLaborAllocation(el) {
+  el.id = 'labor-section';
+  const fc = v => v === 0 ? '—' : '$' + Math.round(Math.abs(v)).toLocaleString();
+  const curMonth = DATA[getSelIdx()].month;
+  const groups = buildLaborGroups(curMonth);
+
   function typeBadge(t) {
-    const colors = {'W-2':['#dbeafe','#1e40af'],'BruntWork':['#f3e8ff','#6b21a8'],
-      'Microsourcing':['#f3e8ff','#6b21a8'],'CRDLE':['#f3e8ff','#6b21a8'],
-      'Gusto 1099':['#fef3c7','#92400e'],'1099':['#fef3c7','#92400e'],
-      'Direct':['#dcfce7','#166534'],'Consulting':['#fef3c7','#92400e']};
-    const c = colors[t]||['#f1f5f9','#475569'];
+    const colors = {
+      'W-2':['#dbeafe','#1e40af'], 'BruntWork':['#f3e8ff','#6b21a8'],
+      'Microsourcing':['#f3e8ff','#6b21a8'], 'CRDLE':['#f3e8ff','#6b21a8'],
+      'Gusto 1099':['#fef3c7','#92400e'], '1099':['#fef3c7','#92400e'],
+      'Direct':['#dcfce7','#166534'], 'Consulting':['#fef3c7','#92400e'],
+    };
+    const c = colors[t] || ['#f1f5f9','#475569'];
     return `<span style="font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;background:${c[0]};color:${c[1]}">${t}</span>`;
   }
 
-  // ── Helper: people table ──
-  function peopleTable(people) {
-    const totalGross = people.reduce((s,p)=>s+p.g,0);
+  function peopleTable(people, deptId) {
+    const totalGross = people.reduce((s,p) => s + p.g, 0);
+    const rows = people.map(p => {
+      if (p.id === 'consulting-office-space') {
+        return `<tr style="border-bottom:1px solid #f0f0f0">
+          <td style="padding:4px 8px;font-weight:500;color:#1a1a1a" colspan="5">
+            Consulting &amp; Office Space
+            <span style="font-size:9px;background:#fef3c7;color:#92400e;padding:2px 5px;border-radius:3px;margin-left:6px">aggregate — not broken out</span>
+          </td>
+        </tr>`;
+      }
+      const isContractor = p.type !== 'W-2';
+      const deptAllocRows = p.depts.map(da => {
+        const isHere = da.dept === deptId;
+        const pctSpan = `<span contenteditable="true" title="Click to edit allocation %"
+          style="cursor:pointer;color:${isHere?'#1e40af':'#b45309'};display:inline-block;min-width:28px;text-align:right;font-weight:${isHere?'600':'400'}"
+          onblur="laborSavePct('${p.id}','${da.dept}',this.innerText,'${curMonth}')"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${da.pct}%</span>`;
+        const deptSelect = `<select onchange="laborSaveDept('${p.id}','${da.dept}',this.value,'${curMonth}')"
+          style="font-size:10px;border:1px solid ${isHere?'#93c5fd':'#d1d5db'};border-radius:3px;padding:1px 3px;background:${isHere?'#eff6ff':'#f9fafb'};cursor:pointer;max-width:190px">
+          ${LABOR_DEPTS.map(ld => `<option value="${ld.id}"${ld.id===da.dept?' selected':''}>${ld.name}</option>`).join('')}
+        </select>`;
+        return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">${pctSpan} ${deptSelect}</div>`;
+      }).join('');
+      const grossCell = isContractor
+        ? `<span contenteditable="true" title="Click to edit"
+               style="cursor:pointer;color:#374151;display:inline-block;min-width:55px"
+               onblur="laborSaveGross('${p.id}',this.innerText,'${curMonth}')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${fc(p.g)}</span>
+           <span style="font-size:9px;color:#9ca3af">✏️</span>`
+        : `<span style="color:#374151" title="Base rate from Gusto">${fc(p.g)}</span>
+           <span style="font-size:9px;color:#9ca3af;margin-left:2px">G</span>`;
+      return `<tr style="border-bottom:1px solid #f0f0f0${p.unverified?';opacity:0.6':''}">
+        <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">
+          ${p.n}
+          ${p.unverified ? '<span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 4px;border-radius:2px;margin-left:4px" title="Not found in active Gusto — confirm status">⚠️ verify</span>' : ''}
+        </td>
+        <td contenteditable="true" title="Click to edit title"
+            style="padding:4px 8px;color:#6b7280;cursor:pointer"
+            onblur="laborSaveTitle('${p.id}',this.innerText,'${curMonth}')"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${p.t}</td>
+        <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}${p.manual ? '<span style="font-size:8px;color:#9ca3af;margin-left:2px">manual</span>' : ''}</td>
+        <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">${grossCell}</td>
+        <td style="padding:4px 8px;text-align:right">${deptAllocRows}</td>
+      </tr>`;
+    }).join('');
     return `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px">
       <tr style="color:#6b7280;font-size:11px;border-bottom:1px solid #e0e0e0">
         <th style="text-align:left;padding:4px 8px">Name</th>
-        <th style="text-align:left;padding:4px 8px">Title</th>
+        <th style="text-align:left;padding:4px 8px">Title <span style="font-weight:400">✏️</span></th>
         <th style="text-align:center;padding:4px 8px">Type</th>
         <th style="text-align:right;padding:4px 8px">Gross/Mo</th>
-        <th style="text-align:right;padding:4px 8px">Alloc %</th>
+        <th style="text-align:right;padding:4px 8px">Alloc % / Department</th>
       </tr>
-      ${people.map(p => `<tr style="border-bottom:1px solid #f0f0f0">
-        <td style="padding:4px 8px;font-weight:500;color:#1a1a1a">${p.n}</td>
-        <td style="padding:4px 8px;color:#6b7280">${p.t}</td>
-        <td style="padding:4px 8px;text-align:center">${typeBadge(p.type)}</td>
-        <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:#374151">${fc(p.g)}</td>
-        <td style="padding:4px 8px;text-align:right;color:${p.p==='100%'?'#6b7280':'#b45309'};font-size:11px">${p.p}</td>
-      </tr>`).join('')}
+      ${rows}
       <tr style="border-top:2px solid #d1d5db;font-weight:700;color:#1a1a1a">
-        <td style="padding:6px 8px" colspan="3">Total (${people.filter(p=>p.t).length} people)</td>
-        <td style="padding:6px 8px;text-align:right">${fc(totalGross)}</td><td></td>
-      </tr></table>`;
+        <td style="padding:6px 8px" colspan="3">Total</td>
+        <td style="padding:6px 8px;text-align:right">${fc(totalGross)}</td>
+        <td></td>
+      </tr>
+    </table>`;
   }
 
-  // ── Helper: collapsible dept block ──
-  function deptBlock(dept, pnlLine, expanded, opts) {
-    const locked = opts && opts.locked;
-    const totalGross = dept.people.reduce((s,p)=>s+p.g,0);
-    const id = dept.name.replace(/[^a-z]/gi,'');
+  function deptBlock(deptId, opts) {
+    const def = LABOR_DEPTS.find(d => d.id === deptId);
+    const grp = groups[deptId];
+    if (!def || !grp) return '';
+    const locked = !!(opts && opts.locked);
+    const totalGross = grp.people.reduce((s,p) => s + p.g, 0);
+    const pnlLine = def.pnlAlloc
+      ? `<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&amp;L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(def.pnlAlloc)}</div></div>`
+      : '';
+    const pctTag = def.pnlPct
+      ? `<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${def.pnlPct} of labor pool</span>`
+      : '';
     if (locked) {
-      // No headcount, no drill-through — aggregate only
-      return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      return `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
-          </div>
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${def.emoji} ${def.name}</span>
           <div style="display:flex;gap:16px;align-items:center">
-            ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+            ${pnlLine}
             <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
           </div>
         </div>
       </div>`;
     }
-    return `<div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.chevron').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾'"
+    const bid = deptId.replace(/[^a-z0-9]/gi,'');
+    return `<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div onclick="var c=document.getElementById('lc-${bid}');c.style.display=c.style.display==='none'?'block':'none';this.querySelector('.chv').textContent=c.style.display==='none'?'▸':'▾'"
            style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;user-select:none">
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="chevron" style="color:#9ca3af;font-size:12px">${expanded?'▾':'▸'}</span>
-          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${dept.emoji||''} ${dept.name}</span>
-          <span style="font-size:11px;color:#6b7280">${dept.people.filter(p=>p.t).length} people</span>
-          ${dept.pnlPct?`<span style="font-size:10px;color:#6b7280;background:#f1f5f9;padding:2px 6px;border-radius:3px">${dept.pnlPct} of labor pool</span>`:''}
+          <span class="chv" style="color:#9ca3af;font-size:12px">▸</span>
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a">${def.emoji} ${def.name}</span>
+          ${pctTag}
         </div>
         <div style="display:flex;gap:16px;align-items:center">
-          ${pnlLine?`<div style="text-align:right"><div style="font-size:10px;color:#6b7280">P&L Allocation</div><div style="font-size:14px;font-weight:700;color:#16a34a">${fc(pnlLine)}</div></div>`:''}
+          ${pnlLine}
           <div style="text-align:right"><div style="font-size:10px;color:#6b7280">Gross Wages</div><div style="font-size:14px;font-weight:600;color:#1a1a1a">${fc(totalGross)}</div></div>
         </div>
       </div>
-      <div style="padding:0 16px 12px;display:${expanded?'block':'none'}">${peopleTable(dept.people)}</div>
+      <div id="lc-${bid}" style="padding:0 16px 12px;display:none">${peopleTable(grp.people, deptId)}</div>
     </div>`;
   }
 
-  // ── Build HTML ──
-  let html = `<div class="fade-in">${monthSelector()}
-    <div class="section-title">Labor Allocation — ${L.month}</div>
-    <div class="section-sub" style="margin-bottom:4px">Per-person allocation based on headcount roster • 58 total headcount</div>
-    <div style="font-size:11px;color:#ef4444;font-weight:600;margin-bottom:16px">CONFIDENTIAL — Do not distribute</div>`;
+  const cogsDepts  = LABOR_DEPTS.filter(d => d.section === 'cogs');
+  const gaDepts    = LABOR_DEPTS.filter(d => d.section === 'ga');
+  const totalCogs  = cogsDepts.reduce((s,d) => s + groups[d.id].people.reduce((ss,p) => ss+p.g, 0), 0);
+  const totalRD    = groups.rd.people.reduce((s,p) => s + p.g, 0);
+  const totalSales = groups.sales.people.reduce((s,p) => s + p.g, 0);
+  const totalGA    = gaDepts.reduce((s,d) => s + groups[d.id].people.reduce((ss,p) => ss+p.g, 0), 0);
+  const hasOverrides = Object.keys(loadLaborOverrides()).length > 0;
 
-  // Summary cards
-  const totalCogsLabor = LABOR_DATA.cogs.reduce((s,d)=>s+d.pnlAlloc,0);
+  let html = `<div class="fade-in">${monthSelector()}
+    <div class="section-title">Labor Allocation — Roster</div>
+    <div class="section-sub" style="margin-bottom:4px">Gusto W-2 rates (April 2026) • Manual entry for contractors • Click title/dept/% to edit — saved to browser • Changes apply forward from current month</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <span style="font-size:11px;color:#ef4444;font-weight:600">CONFIDENTIAL — Do not distribute</span>
+      <button onclick="alert('Gusto sync requires API integration — W-2 rates last updated April 2026')"
+              style="font-size:11px;padding:3px 10px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;background:#f9fafb">↻ Refresh from Gusto</button>
+      ${hasOverrides ? `<button onclick="laborResetAll()" style="font-size:11px;padding:3px 10px;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;background:#fef2f2;color:#dc2626">Reset overrides</button>` : ''}
+    </div>`;
+
   html += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #3b82f6;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #3b82f6;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
       <div style="font-size:11px;color:#6b7280">COGS Labor</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalCogsLabor)}</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalCogs)}</div>
       <div style="font-size:10px;color:#9ca3af">6 revenue depts</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #7c3aed;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div style="font-size:11px;color:#6b7280">R&D</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.rd.pnlTotal)}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.rd.people.length} people</div>
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #7c3aed;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">R&amp;D</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalRD)}</div>
+      <div style="font-size:10px;color:#9ca3af">R&amp;D team</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #f59e0b;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #f59e0b;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
       <div style="font-size:11px;color:#6b7280">Sales Labor</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.sales.pnlTotal)}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.sales.people.length} people</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalSales)}</div>
+      <div style="font-size:10px;color:#9ca3af">Sales team</div>
     </div>
-    <div style="background:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #9ca3af;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
-      <div style="font-size:11px;color:#6b7280">G&A Total</div>
-      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(LABOR_DATA.ga.reduce((s,d)=>s+d.people.reduce((ss,p)=>ss+p.g,0),0))}</div>
-      <div style="font-size:10px;color:#9ca3af">${LABOR_DATA.ga.reduce((s,d)=>s+d.people.filter(p=>p.t).length,0)} people + consulting</div>
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px 16px;border-left:3px solid #9ca3af;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <div style="font-size:11px;color:#6b7280">G&amp;A Total</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a">${fc(totalGA)}</div>
+      <div style="font-size:10px;color:#9ca3af">G&amp;A sub-depts</div>
     </div>
   </div>`;
 
-  // COGS departments
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin-bottom:8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
     COGS Labor — Allocated to Revenue Departments
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">$183,836 total direct+project labor redistributed by gross wages</span>
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Direct + project labor weighted by gross wages</span>
   </div>`;
-  LABOR_DATA.cogs.forEach(d => { html += deptBlock(d, d.pnlAlloc, false); });
+  cogsDepts.forEach(d => { html += deptBlock(d.id); });
 
-  // R&D
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    R&D — Separate COGS
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">GL 61900/61910/61930/61940 — reclassed from operating</span>
+    R&amp;D — Separate COGS
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">GL 61900/61910/61930/61940</span>
   </div>`;
-  html += deptBlock(LABOR_DATA.rd, LABOR_DATA.rd.pnlTotal, false);
+  html += deptBlock('rd');
 
-  // Sales
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    Sales Labor — OpEx Line Item
+    Sales Labor — OpEx
   </div>`;
-  html += deptBlock(LABOR_DATA.sales, LABOR_DATA.sales.pnlTotal, false);
+  html += deptBlock('sales');
 
-  // G&A
   html += `<div style="font-size:14px;font-weight:700;color:#1e40af;margin:20px 0 8px;border-bottom:1px solid #e0e0e0;padding-bottom:6px">
-    G&A — Sub-Buckets
-    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Admin payroll + operating expenses</span>
+    G&amp;A — Sub-Buckets
+    <span style="font-size:11px;color:#6b7280;font-weight:400;margin-left:8px">Admin payroll + consulting</span>
   </div>`;
-  LABOR_DATA.ga.forEach(d => {
-    const tot = d.people.reduce((s,p)=>s+p.g,0);
-    const isLocked = d.name.includes('Sr Leadership');
-    html += deptBlock(d, tot, false, isLocked ? {locked:true} : null);
-  });
+  gaDepts.forEach(d => { html += deptBlock(d.id, d.id === 'ga_leadership' ? {locked:true} : null); });
 
   html += `<div style="font-size:11px;color:#9ca3af;margin-top:16px;font-style:italic">
-    P&L line item totals include employer taxes, benefits, and overhead beyond gross wages shown per person.
-    COGS labor uses gross wages as proportional weights to redistribute $183,836 across revenue departments.
+    W-2 gross wages from Gusto base compensation (April 2026). Employer taxes and benefits allocated separately in P&amp;L.
+    COGS depts use gross wages as proportional weights. ✏️ = editable (saved to browser localStorage, applies from current month forward). G = Gusto rate (read-only).
   </div>`;
-
   html += '</div>';
   el.innerHTML = html;
 }
 
-// ═══════════════════════════════════════════════════════════════
+
 // SALES WON VIEW — All deals by month, verified against Agreement History
 // ═══════════════════════════════════════════════════════════════
 const ALL_DEALS = [
-  {m:'Jan 2025',c:'Advantage Home Care',mrr:12320,cy:36,r:'Dan Sturdivant',cat:'Net New',prior:0},
+  {m:'Jan 2025',c:'Advantage Home Care',mrr:12320,cy:36,r:'Dan Sturdivant',cat:'Upsell',prior:0},
   {m:'Jan 2025',c:'ABIFI Professional Health Care',mrr:3752,cy:36,r:'Dan Sturdivant',cat:'Upsell',prior:2491},
-  {m:'Jan 2025',c:'Ameribest',mrr:3317,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Jan 2025',c:'Ameribest',mrr:3317,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Jan 2025',c:'HHHC',mrr:1462,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:12038},
-  {m:'Jan 2025',c:'Yosemite Farm Credit',mrr:1000,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
-  {m:'Jan 2025',c:'Graceada Partners',mrr:720,cy:11,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Jan 2025',c:'PASCO',mrr:715,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
-  {m:'Jan 2025',c:'Hall Management Corp',mrr:420,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Jan 2025',c:'TCB Industrial',mrr:180,cy:36,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Jan 2025',c:'Yosemite Farm Credit',mrr:1000,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
+  {m:'Jan 2025',c:'Graceada Partners',mrr:720,cy:11,r:'Jay Harvey',cat:'Other',prior:0},
+  {m:'Jan 2025',c:'PASCO',mrr:715,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Jan 2025',c:'Hall Management Corp',mrr:420,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Jan 2025',c:'TCB Industrial',mrr:180,cy:36,r:'Jay Harvey',cat:'Resale',prior:0},
   {m:'Jan 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:6405},
-  {m:'Jan 2025',c:'Diversified Machining & Fabrication',mrr:88,cy:36,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Jan 2025',c:'River Delta USD',mrr:60,cy:6,r:'Ricky Maestas',cat:'Upsell',prior:0},
-  {m:'Jan 2025',c:'PASCO',mrr:44,cy:1,r:'Nathan La Fleche',cat:'Net New',prior:0},
-  {m:'Jan 2025',c:'Hall Management Corp',mrr:22,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Jan 2025',c:'Diversified Machining & Fabrication',mrr:88,cy:36,r:'Jay Harvey',cat:'Resale',prior:0},
+  {m:'Jan 2025',c:'River Delta USD',mrr:60,cy:6,r:'Ricky Maestas',cat:'Resale',prior:0},
+  {m:'Jan 2025',c:'PASCO',mrr:44,cy:1,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Jan 2025',c:'Hall Management Corp',mrr:22,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Feb 2025',c:'PASCO',mrr:13220,cy:36,r:'Dan Sturdivant',cat:'Upsell',prior:577},
   {m:'Feb 2025',c:'Hall Management Corp',mrr:5833,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Feb 2025',c:'Circle of Life - First Nations',mrr:4045,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:24282},
-  {m:'Feb 2025',c:'Impact Home Health',mrr:2278,cy:36,r:'Dan Sturdivant',cat:'Net New',prior:0},
+  {m:'Feb 2025',c:'Impact Home Health',mrr:2278,cy:36,r:'Dan Sturdivant',cat:'Upsell',prior:0},
   {m:'Feb 2025',c:'Dependable Home Health Care',mrr:1356,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Feb 2025',c:'DiMare',mrr:800,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2025',c:'Impact Home Health',mrr:627,cy:12,r:'Dan Sturdivant',cat:'Net New',prior:0},
+  {m:'Feb 2025',c:'Impact Home Health',mrr:627,cy:12,r:'Dan Sturdivant',cat:'Resale',prior:0},
   {m:'Feb 2025',c:'Duarte Nursery',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:6225},
-  {m:'Feb 2025',c:'24 Hour Home Care',mrr:10,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Feb 2025',c:'24 Hour Home Care',mrr:10,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
   {m:'Mar 2025',c:'Valley Iron',mrr:11993,cy:12,r:'Ricky Maestas',cat:'Renewal',prior:0},
-  {m:'Mar 2025',c:'Inteli-care LLC',mrr:8282,cy:36,r:'Dan Sturdivant',cat:'Net New',prior:0},
+  {m:'Mar 2025',c:'Inteli-care LLC',mrr:8282,cy:36,r:'Dan Sturdivant',cat:'Upsell',prior:0},
   {m:'Mar 2025',c:'PASCO',mrr:5932,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:577},
   {m:'Mar 2025',c:'Keen Care',mrr:680,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:6930},
   {m:'Mar 2025',c:'Pearls Hope',mrr:530,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4066},
@@ -3272,33 +4471,33 @@ const ALL_DEALS = [
   {m:'Mar 2025',c:'Life Improvement Homecare',mrr:280,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:8547},
   {m:'Mar 2025',c:'St Lukes Family Practice',mrr:200,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4074},
   {m:'Mar 2025',c:'Vital Care Solutions',mrr:160,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:9031},
-  {m:'Mar 2025',c:'Inteli-care LLC',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
-  {m:'Mar 2025',c:'Devoted Guardians',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Mar 2025',c:'Applegate Teeples Drilling',mrr:60,cy:1,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Mar 2025',c:'Trumark Companies',mrr:44,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Mar 2025',c:'Inteli-care LLC',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Mar 2025',c:'Devoted Guardians',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Mar 2025',c:'Applegate Teeples Drilling',mrr:60,cy:1,r:'Nathan La Fleche',cat:'Resale',prior:0},
+  {m:'Mar 2025',c:'Trumark Companies',mrr:44,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
   {m:'Mar 2025',c:'St Lukes Family Practice',mrr:30,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4074},
-  {m:'Mar 2025',c:'Cristo Rey High School',mrr:29,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
-  {m:'Mar 2025',c:'Cristo Rey High School',mrr:29,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
-  {m:'Apr 2025',c:'City of Mendota',mrr:3995,cy:36,r:'Jay Harvey',cat:'Net New',prior:0},
+  {m:'Mar 2025',c:'Cristo Rey High School',mrr:29,cy:12,r:'Joel Walker',cat:'Other',prior:0},
+  {m:'Mar 2025',c:'Cristo Rey High School',mrr:29,cy:12,r:'Joel Walker',cat:'Other',prior:0},
+  {m:'Apr 2025',c:'City of Mendota',mrr:3995,cy:36,r:'Jay Harvey',cat:'Upsell',prior:0},
   {m:'Apr 2025',c:'Ameribest',mrr:715,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:17283},
   {m:'Apr 2025',c:'American Inst. of Science and Tech',mrr:396,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:2328},
   {m:'Apr 2025',c:'Ameribest',mrr:325,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:17283},
-  {m:'Apr 2025',c:'Graceada Partners',mrr:252,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Apr 2025',c:'Caloy Company LLC',mrr:250,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Apr 2025',c:'City of Mendota',mrr:250,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
-  {m:'Apr 2025',c:'Valley Iron',mrr:200,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:0},
-  {m:'May 2025',c:'Samaritan Village',mrr:2871,cy:36,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Apr 2025',c:'Graceada Partners',mrr:252,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
+  {m:'Apr 2025',c:'Caloy Company LLC',mrr:250,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
+  {m:'Apr 2025',c:'City of Mendota',mrr:250,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
+  {m:'Apr 2025',c:'Valley Iron',mrr:200,cy:12,r:'Ricky Maestas',cat:'Other',prior:0},
+  {m:'May 2025',c:'Samaritan Village',mrr:2871,cy:36,r:'Jay Harvey',cat:'Resale',prior:0},
   {m:'May 2025',c:'24 Hour Home Care',mrr:1263,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:43656},
   {m:'May 2025',c:'Circle of Life - First Nations',mrr:633,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:24282},
   {m:'May 2025',c:'Advantage Home Care',mrr:603,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:12995},
-  {m:'May 2025',c:'Winton-Ireland, Strom & Green',mrr:360,cy:8,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'May 2025',c:'Caloy Company LLC',mrr:350,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'May 2025',c:'Winton-Ireland, Strom & Green',mrr:360,cy:8,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'May 2025',c:'Caloy Company LLC',mrr:350,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
   {m:'May 2025',c:'Devoted Guardians',mrr:249,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:9578},
-  {m:'May 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'May 2025',c:'Ameribest',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'May 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
+  {m:'May 2025',c:'Ameribest',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'May 2025',c:'Alliance Services',mrr:81,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:3931},
-  {m:'May 2025',c:'Devoted Guardians',mrr:75,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'May 2025',c:'Agee Construction',mrr:75,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'May 2025',c:'Devoted Guardians',mrr:75,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'May 2025',c:'Agee Construction',mrr:75,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'May 2025',c:'Dependable Home Health Care',mrr:22,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:6803},
   {m:'May 2025',c:'HHHC',mrr:22,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:13652},
   {m:'May 2025',c:'Circle of Life - First Nations',mrr:22,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:24282},
@@ -3314,25 +4513,25 @@ const ALL_DEALS = [
   {m:'Jun 2025',c:'Applegate Teeples Drilling',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4100},
   {m:'Jun 2025',c:'Applegate Teeples Drilling',mrr:95,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:4100},
   {m:'Jun 2025',c:'Applegate Teeples Drilling',mrr:76,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:4100},
-  {m:'Jun 2025',c:'Rumiano Cheese Company',mrr:16,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Jun 2025',c:'Rumiano Cheese Company',mrr:16,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
   {m:'Jul 2025',c:'Empire Union School District',mrr:6806,cy:12,r:'Ricky Maestas',cat:'Renewal',prior:0},
-  {m:'Jul 2025',c:'Cristo Rey High School',mrr:6228,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Jul 2025',c:'Cristo Rey High School',mrr:6228,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Jul 2025',c:'Rizo Lopez Foods',mrr:5149,cy:36,r:'Jay Harvey',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Formulation Technology, Inc.',mrr:4893,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Jul 2025',c:'Worthington Christian School',mrr:4099,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Arts and College Prep Academy',mrr:3506,cy:12,r:'Joel Walker',cat:'Upsell',prior:558},
   {m:'Jul 2025',c:'Global Ambassadors Language Academy',mrr:3022,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
-  {m:'Jul 2025',c:'Empire Union School District',mrr:2869,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:0},
-  {m:'Jul 2025',c:'Newman-Crows Landing USD',mrr:1869,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:0},
+  {m:'Jul 2025',c:'Empire Union School District',mrr:2869,cy:12,r:'Ricky Maestas',cat:'Resale',prior:0},
+  {m:'Jul 2025',c:'Newman-Crows Landing USD',mrr:1869,cy:12,r:'Ricky Maestas',cat:'Resale',prior:0},
   {m:'Jul 2025',c:'St John Lutheran Nottingham',mrr:1269,cy:12,r:'Joel Walker',cat:'Upsell',prior:1390},
   {m:'Jul 2025',c:'Arcanum Butler Local School District',mrr:1161,cy:12,r:'Joel Walker',cat:'Upsell',prior:1161},
   {m:'Jul 2025',c:'Caldwell Exempted Village',mrr:962,cy:1,r:'Joel Walker',cat:'Upsell',prior:2550},
   {m:'Jul 2025',c:'Worthington Christian School',mrr:848,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
-  {m:'Jul 2025',c:'Sylvan Union School District',mrr:781,cy:1,r:'Ricky Maestas',cat:'Upsell',prior:0},
+  {m:'Jul 2025',c:'Sylvan Union School District',mrr:781,cy:1,r:'Ricky Maestas',cat:'Resale',prior:0},
   {m:'Jul 2025',c:'Miami East Local Schools',mrr:731,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Imagine Great Western Academy',mrr:677,cy:12,r:'Joel Walker',cat:'Upsell',prior:6881},
   {m:'Jul 2025',c:'Arts and College Prep Academy',mrr:558,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
-  {m:'Jul 2025',c:'Millennium Comm School',mrr:500,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Jul 2025',c:'Millennium Comm School',mrr:500,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Jul 2025',c:'DiMare',mrr:400,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:10934},
   {m:'Jul 2025',c:'Imagine Sullivant',mrr:384,cy:12,r:'Joel Walker',cat:'Upsell',prior:3738},
   {m:'Jul 2025',c:'Global Ambassadors Language Academy',mrr:363,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
@@ -3341,68 +4540,68 @@ const ALL_DEALS = [
   {m:'Jul 2025',c:'Lutheran High School East',mrr:262,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Imagine Akron Academy',mrr:145,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'River Gate HS',mrr:144,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
-  {m:'Jul 2025',c:'Samaritan Home Health',mrr:140,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
+  {m:'Jul 2025',c:'Samaritan Home Health',mrr:140,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
   {m:'Jul 2025',c:'Imagine Madison Ave',mrr:135,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Imagine Bella Academy of Excellence',mrr:120,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Invictus HS',mrr:120,cy:12,r:'Joel Walker',cat:'Upsell',prior:4352},
   {m:'Jul 2025',c:'Focus Learning Academy',mrr:114,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Albert Einstein Academy of Ohio',mrr:112,cy:12,r:'Joel Walker',cat:'Upsell',prior:2842},
-  {m:'Jul 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Jul 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
   {m:'Jul 2025',c:'Project Hope Alliance',mrr:55,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Groundswell',mrr:44,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:3294},
   {m:'Jul 2025',c:'LHollingworth',mrr:41,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Jul 2025',c:'Imagine Leadership Academy',mrr:19,cy:12,r:'Joel Walker',cat:'Upsell',prior:2297},
   {m:'Aug 2025',c:'24 Hour Home Care',mrr:31614,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:43656},
   {m:'Aug 2025',c:'Sylvan Union School District',mrr:5072,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:20982},
-  {m:'Aug 2025',c:'Jame O Bookkeeping',mrr:2800,cy:36,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Aug 2025',c:'Jame O Bookkeeping',mrr:2800,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Aug 2025',c:'Sunbridge Schools',mrr:2490,cy:12,r:'Joel Walker',cat:'Upsell',prior:2715},
-  {m:'Aug 2025',c:'Luther Memorial',mrr:1974,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Aug 2025',c:'Luther Memorial',mrr:1974,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Aug 2025',c:'Daniel, Towle and Warkentine CPA',mrr:1054,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Aug 2025',c:'Imagine Groveport Community School',mrr:744,cy:12,r:'Joel Walker',cat:'Upsell',prior:8242},
   {m:'Aug 2025',c:'St. Adalbert School',mrr:670,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Aug 2025',c:'City Day Community School',mrr:409,cy:12,r:'Joel Walker',cat:'Upsell',prior:3025},
-  {m:'Aug 2025',c:'LHollingworth',mrr:300,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Aug 2025',c:'LHollingworth',mrr:300,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Aug 2025',c:'Daniel, Towle and Warkentine CPA',mrr:275,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Aug 2025',c:'Empire Union School District',mrr:250,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:0},
-  {m:'Aug 2025',c:'Imagine Columbus Primary Academy',mrr:229,cy:12,r:'Joel Walker',cat:'Upsell',prior:2630},
+  {m:'Aug 2025',c:'Empire Union School District',mrr:250,cy:12,r:'Ricky Maestas',cat:'Resale',prior:0},
+  {m:'Aug 2025',c:'Imagine Columbus Primary Academy',mrr:229,cy:12,r:'Joel Walker',cat:'Renewal',prior:0},
   {m:'Aug 2025',c:'Ability Ambeck Mortgage',mrr:120,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:3326},
   {m:'Aug 2025',c:'Daniel, Towle and Warkentine CPA',mrr:92,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Aug 2025',c:'DeHart Plumbing, Heating & Air',mrr:30,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:7203},
   {m:'Aug 2025',c:'Daniel, Towle and Warkentine CPA',mrr:25,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Aug 2025',c:'Fortune-Ratliff General Contractors',mrr:25,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Aug 2025',c:'Fortune-Ratliff General Contractors',mrr:25,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Aug 2025',c:'United Way of Stanislaus County',mrr:12,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:1842},
   {m:'Sep 2025',c:'Team Public Choices, LLC',mrr:2000,cy:1,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Sep 2025',c:'ECS',mrr:602,cy:27,r:'Dan Sturdivant',cat:'Net New',prior:0},
-  {m:'Sep 2025',c:'Graceada Partners',mrr:565,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Sep 2025',c:'ECS',mrr:602,cy:27,r:'Dan Sturdivant',cat:'Upsell',prior:0},
+  {m:'Sep 2025',c:'Graceada Partners',mrr:565,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
   {m:'Sep 2025',c:'Gill Ranch Storage, LLC',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:1966},
-  {m:'Sep 2025',c:'Tolles Career and Technical Center',mrr:200,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Sep 2025',c:'Tolles Career and Technical Center',mrr:200,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Sep 2025',c:'Madison Plains LSD',mrr:200,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
-  {m:'Sep 2025',c:'Cerbat Mountain Farm LLC',mrr:65,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
-  {m:'Sep 2025',c:'Cerbat Mountain Farm LLC',mrr:21,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Sep 2025',c:'Cerbat Mountain Farm LLC',mrr:65,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Sep 2025',c:'Cerbat Mountain Farm LLC',mrr:21,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Sep 2025',c:'Primetime Escrow',mrr:20,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:2158},
   {m:'Oct 2025',c:'Westmark Incorporated',mrr:10499,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Oct 2025',c:'Westmark Incorporated',mrr:10359,cy:36,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Oct 2025',c:'Team Public Choices, LLC',mrr:3955,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
   {m:'Oct 2025',c:'Community Action Partnership of Madera Co',mrr:954,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:11232},
-  {m:'Oct 2025',c:'Scheurer Health',mrr:680,cy:12,r:'Joel Walker',cat:'Upsell',prior:0},
+  {m:'Oct 2025',c:'Scheurer Health',mrr:680,cy:12,r:'Joel Walker',cat:'Other',prior:0},
   {m:'Oct 2025',c:'River Delta USD',mrr:490,cy:12,r:'Ricky Maestas',cat:'Upsell',prior:15849},
   {m:'Oct 2025',c:'Free Wheelchair Mission',mrr:100,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:6405},
   {m:'Oct 2025',c:'St Lukes Family Practice',mrr:60,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:4074},
-  {m:'Oct 2025',c:'HHHC',mrr:10,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Oct 2025',c:'HHHC',mrr:10,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Nov 2025',c:'Winton-Ireland, Strom & Green',mrr:15179,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:10756},
   {m:'Nov 2025',c:'Spring Creek Golf & Country Club',mrr:2854,cy:36,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Nov 2025',c:'Garretson Team',mrr:2310,cy:24,r:'Dan Sturdivant',cat:'Upsell',prior:460},
   {m:'Nov 2025',c:'Spring Creek Golf & Country Club',mrr:423,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Nov 2025',c:'Weakley & Arendt, LLP',mrr:375,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:3019},
-  {m:'Nov 2025',c:'Winton-Ireland, Strom & Green',mrr:360,cy:2,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Nov 2025',c:'Winton-Ireland, Strom & Green',mrr:360,cy:2,r:'Nathan La Fleche',cat:'Resale',prior:0},
   {m:'Nov 2025',c:'Weakley & Arendt, LLP',mrr:144,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:3019},
   {m:'Nov 2025',c:'American Inst. of Science and Tech',mrr:50,cy:36,r:'Maria Martinez',cat:'Upsell',prior:2328},
-  {m:'Nov 2025',c:'Primetime Escrow',mrr:25,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Nov 2025',c:'Primetime Escrow',mrr:25,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Nov 2025',c:'Weakley & Arendt, LLP',mrr:6,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:3019},
   {m:'Dec 2025',c:'Free Wheelchair Mission',mrr:8217,cy:36,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Dec 2025',c:'Quality Home Services',mrr:3200,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:9778},
-  {m:'Dec 2025',c:'Graceada Partners',mrr:1676,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Dec 2025',c:'Horizon Nut Company',mrr:1540,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Dec 2025',c:'Graceada Partners',mrr:1676,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
+  {m:'Dec 2025',c:'Horizon Nut Company',mrr:1540,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Dec 2025',c:'Hercules OEM Group',mrr:432,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:22366},
   {m:'Dec 2025',c:'Free Wheelchair Mission',mrr:133,cy:1,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Dec 2025',c:'Garretson Team',mrr:132,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:5345},
@@ -3410,39 +4609,39 @@ const ALL_DEALS = [
   {m:'Jan 2026',c:'Central Valley Regional Center',mrr:3500,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
   {m:'Jan 2026',c:'Statuo',mrr:874,cy:36,r:'Nathan La Fleche',cat:'Net New',prior:0},
   {m:'Jan 2026',c:'24 Hour Home Care',mrr:270,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:75270},
-  {m:'Jan 2026',c:'7C Escrow',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Jan 2026',c:'Project Hope Alliance',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Jan 2026',c:'7C Escrow',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Jan 2026',c:'Project Hope Alliance',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
   {m:'Jan 2026',c:'Dust Bowl Brewing Company',mrr:250,cy:12,r:'Maria Martinez',cat:'Renewal',prior:0},
-  {m:'Jan 2026',c:'Peak Real Estate Management LLC',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Jan 2026',c:'Rizo Lopez Foods',mrr:150,cy:12,r:'Jay Harvey',cat:'Net New',prior:0},
+  {m:'Jan 2026',c:'Peak Real Estate Management LLC',mrr:250,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Jan 2026',c:'Rizo Lopez Foods',mrr:150,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
   {m:'Jan 2026',c:'Jame O Bookkeeping',mrr:132,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:2668},
-  {m:'Jan 2026',c:'TCB Industrial',mrr:60,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Jan 2026',c:'City of Selma',mrr:10,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Lucia Mar Unified School District',mrr:6033,cy:5,r:'Ricky Maestas',cat:'Upsell',prior:0},
+  {m:'Jan 2026',c:'TCB Industrial',mrr:60,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
+  {m:'Jan 2026',c:'City of Selma',mrr:10,cy:12,r:'Jay Harvey',cat:'Other',prior:0},
+  {m:'Feb 2026',c:'Lucia Mar Unified School District',mrr:6033,cy:5,r:'Ricky Maestas',cat:'Resale',prior:0},
   {m:'Feb 2026',c:'Sierra Northern Railway',mrr:5538,cy:36,r:'Dan Sturdivant',cat:'Net New',prior:0},
   {m:'Feb 2026',c:'Sierra Energy',mrr:3010,cy:2,r:'Dan Sturdivant',cat:'Net New',prior:0},
   {m:'Feb 2026',c:'Garretson Team',mrr:2912,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:5345},
   {m:'Feb 2026',c:'Mendocino Railway',mrr:2608,cy:2,r:'Dan Sturdivant',cat:'Net New',prior:0},
   {m:'Feb 2026',c:'Advanced Radiology',mrr:2482,cy:36,r:'Jay Harvey',cat:'Net New',prior:0},
   {m:'Feb 2026',c:'Railpower',mrr:1937,cy:36,r:'Dan Sturdivant',cat:'Net New',prior:0},
-  {m:'Feb 2026',c:'Sierra Northern Railway',mrr:1827,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
-  {m:'Feb 2026',c:'The Ohio District - LCMS',mrr:1396,cy:36,r:'Joel Walker',cat:'Net New',prior:0},
-  {m:'Feb 2026',c:'Sierra Energy',mrr:985,cy:12,r:'Nathan La Fleche',cat:'Net New',prior:0},
+  {m:'Feb 2026',c:'Sierra Northern Railway',mrr:1827,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
+  {m:'Feb 2026',c:'The Ohio District - LCMS',mrr:1396,cy:36,r:'Joel Walker',cat:'Other',prior:0},
+  {m:'Feb 2026',c:'Sierra Energy',mrr:985,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
   {m:'Feb 2026',c:'Garretson Team',mrr:769,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
-  {m:'Feb 2026',c:'City of Selma',mrr:740,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Stewart & Jasper',mrr:655,cy:12,r:'Jay Harvey',cat:'Upsell',prior:0},
+  {m:'Feb 2026',c:'City of Selma',mrr:740,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
+  {m:'Feb 2026',c:'Stewart & Jasper',mrr:655,cy:12,r:'Jay Harvey',cat:'Resale',prior:0},
   {m:'Feb 2026',c:'Duarte Nursery',mrr:549,cy:12,r:'Nathan La Fleche',cat:'Renewal',prior:0},
   {m:'Feb 2026',c:'Panoche Energy Center',mrr:450,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:3853},
   {m:'Feb 2026',c:'Winton-Ireland, Strom & Green',mrr:400,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:15264},
-  {m:'Feb 2026',c:'Railpower',mrr:313,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Anonymous LLC',mrr:208,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Kaplan & Trombi',mrr:132,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Agee Construction',mrr:72,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
+  {m:'Feb 2026',c:'Railpower',mrr:313,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
+  {m:'Feb 2026',c:'Anonymous LLC',mrr:208,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Feb 2026',c:'Kaplan & Trombi',mrr:132,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
+  {m:'Feb 2026',c:'Agee Construction',mrr:72,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0},
   {m:'Feb 2026',c:'Fortune-Ratliff General Contractors',mrr:44,cy:36,r:'Nathan La Fleche',cat:'Upsell',prior:2507},
-  {m:'Feb 2026',c:'Dust Bowl Brewing Company',mrr:42,cy:12,r:'Julissa Martinez',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'DeHart Plumbing, Heating & Air',mrr:33,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'Kaplan & Trombi',mrr:24,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0},
-  {m:'Feb 2026',c:'ABI Healthcare',mrr:17,cy:12,r:'Nathan La Fleche',cat:'Upsell',prior:0}
+  {m:'Feb 2026',c:'Dust Bowl Brewing Company',mrr:42,cy:12,r:'Julissa Martinez',cat:'Resale',prior:0},
+  {m:'Feb 2026',c:'DeHart Plumbing, Heating & Air',mrr:33,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Feb 2026',c:'Kaplan & Trombi',mrr:24,cy:12,r:'Nathan La Fleche',cat:'Other',prior:0},
+  {m:'Feb 2026',c:'ABI Healthcare',mrr:17,cy:12,r:'Nathan La Fleche',cat:'Resale',prior:0}
 ];
 
 let swFilter = 'all';
@@ -3464,8 +4663,8 @@ const UNBILLED_DEALS = [
 ];
 
 function renderSalesWon(el) {
-  const catColors = {'Net New':'#16a34a','Upsell':'#ea580c','Renewal':'#2563eb'};
-  const catLabels = {'Net New':'✓ Net New Logo','Upsell':'⬆ Existing Upsell','Renewal':'🔄 Renewal'};
+  const catColors = {'Net New':'#16a34a','Upsell':'#ea580c','Renewal':'#2563eb','Resale':'#7c3aed','Other':'#6b7280'};
+  const catLabels = {'Net New':'✓ Net New Logo','Upsell':'⬆ Existing Upsell','Renewal':'🔄 Renewal','Resale':'📦 Resale','Other':'📋 Other'};
 
   // Totals by category
   const cats = {};
@@ -3486,25 +4685,27 @@ function renderSalesWon(el) {
   const totalMRR = ALL_DEALS.reduce((s,d)=>s+d.mrr,0);
   const nnMRR = (cats['Net New']||{mrr:0}).mrr;
   const upMRR = (cats['Upsell']||{mrr:0}).mrr;
-  const nnClients = new Set(ALL_DEALS.filter(d=>d.cat==='Net New').map(d=>d.c)).size;
 
   let html = `<div class="fade-in">
     <div class="section-title">Sales Won — All Deals by Month</div>
     <div class="section-sub">Jan 2025 – Feb 2026 · ${ALL_DEALS.length} deals · Verified against 2,732 agreements (521 clients)</div>
 
-    <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
       <div class="kpi-card" style="border-top:3px solid #16a34a"><div class="kpi-label">Verified Net New</div>
         <div class="kpi-value" style="color:#16a34a">$${(nnMRR).toLocaleString()}</div>
-        <div class="kpi-sub">${nnClients} new logos · Jan 2025–Feb 2026</div></div>
+        <div class="kpi-sub">${(cats['Net New']||{deals:0}).deals} new logos · All in 2026</div></div>
       <div class="kpi-card" style="border-top:3px solid #ea580c"><div class="kpi-label">Existing Client Upsells</div>
         <div class="kpi-value" style="color:#ea580c">$${(upMRR).toLocaleString()}</div>
-        <div class="kpi-sub">${(cats['Upsell']||{deals:0}).deals} deals · Incl. reclassified resale &amp; other</div></div>
+        <div class="kpi-sub">${(cats['Upsell']||{deals:0}).deals} deals · CRM tagged "Net New"</div></div>
       <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Renewals</div>
         <div class="kpi-value" style="color:#2563eb">$${((cats['Renewal']||{mrr:0}).mrr).toLocaleString()}</div>
         <div class="kpi-sub">${(cats['Renewal']||{deals:0}).deals} deals</div></div>
+      <div class="kpi-card" style="border-top:3px solid #7c3aed"><div class="kpi-label">Resale</div>
+        <div class="kpi-value" style="color:#7c3aed">$${((cats['Resale']||{mrr:0}).mrr).toLocaleString()}</div>
+        <div class="kpi-sub">${(cats['Resale']||{deals:0}).deals} deals</div></div>
       <div class="kpi-card" style="border-top:3px solid #0891b2"><div class="kpi-label">Total MRR Won</div>
         <div class="kpi-value" style="color:#0891b2">$${totalMRR.toLocaleString()}</div>
-        <div class="kpi-sub">${ALL_DEALS.length} deals · Growth: ${((nnMRR+upMRR)/totalMRR*100).toFixed(1)}%</div></div>
+        <div class="kpi-sub">${ALL_DEALS.length} deals · 14 months</div></div>
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
@@ -3512,6 +4713,8 @@ function renderSalesWon(el) {
       <button class="quick-btn" onclick="swFilter='Net New';render()" style="${swFilter==='Net New'?'background:#16a34a;color:#fff;border-color:#16a34a':''}">Net New (${(cats['Net New']||{deals:0}).deals})</button>
       <button class="quick-btn" onclick="swFilter='Upsell';render()" style="${swFilter==='Upsell'?'background:#ea580c;color:#fff;border-color:#ea580c':''}">Upsells (${(cats['Upsell']||{deals:0}).deals})</button>
       <button class="quick-btn" onclick="swFilter='Renewal';render()" style="${swFilter==='Renewal'?'background:#2563eb;color:#fff;border-color:#2563eb':''}">Renewals (${(cats['Renewal']||{deals:0}).deals})</button>
+      <button class="quick-btn" onclick="swFilter='Resale';render()" style="${swFilter==='Resale'?'background:#7c3aed;color:#fff;border-color:#7c3aed':''}">Resale (${(cats['Resale']||{deals:0}).deals})</button>
+      <button class="quick-btn" onclick="swFilter='Other';render()" style="${swFilter==='Other'?'background:#6b7280;color:#fff;border-color:#6b7280':''}">Other (${(cats['Other']||{deals:0}).deals})</button>
       <button class="quick-btn" onclick="swFilter='unbilled';render()" style="${swFilter==='unbilled'?'background:#dc2626;color:#fff;border-color:#dc2626':''}">⚠ Unbilled (${UNBILLED_DEALS.length})</button>
     </div>`;
 
@@ -3626,10 +4829,9 @@ function renderSalesWon(el) {
   });
 
   html += `<div style="font-size:11px;color:#9ca3af;margin-top:12px;font-style:italic">
-    Verified against Power BI Agreement Invoice Comparison API (527 clients, agreement start dates queried 4/26/26).
-    "Net New" = first-ever agreement started 2025+. "Upsell" = customer had pre-2025 agreements (includes reclassified Resale &amp; Other).
-    21 deals ($41,014/mo) across 13 clients reclassified Upsell → Net New after Power BI confirmed first agreements in 2025+.
-    29 Resale deals and 37 Other deals previously reclassified as Upsell. Net New logos: 20 unique clients.
+    Verified against Agreement Renewals report (2,732 rows, 521 clients, data 12/27/25).
+    "Net New" = zero prior agreements. "Upsell" = customer had existing agreements (CRM mislabeled as Net New).
+    "Prior Agr MRR" = total monthly amount on client's existing agreements at time of deal.
   </div></div>`;
 
   el.innerHTML = html;
@@ -3749,69 +4951,84 @@ OPERATING EXPENSES:
 TREND (${DATA.length} periods loaded): ${DATA.map(m => m.month + ': Rev ' + fmt(m.totRev) + ', EBITDA ' + fmtP(m.ebitdaM)).join(' | ')}`;
 }
 
-const DATAPATH_SYSTEM_PROMPT = `You are the Datapath MSP Strategy Advisor — an expert financial analyst and MSP consultant embedded in Datapath's executive dashboard. You have deep knowledge of MSP industry benchmarks, valuation multiples, and operational best practices.
+const DATAPATH_SYSTEM_PROMPT = `You are a senior MSP financial advisor for Datapath, a managed service provider headquartered in Modesto, CA with operations in Ohio. You have deep expertise in MSP operations, recurring revenue models, and PE-backed IT services valuations. You are advising the co-CEOs (James Bates and David Darmstandler) and COO (Scott Gordon).
 
-COMPANY CONTEXT:
-- Company: Datapath (Managed Service Provider)
-- Locations: California (primary) + Ohio
-- Co-CEOs: James Bates (R&D focus) and David Darmstandler (operations)
-- COO: Scott Gordon (consultant via CLevelAdvising LLC)
-- Accounting Firm: Citrin Cooperman (monthly P&L)
-- Goal: Maximize EBITDA for business exit at maximum valuation ($30M–$35M strategic purchase price target)
-- Headcount: ~58 employees (W-2 + offshore contractors via BruntWork, Microsourcing, CRDLE)
+## Company Overview
+- 25-year-old MSP, ~58 employees (as of March 2026)
+- 8 revenue departments: Managed Services (~$595K/mo), Security/MDR (~$151K/mo), Cloud & Hosting (~$66K/mo), Projects/Professional Services (~$59K/mo), Subcontracted Services (~$15K/mo), HW/SW Resale (~$549K/mo, lumpy), AI Consulting ($0 currently), R&D (cost center)
+- Preparing for PE exit at 8-11x adjusted EBITDA, target $30M-$35M
 
-REVENUE DEPARTMENTS (8):
-1. Managed Services (MS) — largest, recurring MRR (~$593K/mo)
-2. Security (MDR/SOC) — high-growth (~$150K/mo)
-3. Cloud & Hosting (~$66K/mo)
-4. Projects / Professional Services (~$21K/mo)
-5. Subcontracted Services (~$4K/mo)
-6. HW/SW Resale — lumpy, low margin (~$423K/mo)
-7. AI Consulting — $0 currently (future revenue line)
-8. R&D — cost center only, $0 revenue, ~$75K/mo COGS (new Jan 2026)
+## MSP Benchmarks (Gross Profit Targets)
+MS: 72% | PS: 55% | Cloud: 70% | Security: 65% | HW/SW: 22% | vCIO: 75% | Subcontracted: 40%
 
-LABOR MODEL (Jan 2026+):
-- New roster-based allocation: each employee assigned to specific department(s) with split percentages
-- Direct+project labor redistributed proportionally by gross wages across COGS departments
-- R&D team: James Bates, Peter Annabel (75%), Timothy Stewart, Jacob Berlin, Haskell Macaraig
-- R&D wages reclassified FROM Direct Labor & Officer's Comp TO R&D (YTD adjustment 2/28/2026)
-- Legacy model (2025 and prior): Direct Labor → 100% MS, 25% Project Labor → MS, rest → PS
+## 2025 Full Year Financials
+- Revenue: $17,737,413 | COGS: $11,092,086 | Gross Profit: $6,645,327 (37.5%)
+- OpEx: $3,293,096 | EBITDA: $1,595,160 (9.0%)
+- Total Addbacks: $1,297,247 (19 items) | Adjusted EBITDA: $2,892,407 | Margin: 16.3%
 
-MSP INDUSTRY BENCHMARKS:
-- MS GP target: 72% (median 65%, top 78%)
-- Security GP target: 65% (top 72%)
-- Cloud GP target: 70%
-- PS GP target: 55%
-- HW/SW GP target: 22% (top 28%)
-- EBITDA: Top 22%+, Above Avg 16-22%, Median 10-16%
-- All-in labor target: <50% of revenue
-- Revenue per employee target: $200K+ (top quartile)
+## Q1 2026 Performance (Final)
+- Jan: Rev $1,583K | EBITDA $86.8K (5.5%)
+- Feb: Rev $1,466K | EBITDA $145.1K (9.9%)
+- Mar: Rev $1,440K | EBITDA $177.4K (12.3%)
+- Q1 YTD: Rev $4,490K | EBITDA $409.3K (9.1%)
+- Trend: Improving monthly — Feb and Mar cleaned up from Jan's 3-payroll month
 
-VALUATION:
-- Target multiple: 8-11x adjusted EBITDA (strategic acquisition)
-- Every $100K in defensible add-backs = $800K–$1.1M in enterprise value
-- Key add-back categories: owner comp above market, one-time legal ($137K CA class action), bad debt ($60K Jan 26), R&D capitalization, non-recurring expenses
-- Premium drivers: >20% EBITDA margin, >70% MRR mix, strong security practice, 3-year contracts, low client concentration, documented IP/AI capabilities
+## EBITDA Addback Schedule (19 Items, 2025)
+Owner/executive compensation above market, family member compensation ($3,520/mo Colin + Hudson), excess facilities (Modesto HQ $15,700/mo + Ohio), one-time legal reserves ($231K Dec), software capitalization adjustments ($91K), depreciation & amortization ($316K), one-time consulting engagements, vehicle allowances, and other owner discretionary expenses.
 
-KEY RECENT CHANGES:
-- R&D department established Jan 2026 as separate COGS line
-- Labor allocation switched from legacy formula to roster-based per-department model (Jan+Feb 2026)
-- DinYero Johnson (sales, $14.6K/mo) and Henry Martinez (service, $5.9K/mo) departing — costs dropping
-- Products Ordered Not Invoiced (SNI): $631K across 49 customers (as of 3/6/2026)
+## COGS Structure
+- MS COGS = Tech stack tools (~$43K/mo) + Service Delivery labor
+- Security COGS = Vendor costs + security team labor
+- Cloud COGS = Vendor hosting costs + 25% of Peter Annabel
+- HW/SW COGS = Product costs + procurement labor (typically 78%+ of revenue — low margin, high volume)
+- R&D COGS = $75K/mo (payroll $64K + taxes $6K + benefits $1.5K + Haskell 1099 $4K)
+- Note: R&D is classified in COGS on the dashboard but OpEx on Citrin's P&L. Same EBITDA either way.
 
-CONFIDENTIALITY:
-- Do NOT break out Scott Gordon's compensation individually — include only in aggregate Sr Leadership totals
-- Do NOT reveal individual salaries unless explicitly asked about a specific person
+## R&D Team
+Peter Annabel (75% R&D, 25% Cloud), Kenny Bates, Tim Stewart, Caleb Berlin. Focused on internal tooling and automation. Currently $0 revenue — future AI consulting monetization planned.
 
-INSTRUCTIONS:
-- Always ground your analysis in the LIVE financial data provided below
-- Reference specific numbers, not just generalities
-- Compare to industry benchmarks where relevant
-- Frame recommendations in terms of exit value impact
-- Be direct and actionable — this is for C-suite executives
-- Use dollar amounts and percentages from the actual data
-- When discussing improvements, quantify the impact (e.g., "improving MS margin by 2pp = $X/mo in GP")
-- Keep responses focused and structured but conversational`;
+## Key Personnel Changes (Q1 2026)
+- Mark Wallace (Sales, Ohio, $75K/yr) — terminated Jan 23
+- Steve Morozov (Service Delivery, $22/hr) — terminated Feb 4
+- Michael Hughes (Service Delivery, $30/hr) — terminated Feb 6
+- Elise Chavez Soto — maternity leave started March
+- Direct labor dropped ~$11K Feb→Mar due to Hughes/Morozov departures
+- DinYero Johnson sales comp spiked to $31K in March (was $14.6K) — likely commissions
+
+## Resolved Citrin Anomalies
+- Jan had 3 payroll runs vs 2 in Feb/Mar (explains elevated Jan labor)
+- Professional services ~$76K/mo is recurring (Citrin, CLevel, Call & Jensen, Sensiba, CyberGuard, Avalara, Lucas/Horsfall ~$69K + ~$7.5K ad-hoc)
+- Insurance run rate ~$7-7.5K/mo (Feb was low due to $3.5K refund)
+- R&D spike in Feb was retroactive YTD catch-up; go-forward ~$26.5K/mo gross payroll
+- OH Interest declining: $16.8K→$15.8K→$15.6K (one FFB loan paid off Jan)
+
+## G&A Sub-Buckets (Monthly)
+- Sr Leadership: $45,071 (David D., Scott G., Dan S. 50%, Stephen W. 50%)
+- Central Services: $16,389 (Marshall Rownd, Devin Peterson)
+- Finance: $8,896 (Melinda Hennington, Jaquelene Dizon)
+- Marketing: $1,985 (Myca Villanueva)
+
+## Professional Services Vendors (~$76K/mo)
+Citrin Cooperman (accounting/audit), CLevel Advising (COO consulting), Call & Jensen (legal), Sensiba (IT audit/compliance), CyberGuard (security compliance), Avalara (tax automation), Lucas & Horsfall (HR/benefits)
+
+## IUS (Internal Use Software) Capitalization
+Monthly estimates with quarterly true-ups going forward. Affects R&D expense vs. capitalized development costs on balance sheet.
+
+## Valuation Context
+- Target: 8-11x adjusted EBITDA for PE acquisition
+- Every $100K in addbacks = $800K-$1.1M in enterprise value
+- Revenue declining from $27.7M (2023) → $22.1M (2024) → $17.8M (2025) — driven by HW/SW resale normalization, not recurring revenue loss
+- Recurring revenue (MS + Security + Cloud) is stable/growing — this is the PE story
+- Key narrative: Transition from break-fix/resale to pure recurring managed services
+
+## Behavioral Instructions
+- Always frame analysis in terms of PE readiness and valuation impact
+- When discussing costs, note whether they are addback-eligible
+- Flag any trend that could concern a PE buyer (revenue concentration, margin compression, key-person risk)
+- Compare metrics against MSP industry benchmarks
+- Be direct and analytical — the audience is financially sophisticated
+- Never break out individual compensation for Scott Gordon — include only in aggregate Sr Leadership totals
+- When asked about revenue trends, distinguish between recurring (MS/Security/Cloud) and transactional (HW/SW/Subcontracted)`;
 
 const QUICK_QUESTIONS = [
   'How do we improve EBITDA?',
@@ -4149,5 +5366,6 @@ Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', san
 state.selMonth = DATA.length - 1; // Default to latest month
 render();
 </script>
-</body>
-</html>
+
+
+</body></html>
