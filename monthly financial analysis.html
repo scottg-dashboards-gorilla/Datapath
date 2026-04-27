@@ -4831,10 +4831,9 @@ function renderSalesWon(el) {
 
   // Render deals grouped by month
   const filtered = swFilter === 'all' ? ALL_DEALS : ALL_DEALS.filter(d => d.cat === swFilter);
-  const fMonths = [...new Set(filtered.map(d => d.m))].sort((a,b) => {
-    const pa = new Date(a), pb = new Date(b);
-    return pb - pa; // newest first
-  });
+  const mOrder = {'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11};
+  const mKey = s => { const p=s.split(' '); return parseInt(p[1])*12 + mOrder[p[0]]; };
+  const fMonths = [...new Set(filtered.map(d => d.m))].sort((a,b) => mKey(b) - mKey(a));
 
   fMonths.forEach(m => {
     const mDeals = filtered.filter(d => d.m === m);
