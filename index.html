@@ -2398,6 +2398,7 @@ const NAV = [
   {id:'pnl',         label:'P&L Detail',        icon:'📄', adminOnly:false},
   {id:'labor',       label:'Labor Allocation',  icon:'👥', adminOnly:false},
   {id:'saleswon',    label:'Sales Won',         icon:'🏆', adminOnly:false},
+  {id:'benchmarking',label:'Benchmarking',       icon:'🎯', adminOnly:false},
   {id:'advisor',     label:'Intelligence',      icon:'🧠', adminOnly:false},
   {id:'data',        label:'Import Data',       icon:'📤', adminOnly:false},
   {id:'admin',       label:'Admin',             icon:'⚙️',  adminOnly:true},
@@ -2454,6 +2455,7 @@ function render() {
   else if (state.view === 'pnl')                          renderPnL(main);
   else if (state.view === 'labor')                        renderLaborAllocation(main);
   else if (state.view === 'saleswon')                     renderSalesWon(main);
+  else if (state.view === 'benchmarking')                 renderBenchmarking(main);
   else if (state.view === 'advisor')                      renderAdvisor(main);
   else if (state.view === 'admin')                        renderAdmin(main);
 }
@@ -4914,6 +4916,234 @@ function renderSalesWon(el) {
   </div></div>`;
 
   el.innerHTML = html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// BENCHMARKING — Top 7 MSP Financial Metrics vs Industry
+// Source: MSP Financial Metrics Top 15 Benchmarks document
+// Top decile = sub-$50M MSPs, Service Leadership Index basis
+// ═══════════════════════════════════════════════════════════════
+
+function renderBenchmarking(el) {
+  // Per-month metric calculator
+  function calcMetrics(m) {
+    const d = m.d;
+    const svcIds = ['managed_services','security','cloud_hosting','professional_services','subcontracted'];
+    const svcRev  = svcIds.reduce((s,id) => s + (d[id]?.rev||0), 0);
+    const svcCogs = svcIds.reduce((s,id) => s + (d[id]?.cogs||0), 0);
+    const svcGP   = svcRev - svcCogs;
+    const svcGPM  = svcRev > 0 ? svcGP / svcRev * 100 : null;
+    // Recurring rev = MS + Security + Cloud (monthly MRR service lines)
+    const recurRev = (d.managed_services?.rev||0) + (d.security?.rev||0) + (d.cloud_hosting?.rev||0);
+    const recurPct = m.totRev > 0 ? recurRev / m.totRev * 100 : null;
+    // Headcount from dept hc fields (COGS/delivery teams)
+    const hcDelivery = Object.values(d).reduce((s,dd) => s + (dd.hc||0), 0);
+    // Scale to total company HC using LABOR_ROSTER as current denominator
+    const totalRoster = typeof LABOR_ROSTER !== 'undefined' ? LABOR_ROSTER.length : hcDelivery;
+    const currentDeptHC = Object.values(latest().d).reduce((s,dd) => s + (dd.hc||0), 0);
+    const scale = currentDeptHC > 0 ? totalRoster / currentDeptHC : 1;
+    const hcEst = Math.round(hcDelivery * scale);
+    const svcRevPerEmp = hcEst > 0 ? (svcRev * 12) / hcEst : null;
+    // Service multiple of wages = service rev / COGS labor
+    const svcMultiple = m.totLab > 0 ? svcRev / m.totLab : null;
+    // Adj EBITDA margin (percent)
+    const adjEbitdaM = m.adjEbitdaM || null;
+    // NRR approximation: compare recurring rev to 12 months prior (directional only)
+    const mIdx = DATA.indexOf(m);
+    let nrrApprox = null;
+    if (mIdx >= 12) {
+      const prior = DATA[mIdx - 12];
+      const priorRecur = (prior.d.managed_services?.rev||0) + (prior.d.security?.rev||0) + (prior.d.cloud_hosting?.rev||0);
+      if (priorRecur > 0) nrrApprox = recurRev / priorRecur * 100;
+    }
+    return { adjEbitdaM, svcRevPerEmp, recurPct, svcMultiple, svcGPM, nrrApprox };
+  }
+
+  // Build per-month metrics for L12M
+  const l12 = DATA.slice(-12);
+  const l12m = l12.map(m => ({ month: m.month, ...calcMetrics(m) }));
+  const cur = l12m[l12m.length - 1];
+
+  // 3-month average helper
+  function avg3(key) {
+    const vals = l12m.slice(-3).map(m => m[key]).filter(v => v !== null && isFinite(v));
+    return vals.length > 0 ? vals.reduce((a,b)=>a+b,0) / vals.length : null;
+  }
+
+  // L12M high helper — returns {value, month}
+  function l12High(key) {
+    let best = null;
+    l12m.forEach(m => {
+      if (m[key] !== null && isFinite(m[key]) && (best === null || m[key] > best.value))
+        best = { value: m[key], month: m.month };
+    });
+    return best;
+  }
+
+  // Benchmark definitions: the top 7
+  const BENCHMARKS = [
+    {
+      key: 'adjEbitdaM',
+      label: 'Adjusted EBITDA Margin',
+      formula: '(Revenue − COGS − OpEx + owner addbacks) ÷ Revenue',
+      why: 'The single number that drives valuation multiple at exit. Top quartile earns ~2.5x the EBITDA margin of the median. Clearing 20% materially expands the exit multiple.',
+      medLow: 9, medHigh: 14,
+      topLow: 20, topHigh: 25,
+      unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
+      higherIsBetter: true,
+      source: 'ConnectWise/Service Leadership Q2 2024; Aventis Advisors'
+    },
+    {
+      key: 'svcRevPerEmp',
+      label: 'Service Revenue per Employee',
+      formula: 'Annual Service Revenue ÷ Total Headcount',
+      why: 'TruMethods anchor metric. Lead indicator of EBITDA margin. Captures service output produced per person — the compounding lever of standardization and automation.',
+      medLow: 125000, medHigh: 135000,
+      topLow: 165000, topHigh: 200000,
+      unit: '$', fmt: v => v !== null ? '$' + Math.round(v/1000) + 'K' : '—',
+      higherIsBetter: true,
+      source: 'TruMethods World Class MSP; Kaptius 2025; Dune Creek Capital'
+    },
+    {
+      key: 'recurPct',
+      label: 'Recurring Revenue % of Total',
+      formula: '(MS + Security + Cloud MRR) ÷ Total Revenue',
+      why: 'Recurring dollars are valued at ~10x the multiple of one-time/resale dollars. The foundation of MSP valuation premium — buyers pay 8–12x for high-recurring MSPs vs 4–5x for project-heavy shops.',
+      medLow: 55, medHigh: 65,
+      topLow: 75, topHigh: 85,
+      unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
+      higherIsBetter: true,
+      source: 'ScalePad 2025; Service Leadership Index; Auxo Capital'
+    },
+    {
+      key: 'svcMultiple',
+      label: 'Service Multiple of Wages',
+      formula: 'Service Revenue ÷ Service-Team Labor (COGS)',
+      why: 'Most directly tied to gross margin. Every $1 in service wages producing $4.50 vs $2.50 is the difference between top-decile and median margins. Driven by automation, offshoring, and pricing discipline.',
+      medLow: 2.5, medHigh: 3.0,
+      topLow: 4.0, topHigh: 5.0,
+      unit: 'x', fmt: v => v !== null ? v.toFixed(2) + 'x' : '—',
+      higherIsBetter: true,
+      source: 'TruMethods leverage framework; Thread 30 MSP KPIs'
+    },
+    {
+      key: 'nrrApprox',
+      label: 'Net Revenue Retention (Approx.)',
+      formula: 'Current Recurring Rev ÷ Recurring Rev 12 months prior × 100',
+      why: 'NRR >100% means the existing client base grows before adding a single new logo. PE buyers use this to grade revenue quality and it materially expands the exit multiple above 100%.',
+      medLow: 92, medHigh: 96,
+      topLow: 105, topHigh: 110,
+      unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
+      higherIsBetter: true,
+      note: 'Approximation: recurring rev YoY change (includes new logos — true NRR requires client-level data)',
+      source: 'Dune Creek Capital; Auxo Capital advisory'
+    },
+    {
+      key: 'svcGPM',
+      label: 'Managed Services Gross Margin',
+      formula: '(Service Rev − Direct Service COGS incl. labor) ÷ Service Revenue',
+      why: 'The headline gross margin buyers want to see, stripped of product-resale drag. Service Leadership shows ~46% industry average; top performers at 60–70%+ through tooling efficiency and tier-1 automation.',
+      medLow: 45, medHigh: 50,
+      topLow: 60, topHigh: 70,
+      unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
+      higherIsBetter: true,
+      source: 'ConnectWise/Service Leadership Q2 2024; Dune Creek Capital'
+    },
+    {
+      key: null,
+      label: 'ARPU / All-In Seat Price (AISP)',
+      formula: 'Total Monthly Recurring Revenue ÷ Total Seats Supported',
+      why: 'Cleanest measure of pricing power. TruMethods data shows average MSPs under $100/seat; World Class at $120–$160/seat; top earners exceeding $200–$250/seat with bundled security and compliance.',
+      medLow: 95, medHigh: 130,
+      topLow: 160, topHigh: 225,
+      unit: '$/seat', fmt: v => v !== null ? '$' + v.toFixed(0) + '/seat' : '—',
+      higherIsBetter: true,
+      note: 'Seat count not tracked in dashboard — requires CRM or RMM seat data to calculate',
+      source: 'TruMethods MSP pricing framework; ScalePad 2025'
+    },
+  ];
+
+  // Status badge
+  function statusBadge(val, bm) {
+    if (val === null || bm.key === null) return { label:'Data needed', color:'#6b7280', bg:'#f3f4f6' };
+    const v = val;
+    if (v >= bm.topHigh) return { label:'Best-in-class', color:'#166534', bg:'#dcfce7' };
+    if (v >= bm.topLow)  return { label:'Top 10%', color:'#15803d', bg:'#d1fae5' };
+    if (v >= bm.medHigh) return { label:'Approaching top', color:'#92400e', bg:'#fef3c7' };
+    if (v >= bm.medLow)  return { label:'Median range', color:'#b45309', bg:'#fef9c3' };
+    return { label:'Below median', color:'#991b1b', bg:'#fee2e2' };
+  }
+
+  // Progress bar — position val on median→top10% range
+  function progressBar(val, bm) {
+    if (val === null || bm.key === null) return '<div style="height:6px;background:#e5e7eb;border-radius:3px"></div>';
+    const pct = Math.min(100, Math.max(0, (val - bm.medLow) / (bm.topHigh - bm.medLow) * 100));
+    const color = val >= bm.topLow ? '#16a34a' : val >= bm.medLow ? '#f59e0b' : '#ef4444';
+    return `<div style="height:6px;background:#e5e7eb;border-radius:3px;position:relative">
+      <div style="height:6px;width:${pct}%;background:${color};border-radius:3px;transition:width 0.4s"></div>
+      <div style="position:absolute;top:-2px;left:${Math.min(95,(bm.topLow-bm.medLow)/(bm.topHigh-bm.medLow)*100)}%;width:2px;height:10px;background:#6b7280;border-radius:1px" title="Top 10% threshold"></div>
+    </div>`;
+  }
+
+  const cards = BENCHMARKS.map(bm => {
+    const curVal = bm.key ? cur[bm.key] : null;
+    const avg3Val = bm.key ? avg3(bm.key) : null;
+    const high = bm.key ? l12High(bm.key) : null;
+    const badge = statusBadge(curVal, bm);
+
+    return `<div style="background:#fff;border-radius:12px;border:1px solid #e5e7eb;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#111827">${bm.label}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-family:monospace">${bm.formula}</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;color:${badge.color};background:${badge.bg}">${badge.label}</span>
+      </div>
+      <div style="font-size:12px;color:#374151;line-height:1.5;margin-bottom:12px">${bm.why}</div>
+      ${bm.note ? `<div style="font-size:11px;color:#6b7280;background:#f9fafb;padding:6px 10px;border-radius:6px;margin-bottom:12px;border-left:3px solid #d1d5db">⚠️ ${bm.note}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:#f8faff;border:1px solid #dbeafe;border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:600;color:#1e40af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Industry Median</div>
+          <div style="font-size:16px;font-weight:700;color:#1e3a8a">${bm.fmt(bm.medLow)} – ${bm.fmt(bm.medHigh)}</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px">
+          <div style="font-size:10px;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Top 10% Target</div>
+          <div style="font-size:16px;font-weight:700;color:#14532d">${bm.fmt(bm.topLow)}${bm.topHigh > bm.topLow ? ' – ' + bm.fmt(bm.topHigh) : '+'}</div>
+        </div>
+      </div>
+      ${progressBar(curVal, bm)}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px">
+        <div style="text-align:center;background:#f9fafb;border-radius:8px;padding:8px">
+          <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Current (${cur.month})</div>
+          <div style="font-size:18px;font-weight:800;color:${curVal !== null && curVal >= bm.topLow ? '#15803d' : curVal !== null && curVal >= bm.medLow ? '#b45309' : curVal !== null ? '#b91c1c' : '#9ca3af'}">${bm.fmt(curVal)}</div>
+        </div>
+        <div style="text-align:center;background:#f9fafb;border-radius:8px;padding:8px">
+          <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">3-Mo Avg</div>
+          <div style="font-size:18px;font-weight:800;color:#374151">${bm.fmt(avg3Val)}</div>
+        </div>
+        <div style="text-align:center;background:#f9fafb;border-radius:8px;padding:8px">
+          <div style="font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">L12M High</div>
+          <div style="font-size:18px;font-weight:800;color:#374151">${high ? bm.fmt(high.value) : '—'}</div>
+          ${high ? `<div style="font-size:9px;color:#9ca3af">${high.month}</div>` : ''}
+        </div>
+      </div>
+      <div style="font-size:10px;color:#9ca3af;margin-top:8px">Source: ${bm.source}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div style="padding:20px;max-width:1200px;margin:0 auto">
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:20px;font-weight:800;color:#111827;margin:0 0 4px">MSP Benchmarking — Top 7 Metrics</h2>
+      <p style="font-size:13px;color:#6b7280;margin:0">Sub-$50M MSP benchmarks from Service Leadership Index, TruMethods, ScalePad 2025, and MSP M&A advisors. Top 10% = top decile within the sub-$50M band.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px">
+      ${cards}
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:#9ca3af;text-align:center">
+      Current month = ${cur.month} · 3-Mo Avg = last 3 months · L12M High = trailing 12 months · Headcount estimated from LABOR_ROSTER scaling · NRR is approximate (YoY recurring rev change, includes new logos)
+    </div>
+  </div>`;
 }
 
 function renderAdvisor(el) {
