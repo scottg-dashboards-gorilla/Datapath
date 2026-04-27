@@ -3475,9 +3475,9 @@ function pnlTableEngine() {
   const mData = mIdxs.map(i => DATA[i]);
   const curIdx = mData.length - 1;
   const isCurFY = cur.month.startsWith('FY');
-  // For avg/MOM: exclude FY entries when viewing monthly data (apples-to-apples)
+  // For avg/MOM: 3-mo avg of the 3 most recent months INCLUDING current
   const avgIdxs = [];
-  for (let i = Math.max(0, si - 3); i < si; i++) {
+  for (let i = Math.max(0, si - 2); i <= si; i++) {
     if (!isCurFY && DATA[i].month.startsWith('FY')) continue; // skip FY from monthly avg
     avgIdxs.push(i);
   }
