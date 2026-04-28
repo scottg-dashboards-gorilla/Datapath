@@ -46,15 +46,17 @@ Key people: Co-CEOs James Bates & David Darmstandler, COO Scott Gordon (consulta
 - **Legacy detailed context** (all-in-one reference): `projects/-sessions-dazzling-awesome-bell/memory/datapath-context.md`
 
 ## Key File Paths
+All files live at the repo root (NO `dashboards/` subfolder).
+
 | File | Path |
 |------|------|
-| Dashboard (main) | `dashboards/monthly financial analysis.html` |
-| Dashboard (GitHub) | `dashboards/index.html` |
-| PE Investment Memorandum | `dashboards/Datapath - Confidential Investment Memorandum.docx` |
-| P&L to EBITDA | `dashboards/Datapath 2025 P&L to EBITDA.xlsx` |
-| Sales Won Audit | `dashboards/Sales Won Audit - MRR Analysis.xlsx` |
-| P&L Imports | `dashboards/P&L Imports/` (new Citrin xlsx go here) |
-| Weekly SNI snapshots | `dashboards/weekly-snapshots.xlsx` |
+| Dashboard (main) | `monthly financial analysis.html` |
+| Dashboard (GitHub) | `index.html` |
+| PE Investment Memorandum | `Datapath - Confidential Investment Memorandum.docx` |
+| P&L to EBITDA | `Datapath 2025 P&L to EBITDA.xlsx` |
+| Sales Won Audit | `Sales Won Audit - MRR Analysis.xlsx` |
+| P&L Imports | `source-data/` (new Citrin xlsx go here) |
+| Weekly SNI snapshots | `weekly-snapshots.xlsx` |
 
 ## Scheduled Tasks
 - **weekly-sni-refresh**: Mondays 9am — pulls SNI data from Power BI
