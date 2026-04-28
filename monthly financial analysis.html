@@ -1762,7 +1762,7 @@ const DATA = [JAN23, FEB23, MAR23, APR23, MAY23, JUN23, JUL23, AUG23, SEP23, OCT
 // Fields: facilitiesModesto | facilitiesOhio | familyMemberComp | severancePTO |
 //         yearEndLegal | balanceSheetAdj | rdTaxCredit | citrinAssessment |
 //         phoenixStrategy | rogerGentry | podcastStudio | apLogic | ohioFlood |
-//         tpcContract | systems1111 | additionalLegal | websiteDev | marketingGTM
+//         tpcContract | systems1111 | additionalLegal | websiteDev | marketingGTM | callJensen
 // ═══════════════════════════════════════════════════════════════
 function applyAddBacks(m, ab) {
   const total = Object.values(ab).reduce((s,v) => s + (v||0), 0);
@@ -1793,6 +1793,7 @@ const NORM_ONE_TIME_ITEMS = [
   {key:'cloudSaasReversal',  label:'CloudSaaS Overbilling Reversal'},
   {key:'capitalizedPayroll', label:'Capitalized Payroll Q1 Catch-Up'},
   {key:'davesTaxReclass',    label:"Dave's Tax Preparer Reclass"},
+  {key:'callJensen',          label:'Call & Jensen Legal (one-time)'},
 ];
 
 function applyNormalization(m, norm) {
@@ -1873,7 +1874,7 @@ applyAddBacks(AUG25, {
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
   citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
   podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:20000,
-  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000, callJensen:12503
 });
 // Sep 25 — $46,223
 applyNormalization(SEP25, {sevPTO:35478, oneTimeItems:{citrinBillings:15111}});
@@ -1882,7 +1883,7 @@ applyAddBacks(SEP25, {
   severancePTO:5662, yearEndLegal:0, balanceSheetAdj:0, rdTaxCredit:0,
   citrinAssessment:0, phoenixStrategy:0, rogerGentry:0,
   podcastStudio:0, apLogic:0, ohioFlood:0, tpcContract:0,
-  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000
+  systems1111:6174, additionalLegal:5167, websiteDev:0, marketingGTM:6000, callJensen:13172
 });
 // Oct 25 — $40,049
 applyNormalization(OCT25, {sevPTO:572, oneTimeItems:{recruiting:7672}});
@@ -1917,23 +1918,27 @@ applyAddBacks(DEC25, {
 
 // ─── Q1 2026 Add-Backs ────────────────────────────────────────
 // Normalize: Facilities Modesto $15,700, Ohio $0 (Jan) / $6,107 (Feb+), Family Member Comp $3,520
-// Jan 26 — $34,540 (Wallace termination: ~$577 PTO est. at 0.8wk accrual, $75K salary)
+// Jan 26 — Wallace termination: final payroll $2,885, NO PTO payout (confirmed by Citrin 4/27/26)
 // Bank fees breakdown per Citrin (4/27/26): $10K one-time "LN Fees" bank service charge (no 2025 equivalent)
 //   + ~$3K Istream/ConnectBooster (recurring monthly, ran higher than normal in Jan — Melinda investigating)
 //   Only the $10K LN Fees is added back as one-time; Istream/CB is recurring OpEx
-applyNormalization(JAN26, {sevPTO:577, oneTimeItems:{bankFees:10000}});
+applyNormalization(JAN26, {sevPTO:0, oneTimeItems:{bankFees:10000}});
 applyAddBacks(JAN26, {
   facilitiesModesto:15700, facilitiesOhio:0, familyMemberComp:3520,
-  severancePTO:577, bankFees:10000
+  severancePTO:0, bankFees:10000
 });
-// Feb 26 — $26,758 (Morozov ~$508 PTO + Hughes ~$923 PTO; est. from accrual rates/tenure — gross final pay confirmed via Gusto)
-applyNormalization(FEB26, {sevPTO:1431, oneTimeItems:{}});
+// Feb 26 — Morozov PTO $555.72 + Hughes PTO $3,157 = $3,713 (confirmed by Citrin 4/27/26)
+applyNormalization(FEB26, {sevPTO:3713, oneTimeItems:{}});
 applyAddBacks(FEB26, {
   facilitiesModesto:15700, facilitiesOhio:6107, familyMemberComp:3520,
-  severancePTO:1431, bankFees:0
+  severancePTO:3713, bankFees:0
 });
-// Mar 26 — $25,327
-applyNormalization(MAR26, {sevPTO:19162, oneTimeItems:{
+// Mar 26 — DinYero Johnson: final pay $16,242 (outstanding PTO $13,319.18, reg wages $2,923.08 for 32hrs)
+//   Severance: $7,307.69 on 4/10 + $7,307.69 on 4/24 + $5,384.62 on 5/8 regular payroll
+//   Henry Martinez: severance $2,800 paid 3/27, no PTO payout (confirmed by Citrin 4/27/26)
+//   Total sev/PTO in March: Johnson PTO $13,319 + Martinez sev $2,800 = $16,119
+//   Johnson severance ($19,999.99) hits April/May payroll, will need addback there
+applyNormalization(MAR26, {sevPTO:16119, oneTimeItems:{
   piaTradeSwCatchUp:35451, cloudSaasReversal:59891,
   capitalizedPayroll:-28341, davesTaxReclass:5000
 }});
@@ -4037,6 +4042,7 @@ function renderPnL(el) {
   rows += dataRow('TPC Contract Negotiation', m => m.addBacks?.tpcContract || 0, {indent: true});
   rows += dataRow('11:11 Systems Contract Buyout', m => m.addBacks?.systems1111 || 0, {indent: true});
   rows += dataRow('Additional Legal Fees', m => m.addBacks?.additionalLegal || 0, {indent: true});
+  rows += dataRow('Call & Jensen Legal (one-time)', m => m.addBacks?.callJensen || 0, {indent: true});
   rows += dataRow('Website Development', m => m.addBacks?.websiteDev || 0, {indent: true});
   rows += dataRow('Marketing GTM Consulting', m => m.addBacks?.marketingGTM || 0, {indent: true});
   rows += dataRow('One-Time Bank / Finance Fees', m => m.addBacks?.bankFees || 0, {indent: true});
@@ -5066,11 +5072,11 @@ function renderBenchmarking(el) {
       label: 'Adjusted EBITDA Margin',
       formula: '(Revenue − COGS − OpEx + owner addbacks) ÷ Revenue',
       why: 'The single number that drives valuation multiple at exit. Top quartile earns ~2.5x the EBITDA margin of the median. Clearing 20% materially expands the exit multiple.',
-      medLow: 9, medHigh: 14,
+      medLow: 10, medHigh: 14,
       topLow: 20, topHigh: 25,
       unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
       higherIsBetter: true,
-      source: 'ConnectWise/Service Leadership Q2 2024; Aventis Advisors'
+      source: 'ConnectWise/Service Leadership Q2 & Q4 2024; Aventis Advisors'
     },
     {
       key: 'svcRevPerEmp',
@@ -5078,7 +5084,7 @@ function renderBenchmarking(el) {
       formula: 'Annual Service Revenue ÷ Total Headcount',
       why: 'TruMethods anchor metric. Lead indicator of EBITDA margin. Captures service output produced per person — the compounding lever of standardization and automation.',
       medLow: 125000, medHigh: 135000,
-      topLow: 165000, topHigh: 200000,
+      topLow: 165000, topHigh: 185000,
       unit: '$', fmt: v => v !== null ? '$' + Math.round(v/1000) + 'K' : '—',
       higherIsBetter: true,
       source: 'TruMethods World Class MSP; Kaptius 2025; Dune Creek Capital'
@@ -5098,35 +5104,35 @@ function renderBenchmarking(el) {
       key: 'svcMultiple',
       label: 'Service Multiple of Wages',
       formula: 'Service Revenue ÷ Service-Team Labor (COGS)',
-      why: 'Most directly tied to gross margin. Every $1 in service wages producing $4.50 vs $2.50 is the difference between top-decile and median margins. Driven by automation, offshoring, and pricing discipline.',
-      medLow: 2.5, medHigh: 3.0,
+      why: 'Most directly tied to gross margin. TruMethods target: service wages should be no more than 33% of service revenue (i.e., 3.0x minimum). Every $1 in service wages producing $4.50 vs $2.50 is the difference between top-decile and median margins. Driven by automation, offshoring, and pricing discipline.',
+      medLow: 2.5, medHigh: 3.5,
       topLow: 4.0, topHigh: 5.0,
       unit: 'x', fmt: v => v !== null ? v.toFixed(2) + 'x' : '—',
       higherIsBetter: true,
-      source: 'TruMethods leverage framework; Thread 30 MSP KPIs'
+      source: 'TruMethods 33% wage rule; Thread 30 MSP KPIs'
     },
     {
       key: 'nrrApprox',
-      label: 'Net Revenue Retention (Approx.)',
+      label: 'Recurring Revenue Growth Rate',
       formula: 'Current Recurring Rev ÷ Recurring Rev 12 months prior × 100',
-      why: 'NRR >100% means the existing client base grows before adding a single new logo. PE buyers use this to grade revenue quality and it materially expands the exit multiple above 100%.',
-      medLow: 92, medHigh: 96,
-      topLow: 105, topHigh: 110,
+      why: 'Measures whether recurring revenue is growing or shrinking year-over-year. Above 100% means the book is expanding. PE buyers use this to grade revenue quality — sustained growth above 100% materially expands the exit multiple.',
+      medLow: 95, medHigh: 100,
+      topLow: 105, topHigh: 115,
       unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
       higherIsBetter: true,
-      note: 'Approximation: recurring rev YoY change (includes new logos — true NRR requires client-level data)',
-      source: 'Dune Creek Capital; Auxo Capital advisory'
+      note: 'Includes both expansion of existing clients and new logo adds — not a pure same-store NRR metric. MSP-specific benchmarks for this metric are limited; ranges derived from IT services M&A advisory data.',
+      source: 'Dune Creek Capital; Auxo Capital; MSP industry logo retention 83–90% (TSIA 2022)'
     },
     {
       key: 'svcGPM',
       label: 'Managed Services Gross Margin',
       formula: '(Service Rev − Direct Service COGS incl. labor) ÷ Service Revenue',
-      why: 'The headline gross margin buyers want to see, stripped of product-resale drag. Service Leadership shows ~46% industry average; top performers at 60–70%+ through tooling efficiency and tier-1 automation.',
-      medLow: 45, medHigh: 50,
-      topLow: 60, topHigh: 70,
+      why: 'The headline gross margin buyers want to see, stripped of product-resale drag. Service Leadership 2024 data shows median at 40–42% and top quartile at 46–48%. Only 25% of MSPs exceed 50%. Top performers achieve higher margins through tooling efficiency and tier-1 automation.',
+      medLow: 40, medHigh: 48,
+      topLow: 52, topHigh: 60,
       unit: '%', fmt: v => v !== null ? v.toFixed(1) + '%' : '—',
       higherIsBetter: true,
-      source: 'ConnectWise/Service Leadership Q2 2024; Dune Creek Capital'
+      source: 'ConnectWise/Service Leadership Q1–Q4 2024; Gradient MSP'
     },
     {
       key: null,
@@ -5213,7 +5219,7 @@ function renderBenchmarking(el) {
       ${cards}
     </div>
     <div style="margin-top:16px;font-size:11px;color:#9ca3af;text-align:center">
-      Current month = ${cur.month} · 3-Mo Avg = last 3 months · Headcount estimated from LABOR_ROSTER scaling · NRR is approximate (YoY recurring rev change, includes new logos)
+      Current month = ${cur.month} · 3-Mo Avg = last 3 months · Headcount estimated from LABOR_ROSTER scaling · Recurring Revenue Growth Rate is approximate (YoY recurring rev change, includes new logos)
     </div>
   </div>`;
 }
@@ -5321,7 +5327,7 @@ function buildFinancialSnapshot() {
   const yr2025 = DATA.filter(m => m.month.endsWith('25'));
   const abKeys = ['facilitiesModesto','facilitiesOhio','ownerAboveMarket','familyMemberComp','severancePTO',
     'yearEndLegal','balanceSheetAdj','rdTaxCredit','citrinAssessment','phoenixStrategy','rogerGentry',
-    'podcastStudio','apLogic','ohioFlood','tpcContract','systems1111','additionalLegal','websiteDev','marketingGTM','bankFees'];
+    'podcastStudio','apLogic','ohioFlood','tpcContract','systems1111','additionalLegal','websiteDev','marketingGTM','bankFees','callJensen'];
   const abLabels = {facilitiesModesto:'Facilities – Modesto HQ',facilitiesOhio:'Facilities – Ohio',
     ownerAboveMarket:'Owner Above-Market Comp',familyMemberComp:'Family Member Comp (Colin+Hudson $3,520/mo)',
     severancePTO:'Severance & PTO',yearEndLegal:'Year-End Legal Reserves (PAGA)',
@@ -5331,7 +5337,7 @@ function buildFinancialSnapshot() {
     apLogic:'AP Logic (SharePoint)',ohioFlood:'Ohio Office Flood Repairs',
     tpcContract:'TPC Contract Negotiation',systems1111:'11:11 Systems Buyout',
     additionalLegal:'Additional Legal Fees',websiteDev:'Website Development',
-    marketingGTM:'Marketing GTM Consulting',bankFees:'Bank/Finance Fees'};
+    marketingGTM:'Marketing GTM Consulting',bankFees:'Bank/Finance Fees',callJensen:'Call & Jensen Legal (one-time)'};
   const ab2025Total = yr2025.reduce((s,m) => s + (m.totalAddBacks||0), 0);
   const abSnap = abKeys.map(k => {
     const total = yr2025.reduce((s,m) => s + (m.addBacks?.[k]||0), 0);
