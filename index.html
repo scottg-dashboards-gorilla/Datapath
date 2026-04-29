@@ -2428,6 +2428,7 @@ const NAV = [
   {id:'pnl',         label:'P&L Detail',        icon:'📄', adminOnly:false},
   {id:'labor',       label:'Labor Allocation',  icon:'👥', adminOnly:false},
   {id:'saleswon',    label:'Sales Won',         icon:'🏆', adminOnly:false},
+  {id:'mrrbilling',  label:'MRR vs Billing',    icon:'🔍', adminOnly:false},
   {id:'benchmarking',label:'Benchmarking',       icon:'🎯', adminOnly:false},
   {id:'advisor',     label:'Intelligence',      icon:'🧠', adminOnly:false},
   {id:'data',        label:'Import Data',       icon:'📤', adminOnly:false},
@@ -2485,6 +2486,7 @@ function render() {
   else if (state.view === 'pnl')                          renderPnL(main);
   else if (state.view === 'labor')                        renderLaborAllocation(main);
   else if (state.view === 'saleswon')                     renderSalesWon(main);
+  else if (state.view === 'mrrbilling')                   renderMrrBilling(main);
   else if (state.view === 'benchmarking')                 renderBenchmarking(main);
   else if (state.view === 'advisor')                      renderAdvisor(main);
   else if (state.view === 'admin')                        renderAdmin(main);
@@ -5173,6 +5175,282 @@ function renderSalesWon(el) {
   </div></div>`;
 
   el.innerHTML = html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// MRR vs BILLING STATUS — Won deals mapped against billing
+// Cross-references ALL_DEALS with CW billing verification
+// Updated weekly via scheduled audit
+// Last audit: 2026-04-29
+// ═══════════════════════════════════════════════════════════════
+
+const MRR_BILLING_MAP = [
+  // ── JANUARY 2026 — all billing ──
+  {month:'Jan 2026',c:'Central Valley Regional Center',mrr:3500,type:'Net New',status:'billing',billingStart:'Jan 2026',detail:'Active $3,500/mo T-Services-MSP, verified 4/27/26',rep:'Jay Harvey'},
+  {month:'Jan 2026',c:'Statuo',mrr:874,type:'Net New',status:'billing',billingStart:'Jan 2026',detail:'Active $1,530/mo T-Services-MSP, verified 4/27/26',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'24 Hour Home Care',mrr:270,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'7C Escrow',mrr:250,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'Dust Bowl Brewing Company',mrr:250,type:'Renewal',status:'billing',billingStart:'Jan 2026',detail:'Renewal confirmed',rep:'Maria Martinez'},
+  {month:'Jan 2026',c:'Project Hope Alliance',mrr:250,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'Peak Real Estate Management LLC',mrr:250,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'Rizo Lopez Foods',mrr:150,type:'Net New',status:'billing',billingStart:'Jan 2026',detail:'Active agreement confirmed',rep:'Jay Harvey'},
+  {month:'Jan 2026',c:'Jame O Bookkeeping',mrr:132,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Nathan La Fleche'},
+  {month:'Jan 2026',c:'TCB Industrial',mrr:60,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Jay Harvey'},
+  {month:'Jan 2026',c:'City of Selma',mrr:10,type:'Upsell',status:'billing',billingStart:'Jan 2026',detail:'Added to existing agreement',rep:'Jay Harvey'},
+
+  // ── FEBRUARY 2026 — 1 unbilled (Advanced Radiology) ──
+  {month:'Feb 2026',c:'Lucia Mar Unified School District',mrr:6033,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Ricky Maestas'},
+  {month:'Feb 2026',c:'Sierra Northern Railway',mrr:5538,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active $5,574.11 T-Services-MSP started 3/1/26, invoices confirmed',rep:'Dan Sturdivant'},
+  {month:'Feb 2026',c:'Sierra Energy',mrr:3010,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active $2,897 T-Services-MSP started 3/1/26',rep:'Dan Sturdivant'},
+  {month:'Feb 2026',c:'Garretson Team',mrr:2912,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Mendocino Railway',mrr:2608,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active T-Services-MSP, last invoice $2,449 on 4/1/26',rep:'Dan Sturdivant'},
+  {month:'Feb 2026',c:'Advanced Radiology',mrr:2483,type:'Net New',status:'unbilled',billingStart:null,detail:'CW agreement exists but INACTIVE — needs activation. Created 2/25/26, planned start 4/1/26, 0 invoices sent',rep:'Jay Harvey',risk:'high',daysSinceClose:63},
+  {month:'Feb 2026',c:'Railpower',mrr:1937,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active $1,910.06 T-Services-MSP started 3/1/26, invoices confirmed',rep:'Dan Sturdivant'},
+  {month:'Feb 2026',c:'Sierra Northern Railway (Resale)',mrr:1827,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active $1,879.10 Recurring Resale',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'The Ohio District - LCMS',mrr:1396,type:'Net New',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Joel Walker'},
+  {month:'Feb 2026',c:'Sierra Energy (Resale)',mrr:985,type:'Net New',status:'billing',billingStart:'Mar 2026',detail:'Active $984.84 Recurring Resale',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Garretson Team',mrr:769,type:'Renewal',status:'billing',billingStart:'Feb 2026',detail:'Renewal confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'City of Selma',mrr:740,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Jay Harvey'},
+  {month:'Feb 2026',c:'Stewart & Jasper',mrr:655,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Jay Harvey'},
+  {month:'Feb 2026',c:'Duarte Nursery',mrr:549,type:'Renewal',status:'billing',billingStart:'Feb 2026',detail:'Renewal confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Panoche Energy Center',mrr:450,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Winton-Ireland, Strom & Green',mrr:400,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Railpower (Resale)',mrr:313,type:'Upsell',status:'billing',billingStart:'Mar 2026',detail:'Active $313.30 Recurring Resale',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Anonymous LLC',mrr:208,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Kaplan & Trombi',mrr:156,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Agee Construction',mrr:72,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Fortune-Ratliff General Contractors',mrr:44,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'Dust Bowl Brewing Company',mrr:42,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Julissa Martinez'},
+  {month:'Feb 2026',c:'DeHart Plumbing, Heating & Air',mrr:33,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+  {month:'Feb 2026',c:'ABI Healthcare',mrr:17,type:'Upsell',status:'billing',billingStart:'Feb 2026',detail:'Active agreement confirmed',rep:'Nathan La Fleche'},
+
+  // ── MARCH 2026 — mix of April starts, May starts, and unverified ──
+  {month:'Mar 2026',c:'Laguna Tools',mrr:4061,type:'Net New',status:'billing',billingStart:'Apr 2026',detail:'M365 Business Premium Monthly $4,012.80 replacement effective 4/1/26',rep:'Ricky Maestas'},
+  {month:'Mar 2026',c:'Western Steel Buildings',mrr:380,type:'Net New',status:'billing',billingStart:'Apr 2026',detail:'Firewall addition, CW confirmed eff 4/1/26',rep:'Jay Harvey'},
+  {month:'Mar 2026',c:'PeopleCare Health Services',mrr:326,type:'Upsell',status:'billing',billingStart:'Apr 2026',detail:'ZTNA, CW confirmed eff 4/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'PASCO',mrr:300,type:'Upsell',status:'billing',billingStart:'Apr 2026',detail:'DR + ZTNA, CW confirmed eff 4/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'PASCO',mrr:204,type:'Upsell',status:'billing',billingStart:'Apr 2026',detail:'DR + ZTNA, CW confirmed eff 4/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:"Pearl's Hope",mrr:158,type:'Upsell',status:'billing',billingStart:'Apr 2026',detail:'ZTNA, CW confirmed eff 4/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Hercules OEM Group',mrr:1602,type:'Upsell',status:'billing',billingStart:'May 2026',detail:'M365/O365/Huntress, CW confirmed eff 5/1-6/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Hercules OEM Group',mrr:250,type:'Upsell',status:'billing',billingStart:'May 2026',detail:'CW additions confirmed eff 5/1-6/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Ameribest',mrr:827,type:'Upsell',status:'billing',billingStart:'May 2026',detail:'NCE Power BI Pro, CW confirmed eff 5/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Sierra Northern Railway',mrr:750,type:'Upsell',status:'billing',billingStart:'May 2026',detail:'Copilot Business, CW confirmed eff 5/1/26',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Railpower',mrr:500,type:'Upsell',status:'verified',billingStart:null,detail:'CW active agreement confirmed — verify addition amount & start date',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Railpower',mrr:66,type:'Upsell',status:'verified',billingStart:null,detail:'CW active agreement confirmed — verify addition amount & start date',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Sierra Northern Railway',mrr:6,type:'Upsell',status:'verified',billingStart:null,detail:'CW verified — verify start date',rep:'Nathan La Fleche'},
+  {month:'Mar 2026',c:'Circle of Life - First Nations - Soaring Eagles',mrr:1618,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'24 Hour Home Care',mrr:1360,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'24 Hour Home Care',mrr:281,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'DiMare',mrr:845,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Westmark Incorporated',mrr:708,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Devoted Guardians',mrr:494,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'HHHC',mrr:452,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Aweta - Americas',mrr:250,type:'Net New',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Aweta - Americas',mrr:110,type:'Net New',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Arts and College Preparatory Academy',mrr:345,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Joel Walker',risk:'med'},
+  {month:'Mar 2026',c:'Del Puerto Health Care District',mrr:176,type:'Net New',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Del Puerto Health Care District',mrr:110,type:'Net New',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'Alliance Services',mrr:200,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+  {month:'Mar 2026',c:'ECS',mrr:95,type:'Upsell',status:'unverified',billingStart:null,detail:'Verify addition on existing agreement in CW',rep:'Nathan La Fleche',risk:'med'},
+];
+
+let mrrBillingFilter = 'all';
+
+function mrrMonthIdx(s) {
+  if (!s) return -1;
+  const mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const p = s.split(' ');
+  return parseInt(p[1]) * 12 + (mo[p[0]] || 0);
+}
+
+function renderMrrBilling(el) {
+  const deals = MRR_BILLING_MAP;
+  const billing = deals.filter(d => d.status === 'billing');
+  const unbilled = deals.filter(d => d.status === 'unbilled');
+  const verified = deals.filter(d => d.status === 'verified');
+  const unverified = deals.filter(d => d.status === 'unverified');
+
+  const totalWon = deals.reduce((s,d) => s + d.mrr, 0);
+  const totalBilling = billing.reduce((s,d) => s + d.mrr, 0);
+  const totalUnbilled = unbilled.reduce((s,d) => s + d.mrr, 0);
+  const totalVerified = verified.reduce((s,d) => s + d.mrr, 0);
+  const totalUnverified = unverified.reduce((s,d) => s + d.mrr, 0);
+  const totalGap = totalUnbilled + totalVerified + totalUnverified;
+
+  const aprDeals = billing.filter(d => d.billingStart === 'Apr 2026');
+  const mayDeals = billing.filter(d => d.billingStart === 'May 2026');
+  const aprMRR = aprDeals.reduce((s,d) => s + d.mrr, 0);
+  const mayMRR = mayDeals.reduce((s,d) => s + d.mrr, 0);
+
+  const months = ['Jan 2026','Feb 2026','Mar 2026'];
+  const pctBilling = totalWon > 0 ? ((totalBilling / totalWon) * 100).toFixed(0) : 0;
+
+  let html = `<div class="fade-in">
+    <div class="section-title">MRR Won vs Billing Status</div>
+    <div class="section-sub">Q1 2026 · ${deals.length} deals · Last audit: 2026-04-29 · Cross-referenced against ConnectWise agreements</div>
+
+    <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-label">Total Q1 Won</div>
+        <div class="kpi-value" style="color:#2563eb">$${totalWon.toLocaleString()}<span style="font-size:14px;color:#6b7280">/mo</span></div>
+        <div class="kpi-sub">${deals.length} deals · $${(totalWon*12).toLocaleString()}/yr</div></div>
+      <div class="kpi-card" style="border-top:3px solid #16a34a"><div class="kpi-label">Confirmed Billing</div>
+        <div class="kpi-value" style="color:#16a34a">$${totalBilling.toLocaleString()}<span style="font-size:14px;color:#6b7280">/mo</span></div>
+        <div class="kpi-sub">${billing.length} deals · ${pctBilling}% of won</div></div>
+      <div class="kpi-card" style="border-top:3px solid #ea580c"><div class="kpi-label">Gap (Unbilled + Unverified)</div>
+        <div class="kpi-value" style="color:#ea580c">$${totalGap.toLocaleString()}<span style="font-size:14px;color:#6b7280">/mo</span></div>
+        <div class="kpi-sub">${unbilled.length + verified.length + unverified.length} deals · $${(totalGap*12).toLocaleString()}/yr exposure</div></div>
+      <div class="kpi-card" style="border-top:3px solid #7c3aed"><div class="kpi-label">New MRR Pipeline</div>
+        <div class="kpi-value" style="color:#7c3aed">$${(aprMRR + mayMRR).toLocaleString()}<span style="font-size:14px;color:#6b7280">/mo</span></div>
+        <div class="kpi-sub">Apr: $${aprMRR.toLocaleString()} · May: $${mayMRR.toLocaleString()}</div></div>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="quick-btn" onclick="mrrBillingFilter='all';render()" style="${mrrBillingFilter==='all'?'background:#1e40af;color:#fff;border-color:#1e40af':''}">All (${deals.length})</button>
+      <button class="quick-btn" onclick="mrrBillingFilter='billing';render()" style="${mrrBillingFilter==='billing'?'background:#16a34a;color:#fff;border-color:#16a34a':''}">Billing (${billing.length})</button>
+      <button class="quick-btn" onclick="mrrBillingFilter='april';render()" style="${mrrBillingFilter==='april'?'background:#7c3aed;color:#fff;border-color:#7c3aed':''}">Starting Apr (${aprDeals.length})</button>
+      <button class="quick-btn" onclick="mrrBillingFilter='may';render()" style="${mrrBillingFilter==='may'?'background:#7c3aed;color:#fff;border-color:#7c3aed':''}">Starting May (${mayDeals.length})</button>
+      <button class="quick-btn" onclick="mrrBillingFilter='gap';render()" style="${mrrBillingFilter==='gap'?'background:#dc2626;color:#fff;border-color:#dc2626':''}">Gap (${unbilled.length + verified.length + unverified.length})</button>
+    </div>`;
+
+  // ── Stacked bar chart by month ──
+  html += `<div class="chart-card" style="margin-bottom:16px;padding:16px 20px">
+    <div style="font-weight:700;font-size:14px;margin-bottom:12px">Won MRR by month — billing status breakdown</div>
+    <div style="position:relative;height:220px"><canvas id="mrrBillingChart"></canvas></div>
+    <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:#6b7280;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a"></span> Billing</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#7c3aed"></span> Starts Apr/May</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b"></span> Verified (timing TBD)</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444"></span> Unbilled / Unverified</span>
+    </div>
+  </div>`;
+
+  // ── Deal tables by filter ──
+  function statusPill(d) {
+    if (d.status === 'billing' && d.billingStart && d.billingStart !== d.month) return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#f0fdf4;color:#16a34a">Billing ' + d.billingStart + '</span>';
+    if (d.status === 'billing') return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#f0fdf4;color:#16a34a">Billing</span>';
+    if (d.status === 'unbilled') return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#fef2f2;color:#dc2626">Unbilled</span>';
+    if (d.status === 'verified') return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#fffbeb;color:#d97706">Verified — timing TBD</span>';
+    if (d.status === 'unverified') return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#fff7ed;color:#ea580c">Unverified</span>';
+    return '';
+  }
+
+  function dealTable(list, title, borderColor) {
+    if (list.length === 0) return '';
+    const total = list.reduce((s,d) => s + d.mrr, 0);
+    let t = `<div class="chart-card" style="margin-bottom:12px;padding:14px 18px;border-left:4px solid ${borderColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:700;font-size:14px">${title}</div>
+        <div style="font-size:13px"><span style="color:#6b7280">${list.length} deals</span> · <span style="font-weight:700">$${total.toLocaleString()}/mo</span></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="color:#6b7280;font-size:11px;text-transform:uppercase;border-bottom:1px solid #e5e7eb">
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Won</th>
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Customer</th>
+          <th style="text-align:right;padding:4px 8px;font-weight:600">MRR</th>
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Type</th>
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Status</th>
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Detail</th>
+          <th style="text-align:left;padding:4px 8px;font-weight:600">Rep</th>
+        </tr></thead><tbody>`;
+    list.forEach(d => {
+      const bg = d.status === 'unbilled' ? 'background:#fef2f230;' : '';
+      t += `<tr style="border-bottom:1px solid #f3f4f6;${bg}">
+        <td style="padding:5px 8px;color:#6b7280;font-size:11px;white-space:nowrap">${d.month}</td>
+        <td style="padding:5px 8px;font-weight:${d.mrr>=1000?600:400}">${d.c}</td>
+        <td style="padding:5px 8px;text-align:right;font-weight:600">$${d.mrr.toLocaleString()}</td>
+        <td style="padding:5px 8px;font-size:11px">${d.type}</td>
+        <td style="padding:5px 8px">${statusPill(d)}</td>
+        <td style="padding:5px 8px;font-size:11px;color:#6b7280;max-width:220px">${d.detail}</td>
+        <td style="padding:5px 8px;color:#9ca3af;font-size:11px">${d.rep}</td>
+      </tr>`;
+    });
+    t += '</tbody></table></div>';
+    return t;
+  }
+
+  if (mrrBillingFilter === 'all' || mrrBillingFilter === 'gap') {
+    // Show unbilled first (highest priority)
+    if (unbilled.length > 0) html += dealTable(unbilled, 'Unbilled — Immediate Action Required', '#dc2626');
+    if (unverified.length > 0) html += dealTable(unverified, 'Unverified — Needs CW Check', '#ea580c');
+    if (verified.length > 0) html += dealTable(verified, 'Verified Active — Timing TBD', '#f59e0b');
+  }
+
+  if (mrrBillingFilter === 'all' || mrrBillingFilter === 'april') {
+    if (aprDeals.length > 0) html += dealTable(aprDeals, 'New MRR Starting April 2026', '#7c3aed');
+  }
+
+  if (mrrBillingFilter === 'all' || mrrBillingFilter === 'may') {
+    if (mayDeals.length > 0) html += dealTable(mayDeals, 'New MRR Starting May 2026', '#7c3aed');
+  }
+
+  if (mrrBillingFilter === 'all' || mrrBillingFilter === 'billing') {
+    months.forEach(m => {
+      const mBilling = billing.filter(d => d.month === m && (!d.billingStart || d.billingStart === m || ['Jan 2026','Feb 2026','Mar 2026'].indexOf(d.billingStart) >= 0 && d.billingStart <= m));
+      // Only show deals billing in their won month (not future starts)
+      const mIdx = mrrMonthIdx(m);
+      const inMonth = billing.filter(d => d.month === m && d.billingStart && mrrMonthIdx(d.billingStart) <= mIdx);
+      if (inMonth.length > 0) html += dealTable(inMonth, m + ' — Billing Confirmed', '#16a34a');
+    });
+  }
+
+  html += `<div style="font-size:11px;color:#9ca3af;margin-top:12px;font-style:italic">
+    Cross-referenced against ConnectWise agreements via Power BI REST API. Status categories: <strong>Billing</strong> = active CW agreement with invoices confirmed.
+    <strong>Verified</strong> = CW agreement found, start date unconfirmed. <strong>Unverified</strong> = not yet checked in CW.
+    <strong>Unbilled</strong> = confirmed gap, needs immediate attention. Weekly audit updates this view.
+  </div></div>`;
+
+  el.innerHTML = html;
+
+  // Build stacked bar chart
+  setTimeout(() => {
+    const ctx = document.getElementById('mrrBillingChart');
+    if (!ctx) return;
+    const chartMonths = ['Jan 2026','Feb 2026','Mar 2026'];
+    const billingData = [], futureData = [], verifiedData = [], gapData = [];
+    chartMonths.forEach(m => {
+      const md = deals.filter(d => d.month === m);
+      const mIdx = mrrMonthIdx(m);
+      const b = md.filter(d => d.status === 'billing' && d.billingStart && mrrMonthIdx(d.billingStart) <= mIdx).reduce((s,d) => s+d.mrr, 0);
+      const f = md.filter(d => d.status === 'billing' && d.billingStart && mrrMonthIdx(d.billingStart) > mIdx).reduce((s,d) => s+d.mrr, 0);
+      const v = md.filter(d => d.status === 'verified').reduce((s,d) => s+d.mrr, 0);
+      const g = md.filter(d => d.status === 'unbilled' || d.status === 'unverified').reduce((s,d) => s+d.mrr, 0);
+      billingData.push(b); futureData.push(f); verifiedData.push(v); gapData.push(g);
+    });
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartMonths,
+        datasets: [
+          {label:'Billing', data:billingData, backgroundColor:'#16a34a', borderRadius:4},
+          {label:'Starts Apr/May', data:futureData, backgroundColor:'#7c3aed', borderRadius:4},
+          {label:'Verified (timing TBD)', data:verifiedData, backgroundColor:'#f59e0b', borderRadius:4},
+          {label:'Unbilled/Unverified', data:gapData, backgroundColor:'#ef4444', borderRadius:4},
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {display: false},
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString() + '/mo',
+              footer: items => {
+                const total = items.reduce((s,i) => s + i.parsed.y, 0);
+                return 'Total Won: $' + total.toLocaleString() + '/mo';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {stacked: true, grid:{display:false}},
+          y: {stacked: true, ticks:{callback: v => '$' + (v/1000).toFixed(0) + 'K'}, grid:{color:'#f3f4f6'}}
+        }
+      }
+    });
+  }, 100);
 }
 
 

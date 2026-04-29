@@ -61,6 +61,7 @@ All files live at the repo root (NO `dashboards/` subfolder).
 ## Scheduled Tasks
 - **weekly-sni-refresh**: Mondays 9am — pulls SNI data from Power BI
 - **push-dashboard-to-github**: Every 10 min (8am-8pm) — pushes if local file changed
+- **weekly-mrr-billing-audit**: Wednesdays 9am — audits MRR_BILLING_MAP against CW billing status, updates dashboard
 - **github-token-expiry-reminder**: One-time June 21, 2026
 
 ## Key Numbers (2025)
