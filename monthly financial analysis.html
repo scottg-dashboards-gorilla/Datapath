@@ -146,7 +146,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .gp-div-row td { background: #f5f5f5 !important; font-weight: 800; font-size: 13px; padding: 14px 16px 10px; border-bottom: 2px solid #d0d0d0; border-top: 2px solid #d0d0d0; letter-spacing: 0.2px; color: #111827; }
 .gp-bold td { font-weight: 700; }
 .gp-bold td:first-child { font-weight: 700; }
+.gp-bold-indent td { font-weight: 600; }
+.gp-bold-indent td:first-child { padding-left: 28px; font-weight: 600; color: #374151; }
 .gp-indent td:first-child { padding-left: 28px; color: #6b7280; font-weight: 400; }
+.gp-detail td { font-size: 12px; color: #9ca3af; }
+.gp-detail td:first-child { padding-left: 48px; font-weight: 400; }
 .gp-gp-row td { font-weight: 700; border-top: 2px solid #d0d0d0; }
 .gp-gpm-row td { color: #9ca3af; font-size: 12px; font-style: italic; border-bottom: none; padding-top: 2px; padding-bottom: 14px; }
 .gp-flag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; margin-left: 6px; letter-spacing: 0.5px; vertical-align: middle; }
@@ -3578,11 +3582,11 @@ function pnlTableEngine() {
   const activeDepts = DEPTS.filter(d => DATA.some(m => m.d[d.id].rev > 0 || m.d[d.id].cogs > 0));
 
   function fc(v) {
-    if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
+    if (v === null || v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
     return '$' + Math.abs(Math.round(v)).toLocaleString();
   }
   function fNeg(v) {
-    if (v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
+    if (v === null || v === 0 || v === undefined || isNaN(v)) return '<span style="color:#9ca3af">—</span>';
     return v < 0 ? '<span style="color:var(--red)">($' + Math.abs(Math.round(v)).toLocaleString() + ')</span>' : '$' + Math.round(v).toLocaleString();
   }
   function fDelta(d, invert) {
@@ -3656,7 +3660,7 @@ function pnlTableEngine() {
   }
 
   function dataRow(label, getter, opts = {}) {
-    const {bold, indent, isCost, isTotal, isPct, flag, flagType, colorBySign} = opts;
+    const {bold, indent, detail, isCost, isTotal, isPct, flag, flagType, colorBySign} = opts;
     const vals = mData.map(m => getter(m));
     const curVal = vals[curIdx];
     const prevVal = curIdx > 0 ? vals[curIdx - 1] : null;
@@ -3684,7 +3688,7 @@ function pnlTableEngine() {
         ${pctAnalysis}</tr>`;
     }
 
-    const cls = isTotal ? 'gp-gp-row' : bold ? 'gp-bold' : indent ? 'gp-indent' : '';
+    const cls = isTotal ? 'gp-gp-row' : (bold && indent) ? 'gp-bold-indent' : bold ? 'gp-bold' : detail ? 'gp-detail' : indent ? 'gp-indent' : '';
     const dash = '<span style="color:#9ca3af">—</span>';
     const inv = !!isCost;
     const momDelta = suppressMOM ? dash : fDelta(momD, inv);
@@ -3950,6 +3954,76 @@ function renderGrossProfit(el) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MRR REVENUE HELPERS — Maps detail.rev across all naming eras
+// ═══════════════════════════════════════════════════════════════
+
+// Get individual revenue detail line, handling camelCase (Jan26+), snake_case (Nov-Dec25), and legacy names
+function getRevLine(m, key) {
+  const d = m.detail?.rev;
+  if (!d) return 0;
+  // Try all known aliases for each key across naming eras
+  const aliases = {managedIT:['managedIT','managed_it'], managedSecurity:['managedSecurity','managed_security'],
+    managedVoice:['managedVoice','managed_voice'], managedBackup:['managedBackup','managed_backup'],
+    usacErate:['usacErate','erate'], publicCloud:['publicCloud','public_cloud'],
+    privateCloud:['privateCloud','private_cloud'], cloudSaas:['cloudSaas','cloud_saas'],
+    spamFilter:['spamFilter','spam_filtering'], m365:['m365','microsoft365'],
+    securityResale:['securityResale','security_resale'], toolResale:['toolResale','tool_resale'],
+    voiceResale:['voiceResale','voice_resale'], haas:['haas'], chromebook:['chromebook'],
+    projectService:['projectService','projectServices','project_services'],
+    subcontracted:['subcontracted'], productSales:['productSales','product_sales'],
+    freight:['freight'], commissions:['commissions','commission']};
+  const names = aliases[key] || [key];
+  for (const n of names) { if (d[n] !== undefined) return d[n]; }
+  return 0;
+}
+
+// Get MRR group subtotal — works across all data eras (2023 aggregated through 2026 granular)
+function getMrrGroup(m, group) {
+  const d = m.detail?.rev;
+  if (!d) return 0;
+  if (group === 'mrs') {
+    // Monthly Recurring Services: managedIT + managedSecurity + managedVoice + managedBackup + usacErate
+    if (d.recurringServices !== undefined) return d.recurringServices;          // 2024 / Jan-Oct 2025
+    if (d.managed_it !== undefined) return (d.managed_it||0)+(d.managed_security||0)+(d.managed_voice||0)+(d.managed_backup||0)+(d.erate||0); // Nov-Dec 25
+    if (d.managedSecurity !== undefined) return (d.managedIT||0)+(d.managedSecurity||0)+(d.managedVoice||0)+(d.managedBackup||0)+(d.usacErate||0); // 2026
+    return d.managedIT || 0; // 2023 (managedIT is all managed services)
+  }
+  if (group === 'cloud') {
+    // Monthly Recurring Private Cloud: publicCloud + privateCloud
+    if (d.cloud !== undefined) return d.cloud;                                  // 2023
+    if (d.public_cloud !== undefined) return (d.public_cloud||0)+(d.private_cloud||0); // Nov-Dec 25
+    return (d.publicCloud||0)+(d.privateCloud||0);                              // 2024-Oct25 / 2026
+  }
+  if (group === 'resale') {
+    // Monthly Recurring Resale: haas + chromebook + cloudSaas + spamFilter + m365 + securityResale + toolResale + voiceResale
+    if (d.recurringResale !== undefined) return d.recurringResale;              // 2023 / 2024 / Jan-Oct 2025
+    if (d.microsoft365 !== undefined) return (d.haas||0)+(d.chromebook||0)+(d.cloud_saas||0)+(d.spam_filtering||0)+(d.microsoft365||0)+(d.security_resale||0)+(d.tool_resale||0)+(d.voice_resale||0); // Nov-Dec 25
+    return (d.haas||0)+(d.chromebook||0)+(d.cloudSaas||0)+(d.spamFilter||0)+(d.m365||0)+(d.securityResale||0)+(d.toolResale||0)+(d.voiceResale||0); // 2026
+  }
+  if (group === 'nonRecurring') {
+    const ps = d.projectService ?? d.projectServices ?? d.project_services ?? 0;
+    const sub = d.subcontracted ?? 0;
+    const prod = d.productSales ?? d.product_sales ?? 0;
+    const fr = d.freight ?? 0;
+    const comm = d.commissions ?? d.commission ?? 0;
+    // 2024/early 2025 months use 'other' to combine commissions + freight + misc
+    const oth = (comm === 0 && fr === 0) ? (d.other ?? 0) : 0;
+    return ps + sub + prod + fr + comm + oth;
+  }
+  return 0;
+}
+
+// Total MRR = sum of all 3 recurring groups
+function getTotalMrr(m) { return getMrrGroup(m,'mrs') + getMrrGroup(m,'cloud') + getMrrGroup(m,'resale'); }
+
+// Check if a month has granular (line-item) detail vs aggregated subtotals
+function hasGranularDetail(m) {
+  const d = m.detail?.rev;
+  if (!d) return false;
+  return (d.managedSecurity !== undefined || d.managed_security !== undefined);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // P&L VIEW — Same engine, Full P&L with all sections
 // ═══════════════════════════════════════════════════════════════
 function renderPnL(el) {
@@ -3958,12 +4032,45 @@ function renderPnL(el) {
 
   let rows = workingDaysRow();
 
-  // Revenue section
+  // Revenue section — grouped by Citrin MRR categories
   rows += divRow('Revenue');
   rows += dataRow('Total Revenue', m => m.totRev, {bold: true});
-  activeDepts.forEach(dept => {
-    rows += dataRow(dept.name, m => m.d[dept.id].rev, {indent: true});
-  });
+
+  // Monthly Recurring Services (GL 40000-41925)
+  rows += dataRow('Monthly Recurring Services', m => getMrrGroup(m,'mrs'), {bold: true, indent: true});
+  rows += dataRow('Managed IT', m => hasGranularDetail(m) ? getRevLine(m,'managedIT') : null, {detail: true});
+  rows += dataRow('Managed Security', m => hasGranularDetail(m) ? getRevLine(m,'managedSecurity') : null, {detail: true});
+  rows += dataRow('Managed Voice', m => hasGranularDetail(m) ? getRevLine(m,'managedVoice') : null, {detail: true});
+  rows += dataRow('Managed Backup', m => hasGranularDetail(m) ? getRevLine(m,'managedBackup') : null, {detail: true});
+  rows += dataRow('USAC / E-Rate', m => hasGranularDetail(m) ? getRevLine(m,'usacErate') : null, {detail: true});
+
+  // Monthly Recurring Private Cloud (GL 41360-41365)
+  rows += dataRow('Monthly Recurring Private Cloud', m => getMrrGroup(m,'cloud'), {bold: true, indent: true});
+  rows += dataRow('Public Cloud', m => hasGranularDetail(m) ? getRevLine(m,'publicCloud') : null, {detail: true});
+  rows += dataRow('Private Cloud', m => hasGranularDetail(m) ? getRevLine(m,'privateCloud') : null, {detail: true});
+
+  // Monthly Recurring Resale (GL 41200-42300)
+  rows += dataRow('Monthly Recurring Resale', m => getMrrGroup(m,'resale'), {bold: true, indent: true});
+  rows += dataRow('HaaS', m => hasGranularDetail(m) ? getRevLine(m,'haas') : null, {detail: true});
+  rows += dataRow('Chromebook', m => hasGranularDetail(m) ? getRevLine(m,'chromebook') : null, {detail: true});
+  rows += dataRow('Cloud SaaS', m => hasGranularDetail(m) ? getRevLine(m,'cloudSaas') : null, {detail: true});
+  rows += dataRow('Spam Filtering', m => hasGranularDetail(m) ? getRevLine(m,'spamFilter') : null, {detail: true});
+  rows += dataRow('Microsoft 365', m => hasGranularDetail(m) ? getRevLine(m,'m365') : null, {detail: true});
+  rows += dataRow('Security Resale', m => hasGranularDetail(m) ? getRevLine(m,'securityResale') : null, {detail: true});
+  rows += dataRow('Tool Resale', m => hasGranularDetail(m) ? getRevLine(m,'toolResale') : null, {detail: true});
+  rows += dataRow('Voice Resale', m => hasGranularDetail(m) ? getRevLine(m,'voiceResale') : null, {detail: true});
+
+  // Total Monthly Recurring Revenue
+  rows += dataRow('Total Monthly Recurring Revenue', m => getTotalMrr(m), {isTotal: true});
+  rows += dataRow('MRR % of Revenue', m => m.totRev > 0 ? getTotalMrr(m) / m.totRev * 100 : 0, {isPct: true});
+
+  // Non-Recurring Revenue
+  rows += dataRow('Non-Recurring Revenue', m => getMrrGroup(m,'nonRecurring'), {bold: true, indent: true});
+  rows += dataRow('Project Services', m => getRevLine(m,'projectService'), {detail: true});
+  rows += dataRow('Subcontracted', m => getRevLine(m,'subcontracted'), {detail: true});
+  rows += dataRow('Product Sales', m => getRevLine(m,'productSales'), {detail: true});
+  rows += dataRow('Freight', m => getRevLine(m,'freight'), {detail: true});
+  rows += dataRow('Commissions', m => getRevLine(m,'commissions'), {detail: true});
 
   // COGS section (now includes labor allocated to departments)
   rows += divRow('Cost of Goods Sold (incl. labor)');
@@ -5023,8 +5130,8 @@ function renderBenchmarking(el) {
     const svcCogs = svcIds.reduce((s,id) => s + (d[id]?.cogs||0), 0);
     const svcGP   = svcRev - svcCogs;
     const svcGPM  = svcRev > 0 ? svcGP / svcRev * 100 : null;
-    // Recurring rev = MS + Security + Cloud (monthly MRR service lines)
-    const recurRev = (d.managed_services?.rev||0) + (d.security?.rev||0) + (d.cloud_hosting?.rev||0);
+    // Recurring rev = all 3 MRR groups (services + private cloud + resale) from Citrin categories
+    const recurRev = getTotalMrr(m);
     const recurPct = m.totRev > 0 ? recurRev / m.totRev * 100 : null;
     // Headcount from dept hc fields (COGS/delivery teams)
     const hcDelivery = Object.values(d).reduce((s,dd) => s + (dd.hc||0), 0);
@@ -5043,7 +5150,7 @@ function renderBenchmarking(el) {
     let nrrApprox = null;
     if (mIdx >= 12) {
       const prior = DATA[mIdx - 12];
-      const priorRecur = (prior.d.managed_services?.rev||0) + (prior.d.security?.rev||0) + (prior.d.cloud_hosting?.rev||0);
+      const priorRecur = getTotalMrr(prior);
       if (priorRecur > 0) nrrApprox = recurRev / priorRecur * 100;
     }
     return { adjEbitdaM, svcRevPerEmp, recurPct, svcMultiple, svcGPM, nrrApprox };

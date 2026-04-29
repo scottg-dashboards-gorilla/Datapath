@@ -10,7 +10,7 @@ Datapath is a 25-year-old MSP (Managed Service Provider) headquartered in Modest
 Key people: Co-CEOs James Bates & David Darmstandler, COO Scott Gordon (consultant via CLevelAdvising LLC, $25,500/mo — CONFIDENTIAL, never break out individually).
 
 ## Tech Stack
-- **Dashboard**: Vanilla JS + Chart.js + SheetJS, single HTML file, SHA-256 password gate (password: `G0dz1ll@`)
+- **Dashboard**: Vanilla JS + Chart.js + SheetJS, single HTML file, SHA-256 salted password gate (per-user credentials stored as hashes)
 - **DOCX generation**: `docx` npm module (v304). Requires `NODE_PATH=/usr/local/lib/node_modules_global/lib/node_modules`
 - **Excel**: openpyxl (Python). Recalc script: `python3 /sessions/dazzling-awesome-bell/mnt/.claude/skills/xlsx/scripts/recalc.py` — run TWICE for cascading formulas
 - **DOCX tools**: unpack/pack/validate scripts in `/sessions/dazzling-awesome-bell/mnt/.claude/skills/docx/scripts/office/`
