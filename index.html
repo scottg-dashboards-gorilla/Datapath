@@ -3249,8 +3249,14 @@ function renderDashboard(el) {
         datasets:DEPTS.filter(d=>DATA.some(m=>m.d[d.id].rev>0)).map(d=>({label:d.name, data:DATA.map(m=>m.d[d.id].rev), backgroundColor:d.color}))
       }, options:{responsive:true, scales:{x:{stacked:true,grid:{color:'#e5e7eb'}}, y:{stacked:true,ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10,font:{size:10}}}}}
     });
-    // MRR Trend (bar + trend line)
-    const mrrData = DATA.map(m => getTotalMrr(m));
+    // MRR Trend (bar + trend line) — Jan 2024 onward
+    // Chart-only timing adjustments (does NOT change P&L data)
+    // May 2024: ~$40K of MRR was billed in June that should have been recognized in May
+    const MRR_ADJUSTMENTS = {'May 24': 40000, 'Jun 24': -40000};
+    const mrrStart = DATA.findIndex(m => m.month.endsWith('24') && m.month.startsWith('Jan'));
+    const mrrMonths = DATA.slice(mrrStart);
+    const mrrData = mrrMonths.map(m => getTotalMrr(m) + (MRR_ADJUSTMENTS[m.month] || 0));
+    const mrrLabels = mrrMonths.map(m => m.month);
     // Compute linear trend line via least-squares regression
     const mrrN = mrrData.length;
     const mrrSumX = mrrData.reduce((s,_,i) => s+i, 0);
@@ -3276,7 +3282,7 @@ function renderDashboard(el) {
     }
     state.charts.mrrTrend = new Chart(mrrCanvasEl, {
       type:'bar', data:{
-        labels: DATA.map(d=>d.month),
+        labels: mrrLabels,
         datasets:[
           {label:'MRR', data:mrrData, backgroundColor: mrrData.map((v,i) => i === mrrData.length-1 ? '#3b82f6' : 'rgba(59,130,246,0.5)'),
            borderColor:'#3b82f6', borderWidth:1, borderRadius:3, order:2},
