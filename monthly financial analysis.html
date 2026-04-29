@@ -3173,9 +3173,9 @@ function renderDashboard(el) {
       <div class="chart-card"><div class="chart-title">Revenue & EBITDA Trend</div><canvas id="chart-trend" height="140"></canvas></div>
       <div class="chart-card"><div class="chart-title">Revenue Mix by Department</div><canvas id="chart-mix" height="140"></canvas></div>
     </div>
-    <div class="section-title">Department Performance</div>
-    <div class="section-sub">Click any department for detailed P&L drill-down</div>
-    <div class="dept-grid">${DEPTS.map(d => deptCard(d, L.d[d.id])).join('')}</div>
+    <div class="chart-grid" style="grid-template-columns:1fr;margin-bottom:20px">
+      <div class="chart-card"><div class="chart-title">Total Monthly Recurring Revenue (MRR)</div><canvas id="chart-mrr-trend" height="160"></canvas></div>
+    </div>
     <div class="chart-grid chart-grid-2">
       <div class="chart-card"><div class="chart-title">Stacked Revenue by Department</div><canvas id="chart-stacked" height="150"></canvas></div>
       <div class="chart-card"><div class="chart-title">Gross Margin vs. Benchmarks</div><canvas id="chart-margins" height="150"></canvas></div>
@@ -3248,6 +3248,61 @@ function renderDashboard(el) {
         labels:DATA.map(d=>d.month),
         datasets:DEPTS.filter(d=>DATA.some(m=>m.d[d.id].rev>0)).map(d=>({label:d.name, data:DATA.map(m=>m.d[d.id].rev), backgroundColor:d.color}))
       }, options:{responsive:true, scales:{x:{stacked:true,grid:{color:'#e5e7eb'}}, y:{stacked:true,ticks:{callback:v=>'$'+(v/1000)+'K'},grid:{color:'#e5e7eb'}}}, plugins:{legend:{labels:{color:'#6b7280',boxWidth:10,font:{size:10}}}}}
+    });
+    // MRR Trend (bar + trend line)
+    const mrrData = DATA.map(m => getTotalMrr(m));
+    // Compute linear trend line via least-squares regression
+    const mrrN = mrrData.length;
+    const mrrSumX = mrrData.reduce((s,_,i) => s+i, 0);
+    const mrrSumY = mrrData.reduce((s,v) => s+v, 0);
+    const mrrSumXY = mrrData.reduce((s,v,i) => s+i*v, 0);
+    const mrrSumX2 = mrrData.reduce((s,_,i) => s+i*i, 0);
+    const mrrSlope = (mrrN*mrrSumXY - mrrSumX*mrrSumY) / (mrrN*mrrSumX2 - mrrSumX*mrrSumX);
+    const mrrIntercept = (mrrSumY - mrrSlope*mrrSumX) / mrrN;
+    const mrrTrend = mrrData.map((_,i) => mrrSlope*i + mrrIntercept);
+    // MOM delta annotation
+    const mrrCur = mrrData[mrrData.length-1];
+    const mrrPrev = mrrData.length >= 2 ? mrrData[mrrData.length-2] : mrrCur;
+    const mrrDelta = mrrCur - mrrPrev;
+    const mrrPctChg = mrrPrev > 0 ? (mrrDelta/mrrPrev*100).toFixed(1) : '0.0';
+    const mrrCanvasEl = document.getElementById('chart-mrr-trend');
+    // Add subtitle with current MRR and MOM change
+    if (mrrCanvasEl) {
+      const titleEl = mrrCanvasEl.closest('.chart-card').querySelector('.chart-title');
+      if (titleEl) titleEl.innerHTML = 'Total Monthly Recurring Revenue (MRR)' +
+        '<span style="float:right;font-size:13px;font-weight:600;color:#1f2937">Current: $' + Math.round(mrrCur).toLocaleString() +
+        ' <span style="font-size:11px;font-weight:500;color:' + (mrrDelta >= 0 ? '#16a34a' : '#dc2626') + '">' +
+        (mrrDelta >= 0 ? '▲' : '▼') + ' $' + Math.abs(Math.round(mrrDelta)).toLocaleString() + ' (' + (mrrDelta >= 0 ? '+' : '') + mrrPctChg + '%) MOM</span></span>';
+    }
+    state.charts.mrrTrend = new Chart(mrrCanvasEl, {
+      type:'bar', data:{
+        labels: DATA.map(d=>d.month),
+        datasets:[
+          {label:'MRR', data:mrrData, backgroundColor: mrrData.map((v,i) => i === mrrData.length-1 ? '#3b82f6' : 'rgba(59,130,246,0.5)'),
+           borderColor:'#3b82f6', borderWidth:1, borderRadius:3, order:2},
+          {label:'Trend', data:mrrTrend, type:'line', borderColor:'#f59e0b', borderWidth:2, borderDash:[6,3],
+           pointRadius:0, fill:false, tension:0, order:1}
+        ]
+      }, options:{responsive:true, interaction:{mode:'index',intersect:false},
+        scales:{
+          y:{ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'K'}, grid:{color:'#e5e7eb'}, beginAtZero:false,
+             suggestedMin: Math.min(...mrrData)*0.9},
+          x:{grid:{color:'#e5e7eb'}}
+        },
+        plugins:{
+          legend:{labels:{color:'#6b7280',boxWidth:12}},
+          tooltip:{callbacks:{label:ctx => {
+            if (ctx.datasetIndex === 0) {
+              const i = ctx.dataIndex;
+              const prev = i > 0 ? mrrData[i-1] : null;
+              const d = prev ? ctx.raw - prev : 0;
+              const p = prev ? (d/prev*100).toFixed(1) : '0.0';
+              return ' MRR: $' + Math.round(ctx.raw).toLocaleString() + (prev ? ' (' + (d>=0?'+':'') + '$' + Math.round(d).toLocaleString() + ' / ' + (d>=0?'+':'') + p + '%)' : '');
+            }
+            return ' Trend: $' + Math.round(ctx.raw).toLocaleString();
+          }}}
+        }
+      }
     });
     // Margins vs Benchmarks
     const marginDepts = DEPTS.filter(d=>L.d[d.id].rev>0);
