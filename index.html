@@ -531,6 +531,7 @@ function auditLog(userId, action, detail=''){
 // ═══════════════════════════════════════════════════════════════
 const state = {
   view: 'dashboard',
+  navHistory: [],
   selDept: null,
   selMonth: -1, // -1 means "latest"; set after DATA is built
   sidebarCollapsed: false,
@@ -2424,11 +2425,12 @@ function monthSelector() {
 const NAV = [
   {id:'dashboard',   label:'Dashboard',        icon:'📊', adminOnly:false},
   {id:'departments', label:'Departments',       icon:'🏢', adminOnly:false},
-  {id:'grossprofit', label:'Gross Profit',      icon:'💰', adminOnly:false},
+  {id:'grossprofit', label:'Product Line GP',   icon:'💰', adminOnly:false},
   {id:'pnl',         label:'P&L Detail',        icon:'📄', adminOnly:false},
   {id:'labor',       label:'Labor Allocation',  icon:'👥', adminOnly:false},
   {id:'saleswon',    label:'Sales Won',         icon:'🏆', adminOnly:false},
   {id:'mrrbilling',  label:'MRR vs Billing',    icon:'🔍', adminOnly:false},
+  {id:'mrrmovement', label:'MRR Movement',      icon:'📉', adminOnly:false},
   {id:'benchmarking',label:'Benchmarking',       icon:'🎯', adminOnly:false},
   {id:'advisor',     label:'Intelligence',      icon:'🧠', adminOnly:false},
   {id:'data',        label:'Import Data',       icon:'📤', adminOnly:false},
@@ -2462,8 +2464,18 @@ function navigate(view) {
   if (view === 'data') { showUploadModal(); return; }
   if (view === 'admin' && state.currentUser?.role !== 'admin') return;
   auditLog(state.currentUser?.id||'unknown', 'navigate', view);
+  state.navHistory.push({view: state.view, selDept: state.selDept});
+  if (state.navHistory.length > 20) state.navHistory.shift();
   state.view = view;
   if (view !== 'departments') state.selDept = null;
+  render();
+}
+
+function goBack() {
+  if (state.navHistory.length === 0) { navigate('dashboard'); return; }
+  const prev = state.navHistory.pop();
+  state.view = prev.view;
+  state.selDept = prev.selDept;
   render();
 }
 
@@ -2487,6 +2499,7 @@ function render() {
   else if (state.view === 'labor')                        renderLaborAllocation(main);
   else if (state.view === 'saleswon')                     renderSalesWon(main);
   else if (state.view === 'mrrbilling')                   renderMrrBilling(main);
+  else if (state.view === 'mrrmovement')                  renderMrrMovement(main);
   else if (state.view === 'benchmarking')                 renderBenchmarking(main);
   else if (state.view === 'advisor')                      renderAdvisor(main);
   else if (state.view === 'admin')                        renderAdmin(main);
@@ -3443,6 +3456,8 @@ function deptCard(dept, data) {
 }
 
 function drillDept(id) {
+  state.navHistory.push({view: state.view, selDept: state.selDept});
+  if (state.navHistory.length > 20) state.navHistory.shift();
   state.selDept = id;
   state.view = 'departments';
   render();
@@ -3465,7 +3480,7 @@ function renderDrilldown(el) {
 
   el.innerHTML = `<div class="fade-in">
     ${monthSelector()}
-    <button class="back-btn" onclick="navigate('dashboard')">← Back to Overview</button>
+    <button class="back-btn" onclick="goBack()">← Back</button>
     <div class="drill-header">
       <div class="drill-icon" style="background:${dept.color}22;font-size:28px">${dept.emoji}</div>
       <div><div class="drill-title">${dept.name}</div><div class="drill-desc">${bm.desc}</div></div>
@@ -3929,7 +3944,7 @@ function renderGrossProfit(el) {
           });
 
           // Net line (Rev - all COGS including children)
-          rows += netRow('Net – ' + name, revGet, totalCogsGet);
+          rows += netRow('GP – ' + name, revGet, totalCogsGet);
         });
 
         // Show any orphan COGS items that didn't match a revenue line and aren't children
@@ -3939,7 +3954,7 @@ function renderGrossProfit(el) {
           const curVal = cogsGet(cur);
           rows += dataRow('Revenue – ' + name, m => 0, {indent: true, flag: 'NEEDS DATA', flagType: 'gp-flag-new'});
           rows += dataRow('COGS – ' + name, cogsGet, {indent: true, isCost: true, flag: curVal > 50000 ? 'FLAG' : null});
-          rows += netRow('Net – ' + name, m => 0, cogsGet);
+          rows += netRow('GP – ' + name, m => 0, cogsGet);
         });
       } else {
         // No product detail — but we still have labor lines from getDeptDetailLines
@@ -5447,6 +5462,272 @@ function renderMrrBilling(el) {
         scales: {
           x: {stacked: true, grid:{display:false}},
           y: {stacked: true, ticks:{callback: v => '$' + (v/1000).toFixed(0) + 'K'}, grid:{color:'#f3f4f6'}}
+        }
+      }
+    });
+  }, 100);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// MRR MOVEMENT — Client-level MRR changes month-over-month
+// Source: Citrin P&L comparison tabs (source-data/ folder)
+// Shows clients with >$1K MRR reduction to track churn drivers
+// ═══════════════════════════════════════════════════════════════
+
+const MRR_MOVEMENT = [
+  {
+    label:"Sep 2025 vs Aug 2025", curMonth:"Sep 2025", prevMonth:"Aug 2025",
+    totalClients:166, totalReduction:-3154.28, totalIncrease:13954.97, increaseCount:5,
+    reductions:[
+      {c:"Luther Memorial",cur:1973.67,prev:3947.34,diff:-1973.67},
+      {c:"Abest Professional Health Care",cur:1627.72,prev:2808.33,diff:-1180.61},
+    ],
+    increases:[
+      {c:"Sylvan Union School District",cur:25874.33,prev:20676.08,diff:5198.25},
+      {c:"Jame O Bookkeeping",cur:2668.06,prev:0.0,diff:2668.06},
+      {c:"Cranbrook Group Inc.",cur:11566.0,prev:9286.64,diff:2279.36},
+      {c:"Cristo Rey High School",cur:12679.21,prev:10731.71,diff:1947.5},
+      {c:"Devoted Guardians",cur:9350.4,prev:7488.6,diff:1861.8},
+    ],
+  },
+  {
+    label:"Oct 2025 vs Sep 2025", curMonth:"Oct 2025", prevMonth:"Sep 2025",
+    totalClients:170, totalReduction:-31278.22, totalIncrease:47566.06, increaseCount:4,
+    reductions:[
+      {c:"Cranbrook Group Inc.",cur:17237.91,prev:30690.17,diff:-13452.26},
+      {c:"REMAX Executive",cur:0.0,prev:6990.6,diff:-6990.6},
+      {c:"Orange County Human Relations",cur:0.0,prev:3381.5,diff:-3381.5},
+      {c:"Youthbuild Columbus Community",cur:0.0,prev:3183.4,diff:-3183.4},
+      {c:"SVH Law",cur:0.0,prev:3026.01,diff:-3026.01},
+      {c:"Graceada Partners",cur:13769.04,prev:15013.49,diff:-1244.45},
+    ],
+    increases:[
+      {c:"24 Hour Home Care",cur:73331.38,prev:41282.62,diff:32048.76},
+      {c:"Westmark Incorporated",cur:20858.05,prev:10190.0,diff:10668.05},
+      {c:"Groundswell",cur:3446.5,prev:0.0,diff:3446.5},
+      {c:"Empire Union School District",cur:11888.5,prev:10485.75,diff:1402.75},
+    ],
+  },
+  {
+    label:"Nov 2025 vs Oct 2025", curMonth:"Nov 2025", prevMonth:"Oct 2025",
+    totalClients:167, totalReduction:-29682.61, totalIncrease:4093.31, increaseCount:3,
+    reductions:[
+      {c:"Cranbrook Group Inc.",cur:5674.67,prev:17237.91,diff:-11563.24},
+      {c:"Westmark Incorporated",cur:9756.42,prev:20858.05,diff:-11101.63},
+      {c:"HHHC",cur:13275.07,prev:16846.31,diff:-3571.24},
+      {c:"Groundswell",cur:0.0,prev:3446.5,diff:-3446.5},
+    ],
+    increases:[
+      {c:"ABI Healthcare",cur:19195.63,prev:17758.03,diff:1437.6},
+      {c:"Garretson Team",cur:1350.67,prev:0.0,diff:1350.67},
+      {c:"24 Hour Home Care",cur:74636.42,prev:73331.38,diff:1305.04},
+    ],
+  },
+  {
+    label:"Dec 2025 vs Nov 2025", curMonth:"Dec 2025", prevMonth:"Nov 2025",
+    totalClients:167, totalReduction:-7994.13, totalIncrease:13480.28, increaseCount:5,
+    reductions:[
+      {c:"Lucia Mar Unified School District",cur:3125.14,prev:8510.58,diff:-5385.44},
+      {c:"Cristo Rey High School",cur:10626.37,prev:13235.06,diff:-2608.69},
+    ],
+    increases:[
+      {c:"Winton-Ireland, Strom & Green",cur:15179.0,prev:10510.0,diff:4669.0},
+      {c:"Groundswell",cur:3293.5,prev:0.0,diff:3293.5},
+      {c:"Graceada Partners",cur:15126.14,prev:13269.04,diff:1857.1},
+      {c:"St. John 23rd School",cur:2004.6,prev:167.05,diff:1837.55},
+      {c:"Free Wheelchair Mission",cur:8316.84,prev:6493.71,diff:1823.13},
+    ],
+  },
+  {
+    label:"Feb 2026 vs Dec 2025 (2-month gap)", curMonth:"Feb 2026", prevMonth:"Dec 2025",
+    totalClients:172, totalReduction:-34881.98, totalIncrease:71374.74, increaseCount:7,
+    reductions:[
+      {c:"Pasco",cur:0.0,prev:25548.6,diff:-25548.6},
+      {c:"HHHC",cur:9304.67,prev:13420.09,diff:-4115.42},
+      {c:"John Potter Specialty Foods, Inc.",cur:0.0,prev:3213.36,diff:-3213.36},
+      {c:"St. John 23rd School",cur:0.0,prev:2004.6,diff:-2004.6},
+    ],
+    increases:[
+      {c:"Lucia Mar Unified School District",cur:33292.14,prev:3125.14,diff:30167.0},
+      {c:"PASCO",cur:24095.74,prev:0.0,diff:24095.74},
+      {c:"Wave Dental Professionals",cur:6370.0,prev:0.0,diff:6370.0},
+      {c:"Garretson Team",cur:5322.0,prev:1185.0,diff:4137.0},
+      {c:"Central Valley Regional Center",cur:3500.0,prev:0.0,diff:3500.0},
+      {c:"Horizon Nut Company",cur:9655.1,prev:8100.1,diff:1555.0},
+      {c:"Scheurer Health",cur:3268.1,prev:1718.1,diff:1550.0},
+    ],
+  },
+];
+
+function renderMrrMovement(el) {
+  const periods = MRR_MOVEMENT;
+  let selPeriod = state.mrrMovementPeriod || periods.length - 1;
+  if (selPeriod >= periods.length) selPeriod = periods.length - 1;
+  state.mrrMovementPeriod = selPeriod;
+
+  const p = periods[selPeriod];
+
+  // --- KPI cards ---
+  const totalRed = p.totalReduction;
+  const totalInc = p.totalIncrease;
+  const net = totalRed + totalInc;
+
+  el.innerHTML = `
+    <div style="padding:24px;max-width:1200px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <button onclick="goBack()" style="background:none;border:1px solid #ccc;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:14px;color:#555">← Back</button>
+        <h2 style="margin:0;font-size:22px;color:#1a1a2e">MRR Movement — Client-Level Changes >$1K</h2>
+      </div>
+      <p style="color:#666;margin:0 0 20px;font-size:14px">
+        Tracks recurring revenue changes by client month-over-month. Reductions >$1K highlight where MRR is leaking despite new wins.
+        Source: Citrin P&L comparison tabs.
+      </p>
+
+      <!-- Period selector -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="mmPeriodBtns">
+        ${periods.map((pp, i) => `<button onclick="state.mrrMovementPeriod=${i};renderMrrMovement(document.getElementById('main'))" style="padding:8px 16px;border-radius:6px;border:1px solid ${i===selPeriod?'#2563eb':'#ccc'};background:${i===selPeriod?'#2563eb':'#fff'};color:${i===selPeriod?'#fff':'#333'};cursor:pointer;font-size:13px;font-weight:${i===selPeriod?'600':'400'}">${pp.curMonth}</button>`).join('')}
+      </div>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;text-align:center">
+          <div style="font-size:13px;color:#888;margin-bottom:6px">MRR Reductions</div>
+          <div style="font-size:26px;font-weight:700;color:#dc2626">${p.reductions.length}</div>
+          <div style="font-size:12px;color:#999">clients &gt; $1K drop</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;text-align:center">
+          <div style="font-size:13px;color:#888;margin-bottom:6px">Total Reduction</div>
+          <div style="font-size:26px;font-weight:700;color:#dc2626">${fmt(totalRed)}</div>
+          <div style="font-size:12px;color:#999">MRR lost</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;text-align:center">
+          <div style="font-size:13px;color:#888;margin-bottom:6px">Total Increase</div>
+          <div style="font-size:26px;font-weight:700;color:#16a34a">${fmt(totalInc)}</div>
+          <div style="font-size:12px;color:#999">${p.increaseCount} clients &gt; $1K gain</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;text-align:center">
+          <div style="font-size:13px;color:#888;margin-bottom:6px">Net Movement</div>
+          <div style="font-size:26px;font-weight:700;color:${net>=0?'#16a34a':'#dc2626'}">${fmt(net)}</div>
+          <div style="font-size:12px;color:#999">${p.curMonth} vs ${p.prevMonth}</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:24px">
+        <h3 style="margin:0 0 12px;font-size:16px;color:#1a1a2e">MRR Movement Trend — Reductions vs Increases &gt;$1K</h3>
+        <div style="height:300px"><canvas id="mrmChart"></canvas></div>
+      </div>
+
+      <!-- Reductions table -->
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:24px">
+        <h3 style="margin:0 0 4px;font-size:16px;color:#dc2626">Reductions &gt;$1K — ${p.curMonth} vs ${p.prevMonth}</h3>
+        <p style="margin:0 0 12px;font-size:13px;color:#888">${p.reductions.length} client${p.reductions.length!==1?'s':''} with significant MRR reduction</p>
+        ${p.reductions.length === 0 ? '<div style="text-align:center;padding:30px;color:#999;font-size:14px">No reductions &gt;$1K this period</div>' : `
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <thead><tr style="border-bottom:2px solid #e5e7eb;text-align:left">
+            <th style="padding:10px 12px;color:#555">Client</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">${p.prevMonth}</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">${p.curMonth}</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">Change</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">% Change</th>
+          </tr></thead>
+          <tbody>
+            ${p.reductions.map(r => {
+              const pct = r.prev !== 0 ? ((r.diff / r.prev) * 100).toFixed(1) : '-100.0';
+              const isChurned = r.cur === 0;
+              return `<tr style="border-bottom:1px solid #f0f0f0">
+                <td style="padding:10px 12px;font-weight:500">${escHtml(r.c)}${isChurned ? ' <span style="background:#fecaca;color:#991b1b;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px">CHURNED</span>' : ''}</td>
+                <td style="padding:10px 12px;text-align:right;color:#555">${fmt(r.prev)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#555">${fmt(r.cur)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#dc2626;font-weight:600">${fmt(r.diff)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#dc2626">${pct}%</td>
+              </tr>`;
+            }).join('')}
+            <tr style="border-top:2px solid #e5e7eb;font-weight:700">
+              <td style="padding:10px 12px">Total</td>
+              <td style="padding:10px 12px;text-align:right">${fmt(p.reductions.reduce((s,r)=>s+r.prev,0))}</td>
+              <td style="padding:10px 12px;text-align:right">${fmt(p.reductions.reduce((s,r)=>s+r.cur,0))}</td>
+              <td style="padding:10px 12px;text-align:right;color:#dc2626">${fmt(totalRed)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>`}
+      </div>
+
+      <!-- Increases table -->
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin-bottom:24px">
+        <h3 style="margin:0 0 4px;font-size:16px;color:#16a34a">Increases &gt;$1K — ${p.curMonth} vs ${p.prevMonth}</h3>
+        <p style="margin:0 0 12px;font-size:13px;color:#888">${p.increases.length} client${p.increases.length!==1?'s':''} with significant MRR increase</p>
+        ${p.increases.length === 0 ? '<div style="text-align:center;padding:30px;color:#999;font-size:14px">No increases &gt;$1K this period</div>' : `
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <thead><tr style="border-bottom:2px solid #e5e7eb;text-align:left">
+            <th style="padding:10px 12px;color:#555">Client</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">${p.prevMonth}</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">${p.curMonth}</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">Change</th>
+            <th style="padding:10px 12px;color:#555;text-align:right">% Change</th>
+          </tr></thead>
+          <tbody>
+            ${p.increases.map(r => {
+              const pct = r.prev !== 0 ? ((r.diff / r.prev) * 100).toFixed(1) : 'NEW';
+              const isNew = r.prev === 0;
+              return `<tr style="border-bottom:1px solid #f0f0f0">
+                <td style="padding:10px 12px;font-weight:500">${escHtml(r.c)}${isNew ? ' <span style="background:#dcfce7;color:#166534;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px">NEW</span>' : ''}</td>
+                <td style="padding:10px 12px;text-align:right;color:#555">${fmt(r.prev)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#555">${fmt(r.cur)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#16a34a;font-weight:600">+${fmt(r.diff)}</td>
+                <td style="padding:10px 12px;text-align:right;color:#16a34a">${isNew ? 'NEW' : '+'+pct+'%'}</td>
+              </tr>`;
+            }).join('')}
+            <tr style="border-top:2px solid #e5e7eb;font-weight:700">
+              <td style="padding:10px 12px">Total</td>
+              <td style="padding:10px 12px;text-align:right">${fmt(p.increases.reduce((s,r)=>s+r.prev,0))}</td>
+              <td style="padding:10px 12px;text-align:right">${fmt(p.increases.reduce((s,r)=>s+r.cur,0))}</td>
+              <td style="padding:10px 12px;text-align:right;color:#16a34a">+${fmt(totalInc)}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>`}
+      </div>
+
+      <!-- Data notes -->
+      <div style="background:#f8f9fa;border:1px solid #e5e7eb;border-radius:10px;padding:16px;font-size:13px;color:#666">
+        <strong>Data notes:</strong> Sourced from Citrin P&L comparison tabs (CA + OH aggregated per client).
+        Threshold: only changes &gt;$1,000 shown. "CHURNED" = client dropped to $0 MRR.
+        Feb 2026 compared against Dec 2025 (2-month gap — Jan 2026 P&L has no comparison tab).
+        Increases capped at top 20 per period.
+      </div>
+    </div>
+  `;
+
+  // --- Trend chart ---
+  setTimeout(() => {
+    const ctx = document.getElementById('mrmChart');
+    if (!ctx) return;
+    const labels = periods.map(p => p.curMonth);
+    const redData = periods.map(p => Math.abs(p.totalReduction));
+    const incData = periods.map(p => p.totalIncrease);
+    const netData = periods.map(p => p.totalReduction + p.totalIncrease);
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Reductions (absolute)', data: redData, backgroundColor: 'rgba(220,38,38,0.7)', borderRadius: 4, order: 2 },
+          { label: 'Increases', data: incData, backgroundColor: 'rgba(22,163,74,0.7)', borderRadius: 4, order: 2 },
+          { label: 'Net Movement', data: netData, type: 'line', borderColor: '#2563eb', borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#2563eb', fill: false, order: 1 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => fmt(v) } },
         }
       }
     });
