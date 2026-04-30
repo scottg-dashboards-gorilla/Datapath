@@ -28,6 +28,7 @@ Key people: Co-CEOs James Bates & David Darmstandler, COO Scott Gordon (consulta
 - **ATH_EXCLUDE**: `['Dec 25']` — year-end months excluded from ATH/L12M benchmarks
 - **Department names**: Never use "Division 1, 2" — always actual department names
 - **No headcount**: Never show staff counts in labels or KPI cards
+- **Customer name matching**: Always case-insensitive. Different capitalizations (e.g., "Pasco" vs "PASCO") are the same client — normalize before comparing or aggregating
 
 ## What to Avoid
 - **NEVER regenerate PE book from pe-book.js** — User's uploaded narrative is the MASTER. Only use XML unpack/edit/repack workflow
